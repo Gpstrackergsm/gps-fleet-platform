@@ -229,6 +229,36 @@ const initTables = async () => {
         try { await query("CREATE INDEX idx_alerts_status ON alerts(status)"); } catch { }
         try { await query("CREATE INDEX idx_geofences_tenant ON geofences(tenant_id, is_active)"); } catch { }
 
+        // Seed Default Tenant & Admin User if not exists
+        try {
+            const tenantCheck = await query("SELECT id FROM tenants WHERE id = 1");
+            if ((tenantCheck.rows as any[]).length === 0) {
+                await query("INSERT INTO tenants (id, name) VALUES (1, 'Global Admin Fleet')");
+            }
+
+            const adminCheck = await query("SELECT id FROM users WHERE email = 'gsmkhalid@msn.com'");
+            if ((adminCheck.rows as any[]).length === 0) {
+                const bcrypt = await import('bcryptjs');
+                const hash = await bcrypt.hash('admin123', 10);
+                await query(
+                    "INSERT INTO users (email, password_hash, role, tenant_id) VALUES (?, ?, 'admin', 1)",
+                    ['gsmkhalid@msn.com', hash]
+                );
+                console.log('[DB] Seeded initial Admin user: gsmkhalid@msn.com / admin123');
+            }
+
+            // Seed user's real TK103 device
+            const deviceCheck = await query("SELECT id FROM devices WHERE device_id = '869706063068466'");
+            if ((deviceCheck.rows as any[]).length === 0) {
+                await query(
+                    "INSERT INTO devices (device_id, name, status, tenant_id, plate_number, model) VALUES ('869706063068466', 'Mercedes Sprinter', 'online', 1, '12345-A-26', 'TK103B')"
+                );
+                console.log('[DB] Seeded physical device 869706063068466');
+            }
+        } catch (seedErr) {
+            console.error('[DB] Error seeding initial records:', seedErr);
+        }
+
         console.log('[DB] Enterprise tables and performance indexes initialized (MySQL)');
     } catch (err) {
         console.error('[DB] Error initializing tables', err);
