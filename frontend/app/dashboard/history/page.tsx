@@ -3,7 +3,7 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/api';
-import { Play, Pause, SkipBack, Download, ChevronDown, ChevronUp, Gauge, Clock, Route, TrendingUp, Flag, Car, X, SlidersHorizontal } from 'lucide-react';
+import { Play, Pause, SkipBack, Download, ChevronDown, ChevronUp, Gauge, Clock, Route, TrendingUp, Flag, Car, X, SlidersHorizontal, ExternalLink } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Position {
@@ -287,11 +287,22 @@ export default function HistoryPage() {
                         <div className="bg-gray-800 rounded-lg p-2.5 text-xs space-y-1">
                             <div className="flex justify-between text-gray-400">
                                 <span>Speed</span>
-                                <span className="text-blue-400 font-mono">{history[playIndex].speed.toFixed(1)} km/h</span>
+                                <span className="text-blue-400 font-mono font-bold">{history[playIndex].speed.toFixed(1)} km/h</span>
                             </div>
                             <div className="flex justify-between text-gray-400">
                                 <span>Point</span>
                                 <span className="text-gray-300">{playIndex + 1} / {history.length}</span>
+                            </div>
+                            <div className="pt-1.5 border-t border-gray-700/60 flex justify-end">
+                                <a
+                                    href={`https://www.google.com/maps/search/?api=1&query=${history[playIndex].lat},${history[playIndex].lng}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-[11px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-medium transition-colors"
+                                >
+                                    <span>Google Maps</span>
+                                    <ExternalLink size={11} />
+                                </a>
                             </div>
                         </div>
                     )}
@@ -348,8 +359,21 @@ export default function HistoryPage() {
                 {history.length > 0 && (
                     <div className="md:hidden absolute bottom-2 left-2 right-2 z-[400] bg-gray-900/95 border border-gray-800 backdrop-blur rounded-2xl p-3 shadow-2xl flex flex-col gap-2">
                         <div className="flex items-center justify-between text-xs">
-                            <span className="font-bold text-white truncate max-w-[160px]">{vehicleName}</span>
-                            <span className="text-blue-400 font-mono font-bold">{history[playIndex]?.speed.toFixed(1) || 0} km/h</span>
+                            <span className="font-bold text-white truncate max-w-[150px]">{vehicleName}</span>
+                            <div className="flex items-center gap-2">
+                                <span className="text-blue-400 font-mono font-bold">{history[playIndex]?.speed.toFixed(1) || 0} km/h</span>
+                                {history[playIndex] && (
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${history[playIndex].lat},${history[playIndex].lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-blue-400 hover:text-blue-300 p-0.5"
+                                        title="Open in Google Maps"
+                                    >
+                                        <ExternalLink size={12} />
+                                    </a>
+                                )}
+                            </div>
                         </div>
                         <div className="flex items-center gap-2">
                             <button

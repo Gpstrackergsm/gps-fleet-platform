@@ -5,7 +5,7 @@ import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from '@react-
 import { MapContainer, TileLayer, Polyline as LeafletPolyline, CircleMarker, Marker as LeafletMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Layers, Globe, Navigation, Clock, Gauge, Play } from 'lucide-react';
+import { Layers, Globe, Navigation, Clock, Gauge, Play, MapPin, ExternalLink, Search } from 'lucide-react';
 
 interface Position {
     id: number;
@@ -58,10 +58,17 @@ function LeafletFitRoute({ positions }: { positions: Position[] }) {
 export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
     // Default engine: Google Maps
     const [engine, setEngine] = useState<'google' | 'leaflet'>('google');
-    const [googleMapType, setGoogleMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite'>('hybrid');
+    const [googleMapType, setGoogleMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite' | 'terrain'>('hybrid');
     const [leafletTileLayer, setLeafletTileLayer] = useState<'street' | 'satellite'>('street');
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [selectedPoint, setSelectedPoint] = useState<Position | null>(null);
+
+    // Reverse Geocoded Address State
+    const [pointAddress, setPointAddress] = useState<string | null>(null);
+    const [addressLoading, setAddressLoading] = useState(false);
+    const addressCache = useRef<Record<string, string>>({});
+    const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+    const [mapSearch, setMapSearch] = useState('');
 
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
@@ -69,6 +76,92 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
         region: "MA",
         libraries: GOOGLE_MAPS_LIBRARIES
     });
+
+    const resolvePointAddress = useCallback((lat: number, lng: number) => {
+        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (addressCache.current[cacheKey]) {
+            setPointAddress(addressCache.current[cacheKey]);
+            return;
+        }
+
+        if (engine === 'google' && isLoaded && window.google?.maps) {
+            if (!geocoderRef.current) {
+                geocoderRef.current = new google.maps.Geocoder();
+            }
+            setAddressLoading(true);
+            geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+                setAddressLoading(false);
+                if (status === 'OK' && results && results.length > 0) {
+                    const plusCodeRegex = /^[A-Z0-9]{2,8}\+[A-Z0-9]{2,}/i;
+                    const valid = results.filter(r => !plusCodeRegex.test(r.formatted_address.trim()));
+                    const pool = valid.length > 0 ? valid : results;
+
+                    const streetResult = pool.find(r => 
+                        (r.types.includes('street_address') || r.types.includes('subpremise') || r.types.includes('premise')) &&
+                        !r.formatted_address.toLowerCase().includes('route sans nom') &&
+                        !r.formatted_address.toLowerCase().includes('unnamed road')
+                    ) || pool.find(r => 
+                        r.types.includes('route') &&
+                        !r.formatted_address.toLowerCase().includes('route sans nom') &&
+                        !r.formatted_address.toLowerCase().includes('unnamed road')
+                    ) || pool.find(r =>
+                        r.types.includes('neighborhood') || r.types.includes('sublocality')
+                    ) || pool[0];
+
+                    const cleanAddress = streetResult.formatted_address;
+                    addressCache.current[cacheKey] = cleanAddress;
+                    setPointAddress(cleanAddress);
+                } else {
+                    setPointAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                }
+            });
+        } else {
+            // Leaflet fallback reverse geocoding via OpenStreetMap
+            setAddressLoading(true);
+            fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`)
+                .then(res => res.json())
+                .then(data => {
+                    setAddressLoading(false);
+                    if (data && data.display_name) {
+                        addressCache.current[cacheKey] = data.display_name;
+                        setPointAddress(data.display_name);
+                    } else {
+                        setPointAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                    }
+                })
+                .catch(() => {
+                    setAddressLoading(false);
+                    setPointAddress(`${lat.toFixed(5)}, ${lng.toFixed(5)}`);
+                });
+        }
+    }, [engine, isLoaded]);
+
+    // Auto resolve address when selectedPoint changes
+    useEffect(() => {
+        if (selectedPoint) {
+            resolvePointAddress(selectedPoint.lat, selectedPoint.lng);
+        } else {
+            setPointAddress(null);
+        }
+    }, [selectedPoint, resolvePointAddress]);
+
+    const handleSearchAddress = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!mapSearch.trim() || !isLoaded || !map) return;
+        if (!geocoderRef.current && window.google?.maps) {
+            geocoderRef.current = new google.maps.Geocoder();
+        }
+        if (geocoderRef.current) {
+            geocoderRef.current.geocode({ address: mapSearch.trim() }, (results, status) => {
+                if (status === 'OK' && results && results[0]) {
+                    map.panTo(results[0].geometry.location);
+                    map.setZoom(16);
+                } else {
+                    alert('Location not found. Please try another address.');
+                }
+            });
+        }
+    };
 
     const current = history[playIndex] || null;
     const start = history[0] || null;
@@ -123,32 +216,50 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
             {/* ── Top Header Controls Overlay ── */}
             <div className="absolute top-3 right-3 z-[400] flex items-center gap-2">
                 {engine === 'google' && isLoaded && (
-                    <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                        <button
-                            onClick={() => setGoogleMapType('hybrid')}
-                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                                googleMapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                        >
-                            <Layers size={13} /> Hybrid
-                        </button>
-                        <button
-                            onClick={() => setGoogleMapType('roadmap')}
-                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                                googleMapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                        >
-                            <Layers size={13} /> Road
-                        </button>
-                        <button
-                            onClick={() => setGoogleMapType('satellite')}
-                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                                googleMapType === 'satellite' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                        >
-                            <Layers size={13} /> Satellite
-                        </button>
-                    </div>
+                    <>
+                        {/* Search Location Bar */}
+                        <form onSubmit={handleSearchAddress} className="relative hidden md:block">
+                            <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                            <input
+                                type="text"
+                                placeholder="Search location..."
+                                value={mapSearch}
+                                onChange={e => setMapSearch(e.target.value)}
+                                className="bg-zinc-900/95 border border-zinc-700 rounded-lg pl-7 pr-2.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 w-36 shadow-xl backdrop-blur"
+                            />
+                        </form>
+
+                        {/* Google Map Type Selector (Satellite is Hybrid with full streets and labels like Google Maps) */}
+                        <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
+                            <button
+                                onClick={() => setGoogleMapType('hybrid')}
+                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                    googleMapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                }`}
+                                title="Satellite view with road network, street names, and business labels (like Google Maps)"
+                            >
+                                <Layers size={13} /> Satellite
+                            </button>
+                            <button
+                                onClick={() => setGoogleMapType('roadmap')}
+                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                    googleMapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                }`}
+                                title="Standard Street Map"
+                            >
+                                Map
+                            </button>
+                            <button
+                                onClick={() => setGoogleMapType('terrain')}
+                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                    googleMapType === 'terrain' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                                }`}
+                                title="Terrain Topography"
+                            >
+                                Terrain
+                            </button>
+                        </div>
+                    </>
                 )}
 
                 {engine === 'leaflet' && (
@@ -302,15 +413,48 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                     onCloseClick={() => setSelectedPoint(null)}
                                     options={{ pixelOffset: new google.maps.Size(0, -20) }}
                                 >
-                                    <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[180px] border border-zinc-800 shadow-xl font-sans">
+                                    <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[200px] max-w-[280px] border border-zinc-800 shadow-xl font-sans">
                                         <div className="flex items-center justify-between pb-1 mb-1 border-b border-zinc-800">
-                                            <span className="font-bold text-xs text-white">Route Point</span>
+                                            <span className="font-bold text-xs text-white">
+                                                {selectedPoint === start ? '🟢 Trip Start' : (selectedPoint === end && end !== start ? '🔴 Trip End' : (selectedPoint === current ? '🚗 Replay Position' : '📍 Route Point'))}
+                                            </span>
                                             <span className="text-[10px] font-mono text-blue-400 font-bold">{selectedPoint.speed.toFixed(1)} km/h</span>
                                         </div>
+
+                                        {/* Physical Street Address */}
+                                        <div className="flex items-start gap-1 text-[10px] text-zinc-300 pb-1.5 mb-1.5 border-b border-zinc-800">
+                                            <MapPin size={11} className="text-red-400 shrink-0 mt-0.5" />
+                                            <span className="leading-tight text-white font-medium">
+                                                {addressLoading && !pointAddress ? "Resolving street address..." : (pointAddress || `${selectedPoint.lat.toFixed(5)}, ${selectedPoint.lng.toFixed(5)}`)}
+                                            </span>
+                                        </div>
+
                                         <div className="text-[11px] text-zinc-300 space-y-0.5">
-                                            <div>Time: {new Date(selectedPoint.timestamp).toLocaleTimeString()}</div>
-                                            <div>Date: {new Date(selectedPoint.timestamp).toLocaleDateString()}</div>
-                                            <div className="text-zinc-500 font-mono text-[10px]">{selectedPoint.lat.toFixed(5)}, {selectedPoint.lng.toFixed(5)}</div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Time:</span>
+                                                <span className="font-mono text-zinc-200">{new Date(selectedPoint.timestamp).toLocaleTimeString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Date:</span>
+                                                <span className="text-zinc-200">{new Date(selectedPoint.timestamp).toLocaleDateString()}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Coordinates:</span>
+                                                <span className="text-zinc-400 font-mono text-[10px]">{selectedPoint.lat.toFixed(5)}, {selectedPoint.lng.toFixed(5)}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Direct Google Maps Link */}
+                                        <div className="pt-2 mt-2 border-t border-zinc-800 flex justify-end">
+                                            <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${selectedPoint.lat},${selectedPoint.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold transition-colors"
+                                            >
+                                                <span>Open in Google Maps</span>
+                                                <ExternalLink size={10} />
+                                            </a>
                                         </div>
                                     </div>
                                 </InfoWindow>
@@ -339,31 +483,95 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                     )}
 
                     {start && (
-                        <CircleMarker center={[start.lat, start.lng]} radius={8} color="#22c55e" fillColor="#22c55e" fillOpacity={1} weight={2}>
+                        <CircleMarker
+                            center={[start.lat, start.lng]}
+                            radius={8}
+                            color="#22c55e"
+                            fillColor="#22c55e"
+                            fillOpacity={1}
+                            weight={2}
+                            eventHandlers={{ click: () => setSelectedPoint(start) }}
+                        >
                             <Popup>
-                                <div className="text-xs text-black font-semibold">
-                                    🟢 Start<br />{new Date(start.timestamp).toLocaleString()}
+                                <div className="text-xs text-zinc-900 font-sans min-w-[170px]">
+                                    <div className="font-bold text-emerald-600 mb-0.5">🟢 Trip Start</div>
+                                    <div className="text-[10px] text-zinc-600 mb-1 leading-tight">
+                                        {pointAddress || `${start.lat.toFixed(5)}, ${start.lng.toFixed(5)}`}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-500">{new Date(start.timestamp).toLocaleString()}</div>
+                                    <div className="mt-1.5 pt-1 border-t border-zinc-200">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${start.lat},${start.lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-blue-600 font-semibold flex items-center gap-1"
+                                        >
+                                            <span>Open in Google Maps</span>
+                                            <ExternalLink size={9} />
+                                        </a>
+                                    </div>
                                 </div>
                             </Popup>
                         </CircleMarker>
                     )}
 
                     {end && end !== start && (
-                        <CircleMarker center={[end.lat, end.lng]} radius={8} color="#ef4444" fillColor="#ef4444" fillOpacity={1} weight={2}>
+                        <CircleMarker
+                            center={[end.lat, end.lng]}
+                            radius={8}
+                            color="#ef4444"
+                            fillColor="#ef4444"
+                            fillOpacity={1}
+                            weight={2}
+                            eventHandlers={{ click: () => setSelectedPoint(end) }}
+                        >
                             <Popup>
-                                <div className="text-xs text-black font-semibold">
-                                    🔴 End<br />{new Date(end.timestamp).toLocaleString()}
+                                <div className="text-xs text-zinc-900 font-sans min-w-[170px]">
+                                    <div className="font-bold text-red-600 mb-0.5">🔴 Trip End</div>
+                                    <div className="text-[10px] text-zinc-600 mb-1 leading-tight">
+                                        {pointAddress || `${end.lat.toFixed(5)}, ${end.lng.toFixed(5)}`}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-500">{new Date(end.timestamp).toLocaleString()}</div>
+                                    <div className="mt-1.5 pt-1 border-t border-zinc-200">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${end.lat},${end.lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-blue-600 font-semibold flex items-center gap-1"
+                                        >
+                                            <span>Open in Google Maps</span>
+                                            <ExternalLink size={9} />
+                                        </a>
+                                    </div>
                                 </div>
                             </Popup>
                         </CircleMarker>
                     )}
 
                     {current && playIndex > 0 && (
-                        <LeafletMarker position={[current.lat, current.lng]} icon={makeLeafletCarIcon(current.course || 0)}>
+                        <LeafletMarker
+                            position={[current.lat, current.lng]}
+                            icon={makeLeafletCarIcon(current.course || 0)}
+                            eventHandlers={{ click: () => setSelectedPoint(current) }}
+                        >
                             <Popup>
-                                <div className="text-xs text-black">
-                                    <strong>{new Date(current.timestamp).toLocaleTimeString()}</strong><br />
-                                    Speed: {current.speed.toFixed(1)} km/h
+                                <div className="text-xs text-zinc-900 font-sans min-w-[170px]">
+                                    <div className="font-bold text-blue-600 mb-0.5">🚗 Replay Position</div>
+                                    <div className="text-[10px] text-zinc-600 mb-1 leading-tight">
+                                        {pointAddress || `${current.lat.toFixed(5)}, ${current.lng.toFixed(5)}`}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-500">{new Date(current.timestamp).toLocaleTimeString()} · {current.speed.toFixed(1)} km/h</div>
+                                    <div className="mt-1.5 pt-1 border-t border-zinc-200">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${current.lat},${current.lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-blue-600 font-semibold flex items-center gap-1"
+                                        >
+                                            <span>Open in Google Maps</span>
+                                            <ExternalLink size={9} />
+                                        </a>
+                                    </div>
                                 </div>
                             </Popup>
                         </LeafletMarker>
