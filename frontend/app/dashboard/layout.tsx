@@ -9,17 +9,8 @@ import {
     Compass, ShieldAlert, Shield, Menu, X
 } from 'lucide-react';
 import { socket } from '@/lib/socket';
-
-const NAV = [
-    { href: '/dashboard', icon: Map, label: 'Live Map' },
-    { href: '/dashboard/vehicles', icon: Truck, label: 'Fleet' },
-    { href: '/dashboard/history', icon: Clock, label: 'History' },
-    { href: '/dashboard/geofences', icon: Compass, label: 'Geofences' },
-    { href: '/dashboard/alerts', icon: ShieldAlert, label: 'Alerts' },
-    { href: '/dashboard/reports', icon: BarChart2, label: 'Reports', soon: true },
-    { href: '/dashboard/settings', icon: Settings, label: 'Settings' },
-    { href: '/admin', icon: Shield, label: 'Admin Panel', adminOnly: true },
-];
+import LanguageSelector from '@/components/LanguageSelector';
+import { useLanguage } from '@/lib/LanguageContext';
 
 function Clock24() {
     const [time, setTime] = useState('');
@@ -40,6 +31,18 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const [connected, setConnected] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
+    const { t, isRTL } = useLanguage();
+
+    const NAV = [
+        { href: '/dashboard', icon: Map, label: t('dashboard') },
+        { href: '/dashboard/vehicles', icon: Truck, label: t('fleet') },
+        { href: '/dashboard/history', icon: Clock, label: t('history') },
+        { href: '/dashboard/geofences', icon: Compass, label: t('geofences') },
+        { href: '/dashboard/alerts', icon: ShieldAlert, label: t('alerts') },
+        { href: '/dashboard/reports', icon: BarChart2, label: t('reports'), soon: true },
+        { href: '/dashboard/settings', icon: Settings, label: t('settings') },
+        { href: '/admin', icon: Shield, label: t('adminPanel'), adminOnly: true },
+    ];
 
     useEffect(() => {
         const token = localStorage.getItem('token');
@@ -125,7 +128,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     >
                         <LogOut size={18} className="shrink-0" />
                         <span className={`text-sm whitespace-nowrap transition-opacity duration-200 ${expanded ? 'opacity-100' : 'opacity-0'}`}>
-                            Sign Out
+                            {t('signOut')}
                         </span>
                     </button>
                 </div>
@@ -196,6 +199,12 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                             })}
                         </nav>
 
+                        {/* Mobile Drawer Language Selector */}
+                        <div className="p-3 border-t border-gray-800 bg-gray-950/40 flex items-center justify-between">
+                            <span className="text-xs text-gray-400 font-medium">Language</span>
+                            <LanguageSelector compact={false} />
+                        </div>
+
                         {/* Sign Out Button in Drawer */}
                         <div className="p-3 border-t border-gray-800">
                             <button
@@ -203,7 +212,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                                 className="w-full flex items-center justify-center gap-2 px-3 py-2.5 rounded-xl bg-red-950/60 hover:bg-red-900 border border-red-800/60 text-red-300 text-sm font-semibold transition-colors"
                             >
                                 <LogOut size={16} />
-                                <span>Sign Out</span>
+                                <span>{t('signOut')}</span>
                             </button>
                         </div>
                     </div>
@@ -214,7 +223,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col flex-1 overflow-hidden">
 
                 {/* ── Header ── */}
-                <header className="flex items-center h-12 px-3 md:px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 gap-2 md:gap-4">
+                <header className="flex items-center h-12 px-3 md:px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 gap-2 md:gap-3">
                     {/* Mobile Hamburger Menu Toggle */}
                     <button
                         onClick={() => setMobileNavOpen(true)}
@@ -231,12 +240,15 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         </span>
                     </div>
 
+                    {/* Language Selector in Header */}
+                    <LanguageSelector compact={true} />
+
                     <Clock24 />
 
                     <div className="flex items-center gap-1.5 shrink-0">
                         <div className={`w-2 h-2 rounded-full ${connected ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`} />
                         <span className={`text-[11px] md:text-xs ${connected ? 'text-green-400' : 'text-red-400'}`}>
-                            {connected ? 'Live' : 'Offline'}
+                            {connected ? t('live') : t('offline')}
                         </span>
                     </div>
 
@@ -260,10 +272,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                 {/* ── Mobile Bottom Navigation Bar ── */}
                 <nav className="md:hidden flex border-t border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 safe-bottom">
                     {[
-                        { href: '/dashboard', icon: Map, label: 'Map' },
-                        { href: '/dashboard/vehicles', icon: Truck, label: 'Fleet' },
-                        { href: '/dashboard/history', icon: Clock, label: 'History' },
-                        { href: '/dashboard/alerts', icon: ShieldAlert, label: 'Alerts' },
+                        { href: '/dashboard', icon: Map, label: t('dashboard') },
+                        { href: '/dashboard/vehicles', icon: Truck, label: t('fleet') },
+                        { href: '/dashboard/history', icon: Clock, label: t('history') },
+                        { href: '/dashboard/alerts', icon: ShieldAlert, label: t('alerts') },
                     ].map(({ href, icon: Icon, label }) => {
                         const active = pathname === href || (href !== '/dashboard' && pathname.startsWith(href));
                         return (
@@ -285,7 +297,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         className={`flex-1 flex flex-col items-center justify-center gap-1 py-2 text-[10px] font-medium text-gray-400 hover:text-white transition-colors`}
                     >
                         <Menu size={18} />
-                        <span>Menu</span>
+                        <span>{t('menu')}</span>
                     </button>
                 </nav>
             </div>
