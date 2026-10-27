@@ -76,14 +76,15 @@ class UniversalGPSParser:
             if len(parts) > 2:
                 date_time = parts[2]
                 if len(date_time) >= 10:
-                    year = '20' + date_time[0:2]
+                    # Format is DDMMYYHHMM(SS)
+                    day = date_time[0:2]
                     month = date_time[2:4]
-                    day = date_time[4:6]
+                    year = '20' + date_time[4:6]
                     hour = date_time[6:8]
                     minute = date_time[8:10]
                     # Parse seconds if available, otherwise 00
                     seconds = date_time[10:12] if len(date_time) >= 12 else '00'
-                    timestamp = f"{year}-{month}-{day} {hour}:{minute}:{seconds}"
+                    timestamp = f"{year}-{month}-{day} {hour}:{minute}:{seconds}Z"
 
             # GPS Status
             gps_status = parts[4] if len(parts) > 4 else 'V' # 'F'/'A' for valid
@@ -196,7 +197,7 @@ class UniversalGPSParser:
             minute = time_str[2:4]
             second = time_str[4:6]
             
-            timestamp = f"{year}-{month}-{day} {hour}:{minute}:{second}"
+            timestamp = f"{year}-{month}-{day} {hour}:{minute}:{second}Z"
             
             result = {
                 'type': 'location_update',
@@ -253,7 +254,8 @@ if __name__ == "__main__":
         "imei:1234567,tracker,230520120000,,F,120000,A,3124.5678,N,12124.5678,E,0.00,0,10.0,0,0,80%,80%,25;",
         "123456789012345;",
         "##,imei:359586018966098,A",
-        "*HQ,359586018966098,V1,123519,A,3123.1234,N,00433.9876,E,0.08,0,231023,0,0,0,0,0,0,0,0#"
+        "*HQ,359586018966098,V1,123519,A,3123.1234,N,00433.9876,E,0.08,0,231023,0,0,0,0,0,0,0,0#",
+        "imei:359586018966098,help me,090226184525,,F,184525,A,3334.1896,N,00735.2403,W,0.0,;"
     ]
     
     print("Testing Universal GPS Parser:")

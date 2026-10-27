@@ -4,6 +4,8 @@ import authRoutes from './api/auth';
 import deviceRoutes from './api/devices';
 import adminRoutes from './api/admin';
 import historyRoutes from './api/history';
+import geofenceRoutes from './api/geofences';
+import alertRoutes from './api/alerts';
 
 import morgan from 'morgan';
 
@@ -18,6 +20,8 @@ app.use('/api/auth', authRoutes);
 app.use('/api/devices', deviceRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/devices', historyRoutes); // Mount on devices path to extend it
+app.use('/api/geofences', geofenceRoutes);
+app.use('/api/alerts', alertRoutes);
 
 
 // Health check

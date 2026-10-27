@@ -6,7 +6,7 @@ export interface GPSData {
     course?: number;
     timestamp: Date;
     raw: string;
-    type: 'location_update' | 'heartbeat_simple' | 'heartbeat_command' | 'other' | 'alarm';
+    type: 'location_update' | 'heartbeat_simple' | 'heartbeat_command' | 'heartbeat_status' | 'other' | 'alarm';
     format: 'standard' | 'hq' | 'simulator' | 'unknown';
     // New Fields
     alarm?: string;
@@ -16,6 +16,9 @@ export interface GPSData {
     doorStatus?: boolean;
     batteryLevel?: number;
     tripDistance?: number;
+    satellites?: number;
+    gsmSignal?: number;
+    fuelPercent?: number;
 }
 
 /**
@@ -125,31 +128,77 @@ const parseStandardData = (message: string): GPSData | null => {
 
         const lat = convertDDMMToDecimal(parts[7], parts[8]);
         const lng = convertDDMMToDecimal(parts[9], parts[10]);
-        const speed = parts[11] ? parseFloat(parts[11]) : 0;
+        // In GPS103 / TK103 protocol, speed is reported in knots (1 knot = 1.852 km/h)
+        const rawSpeed = parts[11] ? parseFloat(parts[11]) : 0;
+        const speed = Math.round(rawSpeed * 1.852 * 10) / 10;
+        const course = parts[12] ? parseFloat(parts[12]) : 0;
+        const batteryLevel = parts[3] && parts[3].includes('%') ? parseInt(parts[3].replace('%', '')) : 100;
 
         // --- Alarm / Status Detection (Standard Packet) ---
-        // Format often has the trigger at index 1 ("tracker", "help me", "low battery")
         const trigger = parts[1].toLowerCase();
+
+        if (trigger === 'status') {
+            const satellites = parts[3] ? parseInt(parts[3]) : undefined;
+            const gsmSignal = parts[18] ? parseInt(parts[18]) : undefined;
+            return {
+                deviceId,
+                timestamp: new Date(),
+                raw: message,
+                type: 'heartbeat_status',
+                format: 'standard',
+                internetStatus: true,
+                satellites: !isNaN(satellites as number) ? satellites : undefined,
+                gsmSignal: !isNaN(gsmSignal as number) ? gsmSignal : undefined
+            };
+        }
+
         let alarm = undefined;
         let type: GPSData['type'] = 'location_update';
 
-        if (trigger === 'help me') { alarm = 'sos'; type = 'alarm'; }
-        else if (trigger === 'low battery') { alarm = 'low_battery'; type = 'alarm'; }
-        else if (trigger === 'move') { alarm = 'movement'; type = 'alarm'; }
-        else if (trigger === 'speed') { alarm = 'overspeed'; type = 'alarm'; }
-        else if (trigger === 'stockade') { alarm = 'geofence'; type = 'alarm'; }
-        else if (trigger === 'accalarm') { alarm = 'acc_alarm'; type = 'alarm'; }
+        const latDir = parts[8]?.toUpperCase();
+        const lngDir = parts[10]?.toUpperCase();
+        const hasValidCoords = (latDir === 'N' || latDir === 'S') && (lngDir === 'E' || lngDir === 'W') && lat !== 0 && lng !== 0;
 
-        // Some devices send ACC state in a specific column or appended 'State:ACC=1;'
-        // Assuming standard pure text doesn't have it easily without "State:" suffix
-        const accStatus = message.includes('State:ACC=1') || message.includes('acc on');
-        const doorStatus = message.includes('Door=1');
+        if (trigger === 'help me') { 
+            alarm = 'sos'; 
+            type = 'alarm'; 
+        } else if (trigger === 'low battery') { 
+            alarm = 'low_battery'; 
+            type = 'alarm'; 
+        } else if (trigger === 'move') { 
+            alarm = 'movement'; 
+            type = 'alarm'; 
+        } else if (trigger === 'speed') { 
+            alarm = 'overspeed'; 
+            type = 'alarm'; 
+        } else if (trigger === 'stockade') { 
+            alarm = 'geofence'; 
+            type = 'alarm'; 
+        } else if (trigger === 'accalarm') { 
+            alarm = 'acc_alarm'; 
+            type = 'alarm'; 
+        } else if (!hasValidCoords) {
+            type = 'heartbeat_simple';
+        }
+
+        // Some devices send ACC state in a specific column (parts[14]) or appended 'State:ACC=1;'
+        const accStatus = parts[14] === '1' || message.includes('State:ACC=1') || message.includes('acc on');
+        const doorStatus = parts[15] === '1' || message.includes('Door=1');
+
+        let fuelPercent: number | undefined = undefined;
+        if (parts[16] && parts[16].includes('%')) {
+            const f = parseFloat(parts[16].replace('%', ''));
+            if (!isNaN(f)) fuelPercent = f;
+        }
 
         return {
             deviceId,
-            lat,
-            lng,
-            speed,
+            lat: hasValidCoords ? lat : undefined,
+            lng: hasValidCoords ? lng : undefined,
+            speed: hasValidCoords ? speed : 0,
+            course,
+            batteryLevel,
+            fuelPercent,
             timestamp,
             raw: message,
             type,

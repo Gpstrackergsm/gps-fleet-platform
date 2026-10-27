@@ -1,692 +1,767 @@
 "use client"
 
-import React, { useEffect, useState, useCallback, useRef } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow, OverlayView, Polyline, Circle } from '@react-google-maps/api';
+import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
 import { socket } from '@/lib/socket';
 import api from '@/lib/api';
-import { Plus, Minus, Navigation, Layers, History, Play, Pause, Trash2, Activity } from 'lucide-react';
+import {
+    Search, Plus, Minus, Layers, Navigation, Wifi, WifiOff,
+    Gauge, Clock, Car, Radio, Battery, Zap, ZapOff,
+    Compass, Key, ShieldAlert, Sliders, AlertTriangle,
+    CheckCircle2, X, MapPin, Globe
+} from 'lucide-react';
 
 const containerStyle = {
     width: '100%',
     height: '100%'
 };
 
-// Default center (Marrakesh, Morocco - User Requested)
+// Default center (Marrakesh, Morocco)
 const defaultCenter = {
-    lat: 31.626829275702946,
-    lng: -8.003743956539244
+    lat: 31.626829,
+    lng: -8.003744
 };
 
+// ── Types ────────────────────────────────────────────────────────────────────
 interface Vehicle {
     id: string;
     device_id: string;
     name: string;
+    plate_number?: string;
+    model?: string;
+    company_name?: string;
     lat: number;
     lng: number;
     speed: number;
+    course: number;
+    state: 'moving' | 'parked' | 'idling' | 'offline';
     lastUpdate: Date;
+    internet_status: boolean;
+    gps_status: boolean;
+    acc_status: boolean;
+    battery_level: number;
+    door_status?: boolean;
+    satellites?: number;
+    gsm_signal?: number;
+    fuel_percent?: number;
+    isTcpConnected?: boolean;
+    sim_phone?: string;
 }
 
-export default function GoogleMapsView() {
-    const { isLoaded } = useJsApiLoader({
+interface GoogleMapsViewProps {
+    onSwitchToLeaflet?: () => void;
+}
+
+// ── Helpers ──────────────────────────────────────────────────────────────────
+function getState(speed: number, accStatus: boolean, lastUpdate: Date): 'moving' | 'parked' | 'idling' | 'offline' {
+    const ageMs = Date.now() - lastUpdate.getTime();
+    if (ageMs > 3 * 60 * 1000) return 'offline';
+    if (!accStatus && speed <= 3) return 'parked';
+    if (accStatus && speed <= 3) return 'idling';
+    return 'moving';
+}
+
+function stateColor(state: string) {
+    if (state === 'moving') return '#22c55e'; // Green
+    if (state === 'idling') return '#f59e0b'; // Amber / Orange
+    if (state === 'parked') return '#3b82f6'; // Blue
+    return '#6b7280'; // Gray
+}
+
+function stateLabel(state: string) {
+    if (state === 'moving') return 'MOVING';
+    if (state === 'idling') return 'IDLING';
+    if (state === 'parked') return 'PARKED';
+    return 'OFFLINE';
+}
+
+function getCourseCompass(deg: number): string {
+    const directions = ['N', 'NE', 'E', 'SE', 'S', 'SW', 'W', 'NW'];
+    const idx = Math.round(((deg %= 360) < 0 ? deg + 360 : deg) / 45) % 8;
+    return `${deg.toFixed(0)}° (${directions[idx]})`;
+}
+
+function timeSince(date: Date): string {
+    const s = Math.floor((Date.now() - date.getTime()) / 1000);
+    if (s < 60) return `${Math.max(0, s)}s ago`;
+    if (s < 3600) return `${Math.floor(s / 60)}m ago`;
+    return `${Math.floor(s / 3600)}h ago`;
+}
+
+// Static libraries array to avoid re-renders in useJsApiLoader
+const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
+
+export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProps) {
+    const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
-        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "",
-        region: "MA"
+        googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyCnQRiDe3A6Rs9kKAOYJmA4OrOqz8_y7kM",
+        region: "MA",
+        libraries: GOOGLE_MAPS_LIBRARIES
     });
 
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
-    const [center, setCenter] = useState(defaultCenter);
-    const [mapType, setMapType] = useState<string>('hybrid');
-    const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
-    const updateCounter = useRef(0);
-    const vehiclesRef = useRef<Record<string, Vehicle>>({}); // Ref to access current vehicles in socket
-
-    // Track if we have performed the initial zoom-to-fit
+    const vehiclesRef = useRef<Record<string, Vehicle>>({});
+    const [selectedId, setSelectedId] = useState<string | null>(null);
+    const [search, setSearch] = useState('');
+    const [mapType, setMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite' | 'terrain'>('hybrid');
+    const [followMode, setFollowMode] = useState(false);
+    const followModeRef = useRef(false);
     const hasFittedBounds = useRef(false);
+    const [authError, setAuthError] = useState(false);
 
-    // Sync ref with state
+    // Catch Google Maps Billing / Auth failures
     useEffect(() => {
-        vehiclesRef.current = vehicles;
-    }, [vehicles]);
-
-    // Auto-fit bounds when vehicles are loaded for the first time
-    useEffect(() => {
-        if (map && !hasFittedBounds.current && Object.keys(vehicles).length > 0) {
-            const bounds = new google.maps.LatLngBounds();
-            let hasValidLoc = false;
-
-            Object.values(vehicles).forEach(v => {
-                if (v.lat && v.lng) {
-                    bounds.extend({ lat: v.lat, lng: v.lng });
-                    hasValidLoc = true;
-                }
-            });
-
-            if (hasValidLoc) {
-                console.log("Fitting bounds to vehicles...");
-                map.fitBounds(bounds);
-
-                // If only 1 vehicle, the zoom might be too close (max zoom), so we back out slightly check
-                // Google Maps handles single point bounds often by zooming to max.
-                // We can add a listener for 'bounds_changed' or just check zoom after a tick if needed, 
-                // but usually fitBounds is okay. 
-                // A common trick for single vehicle is:
-                if (Object.keys(vehicles).length === 1) {
-                    map.setZoom(16); // Reasonable street level
-                }
-
-                hasFittedBounds.current = true;
+        (window as any).gm_authFailure = () => {
+            console.error("Google Maps JavaScript API error: BillingNotEnabledMapError or AuthFailure");
+            setAuthError(true);
+        };
+        return () => {
+            if ((window as any).gm_authFailure) {
+                delete (window as any).gm_authFailure;
             }
-        }
-    }, [map, vehicles]);
-
-    // History Mode State
-    const [isHistoryMode, setIsHistoryMode] = useState(false);
-    const [historyPoints, setHistoryPoints] = useState<any[]>([]);
-    const [selectedHistoryPoint, setSelectedHistoryPoint] = useState<any>(null); // Track clicked dot
-    const [playbackIndex, setPlaybackIndex] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-    const [historyDate, setHistoryDate] = useState(new Date().toISOString().split('T')[0]); // Default Today
-    const [showRoute, setShowRoute] = useState(false);
-    const [mapResetKey, setMapResetKey] = useState(0);
-    const polylinesRef = useRef<google.maps.Polyline[]>([]); // Track polyline instances for manual cleanup
-    const circleRefs = useRef<google.maps.Circle[]>([]); // Track circle instances for manual cleanup
-
-    // Analysis Mode State
-    const [analysisPoints, setAnalysisPoints] = useState<any[]>([]);
-    const [analysisStats, setAnalysisStats] = useState<{ distance: string, duration: string } | null>(null);
-
-    const calculatePathStats = (p1: any, p2: any) => {
-        if (!historyPoints.length) return;
-
-        // Find indices
-        const idx1 = historyPoints.findIndex(p => p.timestamp === p1.timestamp);
-        const idx2 = historyPoints.findIndex(p => p.timestamp === p2.timestamp);
-
-        if (idx1 === -1 || idx2 === -1) return;
-
-        const startIdx = Math.min(idx1, idx2);
-        const endIdx = Math.max(idx1, idx2);
-
-        // Calculate total distance along the path
-        let totalDistKm = 0;
-        for (let i = startIdx; i < endIdx; i++) {
-            const loc1 = historyPoints[i];
-            const loc2 = historyPoints[i + 1];
-
-            // Haversine formula
-            const R = 6371; // km
-            const dLat = (loc2.lat - loc1.lat) * Math.PI / 180;
-            const dLon = (loc2.lng - loc1.lng) * Math.PI / 180;
-            const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                Math.cos(loc1.lat * Math.PI / 180) * Math.cos(loc2.lat * Math.PI / 180) *
-                Math.sin(dLon / 2) * Math.sin(dLon / 2);
-            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-            totalDistKm += R * c;
-        }
-
-        // Calculate time duration
-        const startTime = new Date(historyPoints[startIdx].timestamp).getTime();
-        const endTime = new Date(historyPoints[endIdx].timestamp).getTime();
-        const diffMs = endTime - startTime;
-
-        const hours = Math.floor(diffMs / (1000 * 60 * 60));
-        const minutes = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-
-        setAnalysisStats({
-            distance: totalDistKm.toFixed(2),
-            duration: `${hours}h ${minutes}m`
-        });
-    };
-
-    const handleHistoryPointClick = (point: any) => {
-        // If we already have 2 points, reset and start over with this new one
-        if (analysisPoints.length === 2) {
-            setAnalysisPoints([point]);
-            setAnalysisStats(null);
-            return;
-        }
-
-        const newPoints = [...analysisPoints, point];
-        setAnalysisPoints(newPoints);
-
-        if (newPoints.length === 2) {
-            calculatePathStats(newPoints[0], newPoints[1]);
-        }
-    };
-
-    const handleClearTrajectory = () => {
-        if (!selectedVehicle) return;
-
-        // Only clear UI state - do NOT delete from database
-        setIsPlaying(false);
-        setPlaybackIndex(0);
-        setSelectedHistoryPoint(null);
-        setShowRoute(false);
-        setHistoryPoints([]);
-
-        // Clear analysis
-        setAnalysisPoints([]);
-        setAnalysisStats(null);
-    };
-
-    const fetchHistory = async () => {
-        if (!selectedVehicle) return;
-
-        try {
-            const start = `${historyDate} 00:00:00`;
-            const end = `${historyDate} 23:59:59`;
-
-            const res = await api.get(`/devices/${selectedVehicle.device_id}/history`, {
-                params: { start, end }
-            });
-
-            if (res.data && res.data.length > 0) {
-                setHistoryPoints(res.data);
-                setPlaybackIndex(0);
-                setIsPlaying(false);
-                setShowRoute(true); // Show route
-                // Center map on start of history
-                if (map) {
-                    map.panTo({ lat: res.data[0].lat, lng: res.data[0].lng });
-                }
-            } else {
-                alert("No history found for this date.");
-                setHistoryPoints([]);
-            }
-        } catch (err) {
-            console.error("Failed to fetch history:", err);
-            alert("Error fetching history.");
-        }
-    };
-
-    // Playback Logic
-    useEffect(() => {
-        let interval: NodeJS.Timeout;
-        if (isPlaying && historyPoints.length > 0) {
-            interval = setInterval(() => {
-                setPlaybackIndex(prev => {
-                    if (prev >= historyPoints.length - 1) {
-                        setIsPlaying(false);
-                        return prev;
-                    }
-                    return prev + 1;
-                });
-            }, 500); // 500ms per step
-        }
-        return () => clearInterval(interval);
-    }, [isPlaying, historyPoints]);
-
-    // Initial Load
-    const onLoad = useCallback(function callback(map: google.maps.Map) {
-        setMap(map);
-        map.setMapTypeId('hybrid');
-        fetchVehicles();
+        };
     }, []);
 
-    const fetchVehicles = async () => {
-        try {
-            const res = await api.get('/devices');
-            const vehicleMap: Record<string, Vehicle> = {};
+    // 2-Way Command State
+    const [commandLoading, setCommandLoading] = useState(false);
+    const [commandResponse, setCommandResponse] = useState<{ message: string; success: boolean } | null>(null);
 
+    // Keep refs in sync
+    useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
+    useEffect(() => { followModeRef.current = followMode; }, [followMode]);
+
+    // Fetch initial fleet
+    useEffect(() => {
+        api.get('/devices').then(res => {
+            const mapData: Record<string, Vehicle> = {};
             res.data.forEach((d: any) => {
-                // If lat/lng exists, use it. Otherwise default to Marrakesh with a small random offset to prevent overlap.
-                const hasLocation = d.lat && d.lng;
-
-                // Add small jitter for default locations: +/- 0.002 degrees (approx 200m)
-                const jitter = () => (Math.random() - 0.5) * 0.004;
-
-                vehicleMap[d.device_id] = {
-                    id: d.device_id,
-                    device_id: d.device_id,
-                    name: d.name || d.device_id, // Fallback to ID if name missing
-                    lat: hasLocation ? d.lat : (defaultCenter.lat + jitter()),
-                    lng: hasLocation ? d.lng : (defaultCenter.lng + jitter()),
-                    speed: d.speed || 0,
-                    lastUpdate: d.last_update ? new Date(d.last_update) : new Date()
-                };
+                if (d.lat && d.lng) {
+                    const lastUpdate = d.last_update ? new Date(d.last_update) : new Date(0);
+                    const speed = d.speed || 0;
+                    const accStatus = Boolean(d.acc_status);
+                    mapData[d.device_id] = {
+                        id: d.device_id,
+                        device_id: d.device_id,
+                        name: d.name || d.device_id,
+                        plate_number: d.plate_number,
+                        model: d.model,
+                        company_name: d.company_name,
+                        lat: d.lat,
+                        lng: d.lng,
+                        speed,
+                        course: d.course || 0,
+                        state: d.current_state || getState(speed, accStatus, lastUpdate),
+                        lastUpdate,
+                        internet_status: d.internet_status || false,
+                        gps_status: d.gps_status || false,
+                        acc_status: accStatus,
+                        battery_level: d.pos_battery_level ?? d.battery_level ?? 100,
+                        door_status: d.door_status || false,
+                        satellites: d.satellites,
+                        gsm_signal: d.gsm_signal,
+                        fuel_percent: d.fuel_percent,
+                        isTcpConnected: d.isTcpConnected,
+                        sim_phone: d.sim_phone
+                    };
+                }
             });
-            setVehicles(vehicleMap);
-        } catch (err) {
-            console.error("Failed to fetch vehicles", err);
-        }
-    };
+            setVehicles(mapData);
+            const firstId = Object.keys(mapData)[0];
+            if (firstId) setSelectedId(firstId);
+        }).catch(console.error);
 
-    // Auto-track selected vehicle
-    useEffect(() => {
-        if (selectedVehicle && vehicles[selectedVehicle.id]) {
-            const v = vehicles[selectedVehicle.id];
-            // Only update current center if we are not in history mode
-            if (!isHistoryMode) {
-                setCenter({ lat: v.lat, lng: v.lng });
-            }
-        }
-    }, [selectedVehicle, vehicles, isHistoryMode]);
-
-    const onUnmount = useCallback(function callback(map: google.maps.Map) {
-        setMap(null);
-    }, []);
-
-    // Socket Connection
-    useEffect(() => {
+        // Socket live telemetry stream
         socket.connect();
-
         socket.on('position', (data: any) => {
-            // SECURITY CHECK: Ignore updates for devices we don't own
-            if (!vehiclesRef.current[data.deviceId as string]) {
-                return;
-            }
-
-            console.log('New position:', data);
-
-            updateCounter.current += 1;
-
-            // REMOVED: Aggressive auto-centering on every update.
-            // We only want to center if the user explicitly "selects" a vehicle to follow, 
-            // or we rely on the initial fitBounds.
-            // if (map && (updateCounter.current === 1 || updateCounter.current % 3 === 0)) {
-            //    map.panTo({ lat: data.lat, lng: data.lng });
-            // }
+            const lastUpdate = new Date(data.lastUpdate || Date.now());
+            const speed = data.speed || 0;
+            const accStatus = Boolean(data.accStatus);
+            const state = data.state || getState(speed, accStatus, lastUpdate);
 
             setVehicles(prev => {
-                const deviceId = data.deviceId as string;
-
-                // SECURITY FIX: Only update if we already know about this device (fetched via API)
-                // This prevents "ghost" vehicles from other users appearing on the map
-                if (!prev[deviceId]) {
-                    // console.warn(`Ignored update for unknown device: ${deviceId}`);
-                    return prev;
-                }
-
-                const startName = prev[deviceId]?.name || deviceId;
-
-                const updated = {
-                    ...prev,
-                    [deviceId]: {
-                        ...prev[deviceId], // Keep existing properties
-                        lat: data.lat,
-                        lng: data.lng,
-                        speed: data.speed,
-                        lastUpdate: new Date()
-                    }
+                const existing = prev[data.deviceId];
+                const updated: Vehicle = {
+                    id: data.deviceId,
+                    device_id: data.deviceId,
+                    name: existing?.name || data.deviceId,
+                    plate_number: existing?.plate_number,
+                    model: existing?.model,
+                    company_name: existing?.company_name,
+                    lat: data.lat,
+                    lng: data.lng,
+                    speed,
+                    course: data.course || 0,
+                    state,
+                    lastUpdate,
+                    internet_status: true,
+                    gps_status: data.gpsStatus ?? existing?.gps_status ?? true,
+                    acc_status: accStatus,
+                    battery_level: data.batteryLevel !== undefined ? data.batteryLevel : (existing?.battery_level ?? 100),
+                    door_status: data.doorStatus ?? existing?.door_status ?? false,
+                    satellites: data.satellites ?? existing?.satellites,
+                    gsm_signal: data.gsmSignal ?? existing?.gsm_signal,
+                    fuel_percent: data.fuelPercent ?? existing?.fuel_percent,
+                    isTcpConnected: true,
+                    sim_phone: existing?.sim_phone
                 };
-
-                // If we have a selected vehicle, update it in real-time for the InfoWindow
-                if (selectedVehicle && selectedVehicle.id === data.deviceId) {
-                    setSelectedVehicle(updated[data.deviceId]);
-                }
-
-                return updated;
+                return { ...prev, [data.deviceId]: updated };
             });
+
+            // If follow mode is on and this is the selected vehicle, pan smoothly
+            if (followModeRef.current && map && selectedId === data.deviceId) {
+                map.panTo({ lat: data.lat, lng: data.lng });
+            }
         });
 
         return () => {
             socket.off('position');
-            socket.disconnect();
         };
-    }, [selectedVehicle, map]);
+    }, [map, selectedId]);
 
-    // Custom Controls
-    const handleZoomIn = () => {
-        if (map) {
-            map.setZoom((map.getZoom() || 18) + 1);
-        }
-    };
-
-    const handleZoomOut = () => {
-        if (map) {
-            map.setZoom((map.getZoom() || 18) - 1);
-        }
-    };
-
-    const toggleMapType = () => {
-        setMapType(prev => prev === 'roadmap' ? 'hybrid' : 'roadmap');
-    };
-
-    // Imperative Polyline Management
+    // Initial Bounds Fit when map & vehicles are ready
     useEffect(() => {
-        // 1. Cleanup all existing polylines
-        if (polylinesRef.current.length > 0) {
-            polylinesRef.current.forEach(line => line.setMap(null));
-            polylinesRef.current = [];
-        }
-
-        // 2. If we have points and route is shown, create new polylines
-        if (map && showRoute && historyPoints.length > 0) {
-            const segments: any[][] = [];
-            let currentSegment: any[] = [historyPoints[0]];
-
-            for (let i = 1; i < historyPoints.length; i++) {
-                const p1 = historyPoints[i - 1];
-                const p2 = historyPoints[i];
-
-                // Calculate distance
-                const R = 6371; // km
-                const dLat = (p2.lat - p1.lat) * Math.PI / 180;
-                const dLon = (p2.lng - p1.lng) * Math.PI / 180;
-                const a = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-                    Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) *
-                    Math.sin(dLon / 2) * Math.sin(dLon / 2);
-                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
-                const distanceKm = R * c;
-
-                // JUMP THRESHOLD: 2 km
-                if (distanceKm > 2) {
-                    segments.push(currentSegment);
-                    currentSegment = [p2];
+        if (map && !hasFittedBounds.current && Object.keys(vehicles).length > 0) {
+            const validVehicles = Object.values(vehicles).filter(v => v.lat && v.lng);
+            if (validVehicles.length > 0) {
+                hasFittedBounds.current = true;
+                if (validVehicles.length === 1) {
+                    map.setCenter({ lat: validVehicles[0].lat, lng: validVehicles[0].lng });
+                    map.setZoom(16);
                 } else {
-                    currentSegment.push(p2);
+                    const bounds = new google.maps.LatLngBounds();
+                    validVehicles.forEach(v => bounds.extend({ lat: v.lat, lng: v.lng }));
+                    map.fitBounds(bounds, 50);
                 }
             }
-            segments.push(currentSegment);
-
-            // Render Segments
-            segments.forEach(segment => {
-                const polyline = new google.maps.Polyline({
-                    path: segment.map(p => ({ lat: p.lat, lng: p.lng })),
-                    strokeColor: "#ef4444", // Red
-                    strokeOpacity: 0.8,
-                    strokeWeight: 4,
-                    map: map
-                });
-                polylinesRef.current.push(polyline);
-            });
         }
-    }, [historyPoints, showRoute, map]);
+    }, [map, vehicles]);
 
-    // Imperative Dot Management
-    useEffect(() => {
-        // 1. Cleanup all existing dots
-        if (circleRefs.current.length > 0) {
-            circleRefs.current.forEach(circle => circle.setMap(null));
-            circleRefs.current = [];
+    const onLoad = useCallback((mapInstance: google.maps.Map) => {
+        setMap(mapInstance);
+    }, []);
+
+    const onUnmount = useCallback(() => {
+        setMap(null);
+    }, []);
+
+    // Select vehicle and pan smoothly
+    const handleSelectVehicle = (id: string) => {
+        setSelectedId(id);
+        const v = vehicles[id];
+        if (v && map) {
+            map.panTo({ lat: v.lat, lng: v.lng });
+            map.setZoom(16);
         }
+    };
 
-        // 2. If we have points and route is shown, create new dots
-        if (map && showRoute && historyPoints.length > 0) {
-            historyPoints.forEach((point) => {
-                // Check if this point is selected for analysis
-                const isSelected = analysisPoints.some(p => p.timestamp === point.timestamp);
+    // Send 2-Way Hardware Command
+    const handleSendCommand = async (type: string, param?: string) => {
+        if (!selectedId) return;
+        setCommandLoading(true);
+        setCommandResponse(null);
 
-                const circle = new google.maps.Circle({
-                    map: map,
-                    center: { lat: point.lat, lng: point.lng },
-                    radius: isSelected ? 6 : 2, // Larger if selected
-                    strokeColor: isSelected ? "#ef4444" : "#2563eb", // Red/Blue
-                    strokeOpacity: 0.9,
-                    strokeWeight: isSelected ? 2 : 1,
-                    fillColor: isSelected ? "#fca5a5" : "#60a5fa",
-                    fillOpacity: 0.9,
-                    zIndex: isSelected ? 200 : 100
-                });
-
-                // Add click listener
-                circle.addListener('click', () => {
-                    setSelectedHistoryPoint(point); // Show InfoWindow
-                    handleHistoryPointClick(point); // Add to analysis
-                });
-
-                circleRefs.current.push(circle);
-            });
+        try {
+            const res = await api.post(`/devices/${selectedId}/command`, { type, param });
+            setCommandResponse({ message: res.data.message || 'Command sent successfully', success: true });
+        } catch (err: any) {
+            const msg = err.response?.data?.error || 'Failed to dispatch command to tracker';
+            setCommandResponse({ message: msg, success: false });
+        } finally {
+            setCommandLoading(false);
+            setTimeout(() => setCommandResponse(null), 5000);
         }
-    }, [historyPoints, showRoute, map, analysisPoints]);
+    };
+
+    // Vehicle Stats Calculation
+    const vehicleList = Object.values(vehicles);
+    const movingCount = vehicleList.filter(v => v.state === 'moving').length;
+    const idlingCount = vehicleList.filter(v => v.state === 'idling').length;
+    const parkedCount = vehicleList.filter(v => v.state === 'parked').length;
+    const offlineCount = vehicleList.filter(v => v.state === 'offline').length;
+
+    const filtered = useMemo(() => {
+        return vehicleList.filter(v =>
+            v.name.toLowerCase().includes(search.toLowerCase()) ||
+            v.device_id.includes(search) ||
+            (v.plate_number && v.plate_number.toLowerCase().includes(search.toLowerCase())) ||
+            (v.company_name && v.company_name.toLowerCase().includes(search.toLowerCase()))
+        );
+    }, [vehicleList, search]);
+
+    const selectedVehicle = selectedId ? vehicles[selectedId] : null;
+
+    if (loadError) {
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-red-400 p-6">
+                <AlertTriangle size={48} className="text-red-500 mb-4 animate-bounce" />
+                <h3 className="text-lg font-bold text-white mb-2">Google Maps Failed to Load</h3>
+                <p className="text-sm text-zinc-400 mb-5 max-w-md text-center">{loadError.message}</p>
+                {onSwitchToLeaflet && (
+                    <button
+                        onClick={onSwitchToLeaflet}
+                        className="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-xl shadow-xl text-sm transition-all flex items-center gap-2"
+                    >
+                        <Globe size={16} /> Switch to OpenStreetMap
+                    </button>
+                )}
+            </div>
+        );
+    }
 
     if (!isLoaded) {
-        return <div className="h-full w-full flex items-center justify-center bg-gray-100 text-gray-500">Loading Google Maps...</div>;
+        return (
+            <div className="h-full w-full flex flex-col items-center justify-center bg-zinc-950 text-zinc-400">
+                <div className="w-10 h-10 border-3 border-blue-500 border-t-transparent rounded-full animate-spin mb-3" />
+                <p className="text-sm font-medium">Loading Google Maps...</p>
+            </div>
+        );
     }
 
     return (
-        <div className="relative h-full w-full">
-            <GoogleMap
-                mapContainerStyle={containerStyle}
-                center={center}
-                zoom={18}
-                onLoad={onLoad}
-                onUnmount={onUnmount}
-                mapTypeId={mapType}
-                options={{
-                    disableDefaultUI: true,
-                    zoomControl: false,
-                    mapTypeControl: false,
-                    streetViewControl: false,
-                    fullscreenControl: false,
-                }}
-            >
-                {Object.values(vehicles).map((v) => (
-                    <div key={v.id}>
-                        {/* The Pin */}
-                        <Marker
-                            position={{ lat: v.lat, lng: v.lng }}
-                            onClick={() => setSelectedVehicle(v)}
-                            icon={{
-                                path: "M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z",
-                                fillColor: "#EA4335", // Google Red
-                                fillOpacity: 1,
-                                strokeWeight: 1,
-                                strokeColor: "#ffffff",
-                                scale: 2, // Adjust scale as needed for SVG path
-                                anchor: new google.maps.Point(12, 22), // Anchor at the bottom tip
-                            }}
-                        />
-                        {/* The Label Box */}
-                        <OverlayView
-                            position={{ lat: v.lat, lng: v.lng }}
-                            mapPaneName={OverlayView.OVERLAY_MOUSE_TARGET}
-                            getPixelPositionOffset={(x, y) => ({ x: 0, y: -85 })} // Moved up significantly to clear the pin
-                        >
-                            <div
-                                className="bg-green-600 text-white text-xs font-bold px-3 py-1.5 rounded-full shadow-lg border-2 border-white flex items-center justify-center gap-1 min-w-[100px] cursor-pointer hover:z-50 relative"
-                                onClick={() => setSelectedVehicle(v)}
-                                style={{ transform: 'translateX(-50%)' }} // Center horizontally regardless of width
-                            >
-                                <Navigation size={12} fill="white" className="transform rotate-0" />
-                                <span>{v.name}</span>
-                            </div>
-                        </OverlayView>
+        <div className="relative h-full w-full flex overflow-hidden bg-zinc-950 font-sans">
+            {/* ── Left Fleet Sidebar ── */}
+            <div className="w-80 h-full bg-zinc-900 border-r border-zinc-800 flex flex-col z-10 shrink-0 shadow-2xl">
+                {/* Header & Fleet Stats */}
+                <div className="p-4 border-b border-zinc-800">
+                    <div className="flex items-center justify-between mb-3">
+                        <div className="flex items-center gap-2">
+                            <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
+                            <h2 className="text-sm font-bold text-white tracking-wider uppercase">Google Live Fleet</h2>
+                        </div>
+                        <span className="text-xs bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full font-mono">
+                            {vehicleList.length} Units
+                        </span>
                     </div>
-                ))}
 
-                {/* History Mode: Route Line & Playback Marker */}
-                {isHistoryMode && (
-                    <>
-                        {/* The Path - Handled imperatively via useEffect now */}
-                        {/* {showRoute && historyPoints.length > 0 && ...} */}
+                    {/* Status Pill Badges */}
+                    <div className="grid grid-cols-4 gap-1.5 text-center text-[10px] font-semibold">
+                        <div className="bg-emerald-950/60 border border-emerald-800/40 text-emerald-400 py-1 rounded">
+                            <span className="block text-xs font-bold">{movingCount}</span>
+                            Moving
+                        </div>
+                        <div className="bg-amber-950/60 border border-amber-800/40 text-amber-400 py-1 rounded">
+                            <span className="block text-xs font-bold">{idlingCount}</span>
+                            Idling
+                        </div>
+                        <div className="bg-blue-950/60 border border-blue-800/40 text-blue-400 py-1 rounded">
+                            <span className="block text-xs font-bold">{parkedCount}</span>
+                            Parked
+                        </div>
+                        <div className="bg-zinc-800/60 border border-zinc-700/40 text-zinc-400 py-1 rounded">
+                            <span className="block text-xs font-bold">{offlineCount}</span>
+                            Offline
+                        </div>
+                    </div>
 
-                        {/* Note: Circles are now rendered imperatively via useEffect for better stability */}
+                    {/* Search Input */}
+                    <div className="mt-3 relative">
+                        <Search size={14} className="absolute left-3 top-2.5 text-zinc-500" />
+                        <input
+                            type="text"
+                            placeholder="Search IMEI, plate, client..."
+                            value={search}
+                            onChange={e => setSearch(e.target.value)}
+                            className="w-full bg-zinc-800 border border-zinc-700 rounded-lg pl-9 pr-3 py-2 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500"
+                        />
+                    </div>
+                </div>
 
-                        {/* Info Window for Selected History Dot */}
-                        {selectedHistoryPoint && (
-                            <InfoWindow
-                                position={{ lat: selectedHistoryPoint.lat, lng: selectedHistoryPoint.lng }}
-                                onCloseClick={() => setSelectedHistoryPoint(null)}
-                            >
-                                <div className="text-black p-1 text-sm">
-                                    <div className="font-bold text-gray-700 mb-1">
-                                        {new Date(selectedHistoryPoint.timestamp).toLocaleTimeString()} <br />
-                                        {new Date(selectedHistoryPoint.timestamp).toLocaleDateString()}
-                                    </div>
-                                    <div className="flex items-center gap-1 text-blue-600 font-semibold">
-                                        <Activity size={14} />
-                                        {Math.round(selectedHistoryPoint.speed)} km/h
-                                    </div>
+                {/* Vehicle List */}
+                <div className="flex-1 overflow-y-auto divide-y divide-zinc-800/50">
+                    {filtered.length === 0 && (
+                        <div className="p-8 text-center text-zinc-500 text-xs">No matching vehicles found</div>
+                    )}
+                    {filtered.map(v => (
+                        <button
+                            key={v.id}
+                            onClick={() => handleSelectVehicle(v.id)}
+                            className={`w-full text-left p-3.5 transition-colors relative ${
+                                selectedId === v.id ? 'bg-zinc-800/80 border-l-4 border-l-blue-500' : 'hover:bg-zinc-800/40'
+                            }`}
+                        >
+                            <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2.5 h-2.5 rounded-full shrink-0" style={{ backgroundColor: stateColor(v.state) }} />
+                                    <span className="font-semibold text-white text-sm truncate max-w-[150px]">{v.name}</span>
                                 </div>
-                            </InfoWindow>
-                        )}
+                                <span
+                                    className="text-[10px] font-bold px-2 py-0.5 rounded"
+                                    style={{ color: stateColor(v.state), backgroundColor: `${stateColor(v.state)}15` }}
+                                >
+                                    {stateLabel(v.state)}
+                                </span>
+                            </div>
 
+                            {v.company_name && (
+                                <p className="text-[11px] text-zinc-400 mb-1">{v.company_name}</p>
+                            )}
 
-                        {/* The Moving Marker - Only show if we actually have points and route is shown */}
-                        {showRoute && historyPoints.length > 0 && (
-                            <Marker
-                                position={{
-                                    lat: historyPoints[playbackIndex].lat,
-                                    lng: historyPoints[playbackIndex].lng
-                                }}
-                                icon={{
-                                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
-                                    scale: 5,
-                                    fillColor: "#2563eb",
-                                    fillOpacity: 1,
-                                    strokeWeight: 2,
-                                    strokeColor: "white",
-                                    rotation: historyPoints[playbackIndex].course || 0
-                                }}
-                            />
-                        )}
-                    </>
-                )}
+                            {/* Compact Telemetry Badges */}
+                            <div className="grid grid-cols-3 gap-1 text-[11px] text-zinc-400 bg-zinc-950/40 p-2 rounded border border-zinc-800/60 mt-2">
+                                <div className="flex items-center gap-1">
+                                    <Gauge size={11} className="text-blue-400 shrink-0" />
+                                    <span className="font-mono text-zinc-200">{v.speed.toFixed(0)} <span className="text-[9px] text-zinc-500">km/h</span></span>
+                                </div>
 
+                                <div className="flex items-center gap-1">
+                                    <Battery size={11} className="text-green-400 shrink-0" />
+                                    <span className="font-mono text-zinc-200">{v.battery_level}%</span>
+                                </div>
 
-            </GoogleMap>
+                                <div className="flex items-center gap-1">
+                                    <Key size={11} className={v.acc_status ? 'text-emerald-400 shrink-0' : 'text-zinc-600 shrink-0'} />
+                                    <span className={`text-[10px] ${v.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                        {v.acc_status ? 'ENG ON' : 'ENG OFF'}
+                                    </span>
+                                </div>
+                            </div>
 
-            {/* Custom Zoom Controls */}
-            <div className="absolute bottom-6 right-4 z-[400] flex flex-col gap-2">
-                <button
-                    onClick={handleZoomIn}
-                    className="bg-white text-gray-700 p-2 rounded-md shadow-md hover:bg-gray-50 border border-gray-200"
-                    aria-label="Zoom In"
-                >
-                    <Plus size={20} />
-                </button>
-                <button
-                    onClick={handleZoomOut}
-                    className="bg-white text-gray-700 p-2 rounded-md shadow-md hover:bg-gray-50 border border-gray-200"
-                    aria-label="Zoom Out"
-                >
-                    <Minus size={20} />
-                </button>
+                            <div className="flex items-center justify-between text-[10px] text-zinc-500 mt-2 px-0.5">
+                                <span className="font-mono text-zinc-400">{v.plate_number || v.device_id.slice(-6)}</span>
+                                <span className="flex items-center gap-1">
+                                    <Clock size={10} />
+                                    {timeSince(v.lastUpdate)}
+                                </span>
+                            </div>
+                        </button>
+                    ))}
+                </div>
             </div>
 
-            {/* History Toggle Button */}
-            <button
-                onClick={() => setIsHistoryMode(!isHistoryMode)}
-                className={`absolute top-4 right-16 z-[400] p-2 rounded-md shadow-md transition-colors border border-gray-200 ${isHistoryMode ? 'bg-blue-600 text-white border-blue-700' : 'bg-white text-gray-800 hover:bg-gray-50'}`}
-                aria-label="Toggle History Mode"
-                title="History Replay"
-            >
-                <History size={20} />
-            </button>
-
-            {/* Map Type Toggle Button */}
-            <button
-                onClick={toggleMapType}
-                className="absolute top-4 right-4 z-[400] bg-white text-gray-800 p-2 rounded-md shadow-md hover:bg-gray-50 transition-colors border border-gray-200"
-                aria-label="Toggle Map Type"
-                title={mapType === 'roadmap' ? 'Switch to Satellite' : 'Switch to Map'}
-            >
-                <Layers size={20} />
-            </button>
-
-            {/* Analysis Pop-up Window */}
-            {analysisStats && analysisPoints.length === 2 && (
-                <div className="absolute top-24 right-4 z-[450] bg-white p-4 rounded-xl shadow-2xl border border-gray-200 w-64 animate-fade-in">
-                    <div className="flex justify-between items-start mb-3">
-                        <h3 className="text-gray-900 font-bold text-lg flex items-center gap-2">
-                            <Activity size={18} className="text-blue-600" />
-                            Trip Analysis
-                        </h3>
+            {/* ── Main Google Maps Area ── */}
+            <div className="relative flex-1 h-full">
+                {/* Map Controls Header Overlay */}
+                <div className="absolute top-3 right-3 z-[400] flex items-center gap-2">
+                    {/* Google Map Type Selector */}
+                    <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
                         <button
-                            onClick={() => { setAnalysisPoints([]); setAnalysisStats(null); }}
-                            className="text-gray-400 hover:text-red-500 transition-colors"
-                            aria-label="Close"
+                            onClick={() => setMapType('hybrid')}
+                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                                mapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            }`}
                         >
-                            <Trash2 size={16} />
+                            <Layers size={13} /> Hybrid
+                        </button>
+                        <button
+                            onClick={() => setMapType('roadmap')}
+                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                                mapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            }`}
+                        >
+                            <Layers size={13} /> Road
+                        </button>
+                        <button
+                            onClick={() => setMapType('satellite')}
+                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
+                                mapType === 'satellite' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            }`}
+                        >
+                            <Layers size={13} /> Satellite
                         </button>
                     </div>
 
-                    <div className="space-y-3">
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">Total Distance</div>
-                            <div className="text-2xl font-bold text-gray-800 tracking-tight">
-                                {analysisStats.distance} <span className="text-sm text-gray-500 font-normal">km</span>
-                            </div>
-                        </div>
+                    {/* Follow Mode Toggle */}
+                    {selectedId && (
+                        <button
+                            onClick={() => setFollowMode(f => !f)}
+                            className={`px-3 py-1.5 text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                                followMode ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                            }`}
+                        >
+                            <Navigation size={13} className={followMode ? 'animate-spin' : ''} />
+                            {followMode ? 'Following' : 'Follow'}
+                        </button>
+                    )}
 
-                        <div className="bg-gray-50 p-3 rounded-lg border border-gray-100">
-                            <div className="text-xs text-gray-500 uppercase font-semibold mb-1">Duration</div>
-                            <div className="text-2xl font-bold text-gray-800 tracking-tight">
-                                {analysisStats.duration}
+                    {/* Provider Switcher: Switch to Leaflet/OSM if desired */}
+                    {onSwitchToLeaflet && (
+                        <button
+                            onClick={onSwitchToLeaflet}
+                            className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-zinc-900 border border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800 transition-colors shadow-xl flex items-center gap-1.5"
+                            title="Switch to OpenStreetMap"
+                        >
+                            <Globe size={13} className="text-blue-400" />
+                            OpenStreetMap
+                        </button>
+                    )}
+                </div>
+
+                {/* Billing / Auth Error Notice */}
+                {authError && (
+                    <div className="absolute top-16 left-6 right-6 z-[600] bg-red-950/95 border-2 border-red-700 backdrop-blur rounded-2xl shadow-2xl p-5 text-white max-w-2xl mx-auto animate-in fade-in duration-300">
+                        <div className="flex items-start gap-4">
+                            <div className="p-3 bg-red-900/60 rounded-xl text-red-300 shrink-0">
+                                <AlertTriangle size={28} />
+                            </div>
+                            <div className="flex-1">
+                                <h3 className="font-bold text-base text-red-100 mb-1">
+                                    Google Maps: BillingNotEnabledMapError
+                                </h3>
+                                <p className="text-xs text-red-200 leading-relaxed mb-3">
+                                    Google Cloud requires a linked billing account to activate this API key. 
+                                    Google provides <strong>$200 free credit every month</strong> (covers ~28,000 map loads for free).
+                                </p>
+                                <div className="flex flex-wrap items-center gap-2">
+                                    {onSwitchToLeaflet && (
+                                        <button
+                                            onClick={onSwitchToLeaflet}
+                                            className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-semibold rounded-lg text-xs transition-colors flex items-center gap-1.5 shadow-lg"
+                                        >
+                                            <Globe size={14} /> Switch to OpenStreetMap (Active Now)
+                                        </button>
+                                    )}
+                                    <a
+                                        href="https://console.cloud.google.com/project/_/billing/enable"
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="px-4 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-600 text-zinc-200 font-medium rounded-lg text-xs transition-colors"
+                                    >
+                                        Enable Billing on Google Cloud ↗
+                                    </a>
+                                </div>
                             </div>
                         </div>
                     </div>
+                )}
 
+                {/* Google Map Container */}
+                <GoogleMap
+                    mapContainerStyle={containerStyle}
+                    center={defaultCenter}
+                    zoom={14}
+                    onLoad={onLoad}
+                    onUnmount={onUnmount}
+                    mapTypeId={mapType}
+                    options={{
+                        disableDefaultUI: true,
+                        zoomControl: false,
+                        mapTypeControl: false,
+                        streetViewControl: false,
+                        fullscreenControl: false,
+                    }}
+                >
+                    {/* Render Real Directional Vehicle Markers */}
+                    {Object.values(vehicles).filter(v => v.lat && v.lng).map(v => (
+                        <Marker
+                            key={v.id}
+                            position={{ lat: v.lat, lng: v.lng }}
+                            onClick={() => handleSelectVehicle(v.id)}
+                            icon={{
+                                path: "M 0,-18 L 12,14 L 0,8 L -12,14 Z", // Sleek aerodynamic GPS navigation arrow
+                                fillColor: stateColor(v.state),
+                                fillOpacity: 1,
+                                strokeColor: "#ffffff",
+                                strokeWeight: 2.2,
+                                scale: 1.3,
+                                rotation: v.course || 0,
+                                anchor: new google.maps.Point(0, 0)
+                            }}
+                        />
+                    ))}
+
+                    {/* Active InfoWindow for Selected Vehicle */}
+                    {selectedVehicle && (
+                        <InfoWindow
+                            position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
+                            onCloseClick={() => setSelectedId(null)}
+                            options={{
+                                pixelOffset: new google.maps.Size(0, -25)
+                            }}
+                        >
+                            <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[190px] border border-zinc-800 shadow-xl font-sans">
+                                <div className="flex items-center justify-between pb-1.5 mb-1.5 border-b border-zinc-800">
+                                    <h4 className="font-bold text-xs text-white">{selectedVehicle.name}</h4>
+                                    <span
+                                        className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                        style={{ color: stateColor(selectedVehicle.state), backgroundColor: `${stateColor(selectedVehicle.state)}20` }}
+                                    >
+                                        {stateLabel(selectedVehicle.state)}
+                                    </span>
+                                </div>
+                                <div className="space-y-1 text-[11px] text-zinc-300">
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-400">Speed:</span>
+                                        <span className="font-mono text-blue-400 font-bold">{selectedVehicle.speed.toFixed(1)} km/h</span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-400">Engine:</span>
+                                        <span className={selectedVehicle.acc_status ? 'text-emerald-400 font-semibold' : 'text-zinc-400'}>
+                                            {selectedVehicle.acc_status ? 'ON' : 'OFF'}
+                                        </span>
+                                    </div>
+                                    <div className="flex justify-between">
+                                        <span className="text-zinc-400">Battery:</span>
+                                        <span className="font-mono text-green-400">{selectedVehicle.battery_level}%</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </InfoWindow>
+                    )}
+                </GoogleMap>
+
+                {/* Custom Map Zoom Controls */}
+                <div className="absolute bottom-8 right-4 z-[400] flex flex-col gap-1">
                     <button
-                        onClick={() => { setAnalysisPoints([]); setAnalysisStats(null); }}
-                        className="w-full mt-4 bg-white border border-red-200 text-red-600 font-medium py-2 rounded-lg hover:bg-red-50 transition-colors text-sm"
+                        onClick={() => map && map.setZoom((map.getZoom() || 14) + 1)}
+                        className="w-9 h-9 bg-zinc-900 border border-zinc-700 text-white rounded-t-lg flex items-center justify-center hover:bg-zinc-800 transition-colors shadow-lg"
+                        title="Zoom In"
                     >
-                        Clear Analysis
+                        <Plus size={16} />
+                    </button>
+                    <button
+                        onClick={() => map && map.setZoom((map.getZoom() || 14) - 1)}
+                        className="w-9 h-9 bg-zinc-900 border border-zinc-700 text-white rounded-b-lg flex items-center justify-center hover:bg-zinc-800 transition-colors shadow-lg border-t-0"
+                        title="Zoom Out"
+                    >
+                        <Minus size={16} />
                     </button>
                 </div>
-            )}
 
-            {/* History Controls Panel */}
-            {isHistoryMode && (
-                <div className="absolute bottom-6 left-1/2 transform -translate-x-1/2 z-[400] bg-white p-4 rounded-xl shadow-lg border border-gray-200 w-[90%] max-w-2xl flex flex-col gap-4">
-                    <div className="flex items-center justify-between gap-4 border-b pb-3">
-                        <div className="flex items-center gap-2">
-                            <input
-                                type="date"
-                                value={historyDate}
-                                onChange={(e) => setHistoryDate(e.target.value)}
-                                className="border p-2 rounded text-black"
-                            />
-                            <button
-                                onClick={fetchHistory}
-                                className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700 disabled:opacity-50"
-                                disabled={!selectedVehicle}
-                            >
-                                Fetch
-                            </button>
-                            <button
-                                onClick={handleClearTrajectory}
-                                className="bg-red-600 text-white p-2 rounded hover:bg-red-700 disabled:opacity-50"
-                                disabled={!selectedVehicle}
-                                title="Clear from Map"
-                            >
-                                <Trash2 size={20} />
-                            </button>
-                        </div>
-                        <div className="text-sm text-gray-600">
-                            {!selectedVehicle ? "Select a vehicle first!" : `History for ${selectedVehicle.name}`}
-                        </div>
-                    </div>
+                {/* ── Bottom Telemetry & 2-Way Command Deck ── */}
+                {selectedVehicle && (
+                    <div className="absolute bottom-4 left-4 right-16 z-[400] bg-zinc-900/95 border border-zinc-800 backdrop-blur rounded-2xl shadow-2xl p-4 animate-in fade-in slide-in-from-bottom-3 duration-200">
+                        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+                            
+                            {/* Vehicle Identity & Primary Telemetry */}
+                            <div className="flex items-center gap-4">
+                                <div
+                                    className="w-12 h-12 rounded-xl flex items-center justify-center shrink-0 border"
+                                    style={{ backgroundColor: `${stateColor(selectedVehicle.state)}15`, borderColor: `${stateColor(selectedVehicle.state)}30` }}
+                                >
+                                    <Car size={24} style={{ color: stateColor(selectedVehicle.state) }} />
+                                </div>
 
-                    {/* Hint for Analysis */}
-                    {analysisPoints.length < 2 && historyPoints.length > 0 && (
-                        <div className="text-xs text-blue-600 bg-blue-50 p-2 rounded text-center border border-blue-100">
-                            💡 Tip: Click on two dots on the route to measure distance and time.
-                        </div>
-                    )}
+                                <div>
+                                    <div className="flex items-center gap-2">
+                                        <h3 className="text-base font-bold text-white">{selectedVehicle.name}</h3>
+                                        <span
+                                            className="text-[10px] font-bold px-2 py-0.5 rounded uppercase tracking-wider"
+                                            style={{ color: stateColor(selectedVehicle.state), backgroundColor: `${stateColor(selectedVehicle.state)}20` }}
+                                        >
+                                            {stateLabel(selectedVehicle.state)}
+                                        </span>
+                                        {selectedVehicle.isTcpConnected && (
+                                            <span className="text-[10px] font-semibold px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 flex items-center gap-1">
+                                                <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                                                TCP SOCKET
+                                            </span>
+                                        )}
+                                    </div>
 
-                    {historyPoints.length > 0 && (
-                        <div className="flex items-center gap-4">
-                            <button
-                                onClick={() => setIsPlaying(!isPlaying)}
-                                className="bg-green-600 text-white p-2 rounded-full hover:bg-green-700"
-                            >
-                                {isPlaying ? <Pause size={20} /> : <Play size={20} />}
-                            </button>
+                                    <div className="flex items-center gap-3 text-xs text-zinc-400 mt-0.5">
+                                        <span className="font-mono text-zinc-300">IMEI: {selectedVehicle.device_id}</span>
+                                        {selectedVehicle.plate_number && (
+                                            <>
+                                                <span>•</span>
+                                                <span className="font-mono text-zinc-300">Plate: {selectedVehicle.plate_number}</span>
+                                            </>
+                                        )}
+                                        {selectedVehicle.company_name && (
+                                            <>
+                                                <span>•</span>
+                                                <span>Client: {selectedVehicle.company_name}</span>
+                                            </>
+                                        )}
+                                    </div>
+                                </div>
+                            </div>
 
-                            <input
-                                type="range"
-                                min="0"
-                                max={historyPoints.length - 1}
-                                value={playbackIndex}
-                                onChange={(e) => {
-                                    setPlaybackIndex(parseInt(e.target.value));
-                                    setIsPlaying(false);
-                                }}
-                                className="flex-1"
-                            />
+                            {/* Telemetry Metrics Strip */}
+                            <div className="grid grid-cols-2 sm:grid-cols-4 md:grid-cols-5 gap-3 border-t md:border-t-0 md:border-l border-zinc-800 pt-3 md:pt-0 md:pl-4">
+                                <div>
+                                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Speed</span>
+                                    <span className="text-sm font-bold font-mono text-blue-400">
+                                        {selectedVehicle.speed.toFixed(1)} <span className="text-[10px] text-zinc-500 font-normal">km/h</span>
+                                    </span>
+                                </div>
 
-                            <div className="text-xs text-gray-500 w-32 text-right">
-                                {new Date(historyPoints[playbackIndex].timestamp).toLocaleTimeString()} <br />
-                                {Math.round(historyPoints[playbackIndex].speed)} km/h
+                                <div>
+                                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Ignition (ACC)</span>
+                                    <span className={`text-xs font-bold flex items-center gap-1 ${selectedVehicle.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                        <Key size={12} />
+                                        {selectedVehicle.acc_status ? 'ENGINE ON' : 'ENGINE OFF'}
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Battery</span>
+                                    <span className="text-xs font-bold font-mono text-green-400 flex items-center gap-1">
+                                        <Battery size={12} />
+                                        {selectedVehicle.battery_level}%
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Satellites / GSM</span>
+                                    <span className="text-xs font-mono text-zinc-300 flex items-center gap-1">
+                                        <Radio size={12} className="text-purple-400" />
+                                        {selectedVehicle.satellites ?? '--'} sats / {selectedVehicle.gsm_signal ?? '--'} dB
+                                    </span>
+                                </div>
+
+                                <div>
+                                    <span className="text-[10px] text-zinc-500 uppercase block font-semibold">Course</span>
+                                    <span className="text-xs font-mono text-zinc-300 flex items-center gap-1">
+                                        <Compass size={12} className="text-amber-400" />
+                                        {getCourseCompass(selectedVehicle.course)}
+                                    </span>
+                                </div>
+                            </div>
+
+                            {/* 2-Way Hardware Remote Control Actions */}
+                            <div className="flex items-center gap-2 border-t md:border-t-0 md:border-l border-zinc-800 pt-3 md:pt-0 md:pl-4">
+                                <button
+                                    onClick={() => handleSendCommand('stop_engine')}
+                                    disabled={commandLoading}
+                                    className="px-3 py-2 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-lg"
+                                    title="Remotely kill fuel pump / engine relay"
+                                >
+                                    <ZapOff size={14} className="text-red-400" />
+                                    Cut Off Engine
+                                </button>
+
+                                <button
+                                    onClick={() => handleSendCommand('resume_engine')}
+                                    disabled={commandLoading}
+                                    className="px-3 py-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-200 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-50 shadow-lg"
+                                    title="Restore fuel pump relay to normal"
+                                >
+                                    <Zap size={14} className="text-emerald-400" />
+                                    Resume Engine
+                                </button>
+
+                                <button
+                                    onClick={() => handleSendCommand('set_interval', '30s')}
+                                    disabled={commandLoading}
+                                    className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-xs font-semibold rounded-xl flex items-center gap-1.5 transition-colors disabled:opacity-50"
+                                    title="Set reporting frequency to 30s"
+                                >
+                                    <Sliders size={14} />
+                                    30s Sync
+                                </button>
                             </div>
                         </div>
-                    )}
-                </div>
-            )}
+
+                        {/* Remote Command Feedback Toast Banner */}
+                        {commandResponse && (
+                            <div className={`mt-3 p-2.5 rounded-xl border text-xs flex items-center justify-between ${
+                                commandResponse.success
+                                    ? 'bg-emerald-950/60 border-emerald-800 text-emerald-300'
+                                    : 'bg-red-950/60 border-red-800 text-red-300'
+                            }`}>
+                                <div className="flex items-center gap-2">
+                                    {commandResponse.success ? <CheckCircle2 size={16} /> : <AlertTriangle size={16} />}
+                                    <span>{commandResponse.message}</span>
+                                </div>
+                                <button onClick={() => setCommandResponse(null)} className="text-zinc-400 hover:text-white">
+                                    <X size={14} />
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                )}
+            </div>
         </div>
     );
 }

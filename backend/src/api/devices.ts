@@ -1,18 +1,16 @@
 import { Router } from 'express';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 import { query } from '../db';
-import { parseTK103 } from '../parser/tk103';
+import { sendCommandToDevice, activeSockets } from '../tcpServer';
 
 const router = Router();
 
-// GET all devices for the tenant
-// GET all devices for the tenant with latest position
+// GET all devices for the tenant (or all devices if admin) with latest position and telemetry
 router.get('/', authenticateToken, async (req: AuthRequest, res) => {
     try {
         const tenantId = req.user.tenantId;
-        // Get devices and their latest position (efficiently handling the join)
-        // We use a correlated subquery in the join condition or just a simple join if we assume the latest position is what we want.
-        // A robust way for MySQL:
+        const isAdmin = req.user.role === 'admin';
+
         const result = await query(`
             SELECT 
                 d.*,
@@ -20,23 +18,29 @@ router.get('/', authenticateToken, async (req: AuthRequest, res) => {
                 p.lng,
                 p.speed,
                 p.course,
+                p.battery_level as pos_battery_level,
+                p.door_status,
                 p.timestamp as last_update,
-                d.current_state,
-                d.state_start_time,
-                d.internet_status,
-                d.gps_status
+                t.name as company_name
             FROM devices d
+            LEFT JOIN tenants t ON t.id = d.tenant_id
             LEFT JOIN positions p ON p.id = (
                 SELECT id FROM positions 
                 WHERE device_id = d.device_id 
                 ORDER BY timestamp DESC 
                 LIMIT 1
             )
-            WHERE d.tenant_id = ? 
+            ${isAdmin ? '' : 'WHERE d.tenant_id = ?'}
             ORDER BY d.last_seen DESC
-        `, [tenantId]);
+        `, isAdmin ? [] : [tenantId]);
 
-        res.json(result.rows);
+        // Enrich with live TCP socket connection status
+        const enriched = (result.rows as any[]).map(dev => ({
+            ...dev,
+            isTcpConnected: activeSockets.has(dev.device_id) && !activeSockets.get(dev.device_id)?.destroyed
+        }));
+
+        res.json(enriched);
     } catch (err) {
         console.error(err);
         res.status(500).json({ error: 'Failed to fetch devices' });
@@ -60,34 +64,100 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
     }
 });
 
-import { processLocationUpdate } from '../services/trackingService';
-
-// SIMULATE Position Update (HTTP)
-router.post('/simulate', async (req, res) => {
-    console.log('[SIMULATE] Payload Received:', JSON.stringify(req.body));
-    const { deviceId, lat, lng, speed, course, alarm, accStatus, tripDistance, internetStatus, gpsStatus } = req.body;
-
-    // Allow simulation without auth for now
+// SEND 2-WAY COMMAND TO TRACKER (Engine Immobilizer, Resume, Arm, Disarm, Interval)
+router.post('/:deviceId/command', authenticateToken, async (req: AuthRequest, res) => {
+    const deviceId = String(req.params.deviceId);
+    const { commandType, customCommand, intervalSeconds } = req.body;
+    const tenantId = req.user.tenantId;
+    const isAdmin = req.user.role === 'admin';
 
     try {
-        const io = req.app.get('io');
-        await processLocationUpdate({
-            deviceId,
-            lat,
-            lng,
-            speed,
-            course,
-            alarm,
-            accStatus,
-            timestamp: new Date(),
-            tripDistance,
-            internetStatus,
-            gpsStatus
-        }, io);
+        // Enforce authorization
+        const devCheck = await query(
+            isAdmin 
+                ? 'SELECT * FROM devices WHERE device_id = ?' 
+                : 'SELECT * FROM devices WHERE device_id = ? AND tenant_id = ?',
+            isAdmin ? [deviceId] : [deviceId, tenantId]
+        );
 
-        res.json({ status: 'ok', message: 'Simulation data processed' });
-    } catch (err: any) {
-        res.status(500).json({ error: err.message });
+        const devices = devCheck.rows as any[];
+        if (devices.length === 0) {
+            return res.status(404).json({ error: 'Device not found or unauthorized' });
+        }
+
+        const device = devices[0];
+
+        // Map commandType to TK103 command syntax
+        let cmd = '';
+        switch (commandType) {
+            case 'stop_engine':
+                cmd = 'stop123456';
+                break;
+            case 'resume_engine':
+                cmd = 'resume123456';
+                break;
+            case 'arm':
+                cmd = 'arm123456';
+                break;
+            case 'disarm':
+                cmd = 'disarm123456';
+                break;
+            case 'set_interval':
+                const sec = Math.max(5, Math.min(3600, parseInt(intervalSeconds) || 30));
+                cmd = `fix${String(sec).padStart(3, '0')}s***n123456`;
+                break;
+            case 'custom':
+                cmd = String(customCommand || '').trim();
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid command type' });
+        }
+
+        if (!cmd) {
+            return res.status(400).json({ error: 'Empty command payload' });
+        }
+
+        // Try to transmit directly through live TCP socket
+        const sent = sendCommandToDevice(deviceId, cmd);
+
+        if (sent) {
+            return res.json({
+                success: true,
+                method: 'tcp',
+                command: cmd,
+                message: `Command "${cmd}" sent to tracker over live TCP socket`
+            });
+        } else {
+            return res.json({
+                success: false,
+                method: 'offline',
+                command: cmd,
+                simPhone: device.sim_phone || null,
+                message: `Tracker is currently not connected via TCP. You can send this command via SMS to ${device.sim_phone || 'tracker SIM'}: "${cmd}"`
+            });
+        }
+
+    } catch (err) {
+        console.error('[Command] Error sending command:', err);
+        res.status(500).json({ error: 'Failed to send command' });
+    }
+});
+
+// DELETE a device
+router.delete('/:deviceId', authenticateToken, async (req: AuthRequest, res) => {
+    const { deviceId } = req.params;
+    const tenantId = req.user.tenantId;
+    const isAdmin = req.user.role === 'admin';
+
+    try {
+        await query(
+            isAdmin ? 'DELETE FROM devices WHERE device_id = ?' : 'DELETE FROM devices WHERE device_id = ? AND tenant_id = ?',
+            isAdmin ? [deviceId] : [deviceId, tenantId]
+        );
+        res.json({ message: 'Device deleted' });
+    } catch (err) {
+        console.error(err);
+        res.status(500).json({ error: 'Failed to delete device' });
     }
 });
 

@@ -20,6 +20,24 @@
   - DB Name: `railway`
 - **Local Backend**: Only used for specific backend logic testing (port 4000), but connected to the **Production Database**.
 
+## 🧪 Testing & Simulation Workflow
+1. **Start Metro Bundler**:
+   - Run `npx expo start --clear` in `mobile/`.
+   - Ensure your iPhone is on the same Wi-Fi network as your Mac.
+   - Scan the QR code or select your device from the list.
+
+2. **Prepare Backend (For Simulator Only)**:
+   - Ensure `backend/.env` is configured to connect to the **Production Database**.
+   - Run `npm run dev` in `backend/`.
+     - This starts the HTTP server on port 4000.
+     - This starts the TCP Server on port **5001** (Required for Simulator).
+
+3. **Run GPS Simulator**:
+   - Run `python3 simulate_movement_hq.py` in `backend/`.
+   - This script sends GPS data to `localhost:5001` (Local Backend).
+   - The Local Backend then processes this data and updates the **Production Database**.
+   - You should see the vehicle moving on your physical device.
+
 ## ⚠️ Common Pitfalls to AVOID
 1. **DO NOT** configure the mobile app to connect to `localhost` or `127.0.0.1`. It will fail on the physical device.
 2. **DO NOT** assume the user wants a local database. The project uses the **Production Railway Database** for all data.

@@ -14,6 +14,14 @@ export default function LoginPage() {
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');
 
+    // Clear any stale tokens on login page load (e.g. from production backend switch)
+    useState(() => {
+        if (typeof window !== 'undefined') {
+            localStorage.removeItem('token');
+            localStorage.removeItem('role');
+        }
+    });
+
     const onSubmit = async (data: any) => {
         setLoading(true);
         setError('');

@@ -1,4 +1,5 @@
 import { pool } from '../db';
+import { evaluateTelemetryAlerts } from './alertEngine';
 
 export interface LocationUpdate {
     deviceId: string;
@@ -104,6 +105,17 @@ export const processLocationUpdate = async (data: LocationUpdate, ioInstance: an
             });
             console.log(`   [SOCKET] Emitted position for ${data.deviceId}`);
         }
+
+        // Evaluate Enterprise Alert Rules
+        evaluateTelemetryAlerts({
+            deviceId: data.deviceId,
+            lat: data.lat,
+            lng: data.lng,
+            speed: data.speed || 0,
+            course: data.course || 0,
+            timestamp: data.timestamp,
+            alarm: data.alarm
+        }, ioInstance).catch(e => console.error('[AlertEngine] Evaluation error:', e));
 
         return { success: true, state: newState };
 

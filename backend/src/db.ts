@@ -142,12 +142,69 @@ const initTables = async () => {
         );
     `;
 
+    const createGeofencesTable = `
+        CREATE TABLE IF NOT EXISTS geofences (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            description VARCHAR(255),
+            type VARCHAR(20) DEFAULT 'circle',
+            center_lat DOUBLE,
+            center_lng DOUBLE,
+            radius_meters DOUBLE DEFAULT 500,
+            polygon_coordinates JSON,
+            speed_limit DOUBLE DEFAULT 0,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+        );
+    `;
+
+    const createAlertRulesTable = `
+        CREATE TABLE IF NOT EXISTS alert_rules (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            name VARCHAR(100) NOT NULL,
+            type VARCHAR(50) NOT NULL,
+            device_id VARCHAR(50),
+            geofence_id INT,
+            threshold_value DOUBLE DEFAULT 0,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE
+        );
+    `;
+
+    const createAlertsTable = `
+        CREATE TABLE IF NOT EXISTS alerts (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            device_id VARCHAR(50) NOT NULL,
+            rule_id INT,
+            type VARCHAR(50) NOT NULL,
+            severity VARCHAR(20) DEFAULT 'medium',
+            message TEXT NOT NULL,
+            lat DOUBLE,
+            lng DOUBLE,
+            speed DOUBLE DEFAULT 0,
+            status VARCHAR(20) DEFAULT 'unacknowledged',
+            acknowledged_by INT,
+            acknowledged_at TIMESTAMP NULL,
+            timestamp TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (tenant_id) REFERENCES tenants(id) ON DELETE CASCADE,
+            FOREIGN KEY (device_id) REFERENCES devices(device_id) ON DELETE CASCADE
+        );
+    `;
+
     try {
         await query(createDevicesTable);
         await query(createPositionsTable);
         await query(createRawLogsTable);
         await query(createTenantsTable);
         await query(createUsersTable);
+        await query(createGeofencesTable);
+        await query(createAlertRulesTable);
+        await query(createAlertsTable);
 
         // Manual Migration for existing tables (Blind ALTERs)
         try { await query("ALTER TABLE positions ADD COLUMN internet_status BOOLEAN DEFAULT FALSE"); } catch { }
@@ -163,9 +220,31 @@ const initTables = async () => {
         try { await query("ALTER TABLE devices ADD COLUMN current_state VARCHAR(20) DEFAULT 'parked'"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN state_start_time TIMESTAMP DEFAULT CURRENT_TIMESTAMP"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN tenant_id INT"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN sim_phone VARCHAR(30)"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN plate_number VARCHAR(50)"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN model VARCHAR(100)"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN vehicle_type VARCHAR(50) DEFAULT 'car'"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN driver_name VARCHAR(100)"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN driver_phone VARCHAR(30)"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN notes TEXT"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN battery_level INT DEFAULT 100"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN acc_status BOOLEAN DEFAULT FALSE"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE positions ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE positions ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE positions ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE users ADD COLUMN phone VARCHAR(20)"); } catch { }
 
-        console.log('[DB] Tables initialized (MySQL)');
+        // High-Performance Composite Indexes
+        try { await query("CREATE INDEX idx_positions_device_time ON positions(device_id, timestamp DESC)"); } catch { }
+        try { await query("CREATE INDEX idx_devices_tenant_status ON devices(tenant_id, status)"); } catch { }
+        try { await query("CREATE INDEX idx_alerts_tenant_time ON alerts(tenant_id, timestamp DESC)"); } catch { }
+        try { await query("CREATE INDEX idx_alerts_status ON alerts(status)"); } catch { }
+        try { await query("CREATE INDEX idx_geofences_tenant ON geofences(tenant_id, is_active)"); } catch { }
+
+        console.log('[DB] Enterprise tables and performance indexes initialized (MySQL)');
     } catch (err) {
         console.error('[DB] Error initializing tables', err);
     }

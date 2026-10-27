@@ -64,14 +64,7 @@ npm run dev > ../backend.log 2>&1 &
 BACKEND_PID=$!
 echo "Backend running (PID: $BACKEND_PID)"
 
-# 3. Start Simulator
-sleep 5
-echo "🛰️ Starting GPS Simulator..."
-python3 simulate_movement_hq.py > ../simulator.log 2>&1 &
-SIMULATOR_PID=$!
-echo "Simulator running (PID: $SIMULATOR_PID)"
-
-# 4. Start Frontend
+# 3. Start Frontend
 echo "💻 Starting Frontend..."
 cd ../frontend
 npm install
