@@ -116,64 +116,64 @@ export default function VehiclesPage() {
     ];
 
     return (
-        <div className="h-full bg-gray-950 text-white overflow-y-auto">
-            <div className="p-6 max-w-7xl mx-auto space-y-6">
+        <div className="h-full bg-gray-950 text-white overflow-y-auto pb-16 md:pb-0">
+            <div className="p-3 sm:p-6 max-w-7xl mx-auto space-y-4 sm:space-y-6">
 
                 {/* Header */}
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
                     <div>
-                        <h1 className="text-2xl font-bold text-white">Fleet Management</h1>
-                        <p className="text-gray-500 text-sm mt-0.5">Monitor and manage your GPS trackers</p>
+                        <h1 className="text-xl sm:text-2xl font-bold text-white">Fleet Management</h1>
+                        <p className="text-gray-500 text-xs sm:text-sm mt-0.5">Monitor and manage your GPS trackers</p>
                     </div>
                     <button
                         onClick={() => setShowModal(true)}
-                        className="flex items-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-4 py-2 rounded-lg text-sm font-medium transition-colors"
+                        className="flex items-center justify-center gap-2 bg-blue-600 hover:bg-blue-500 text-white px-3.5 py-2 rounded-lg text-sm font-medium transition-colors w-full sm:w-auto"
                     >
                         <Plus size={16} /> Add Vehicle
                     </button>
                 </div>
 
                 {/* Stats Cards */}
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-2.5 sm:gap-4">
                     {[
-                        { label: 'Total Vehicles', value: devices.length, icon: <Car size={20} />, color: 'blue' },
-                        { label: 'Moving', value: moving, icon: <Activity size={20} />, color: 'green' },
-                        { label: 'Parked', value: parked, icon: <MapPin size={20} />, color: 'yellow' },
-                        { label: 'Offline', value: offline, icon: <WifiOff size={20} />, color: 'gray' },
+                        { label: 'Total Vehicles', value: devices.length, icon: <Car size={18} />, color: 'blue' },
+                        { label: 'Moving', value: moving, icon: <Activity size={18} />, color: 'green' },
+                        { label: 'Parked', value: parked, icon: <MapPin size={18} />, color: 'yellow' },
+                        { label: 'Offline', value: offline, icon: <WifiOff size={18} />, color: 'gray' },
                     ].map((card, i) => (
-                        <div key={i} className={`bg-gray-900 border border-gray-800 rounded-xl p-4 flex items-center gap-4`}>
-                            <div className={`p-2.5 rounded-lg ${card.color === 'blue' ? 'bg-blue-500/10 text-blue-400' : card.color === 'green' ? 'bg-green-500/10 text-green-400' : card.color === 'yellow' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-gray-700/50 text-gray-400'}`}>
+                        <div key={i} className="bg-gray-900 border border-gray-800 rounded-xl p-3 sm:p-4 flex items-center gap-3">
+                            <div className={`p-2 rounded-lg shrink-0 ${card.color === 'blue' ? 'bg-blue-500/10 text-blue-400' : card.color === 'green' ? 'bg-green-500/10 text-green-400' : card.color === 'yellow' ? 'bg-yellow-500/10 text-yellow-400' : 'bg-gray-700/50 text-gray-400'}`}>
                                 {card.icon}
                             </div>
-                            <div>
-                                <div className="text-2xl font-bold text-white">{card.value}</div>
-                                <div className="text-xs text-gray-500">{card.label}</div>
+                            <div className="truncate">
+                                <div className="text-lg sm:text-2xl font-bold text-white">{card.value}</div>
+                                <div className="text-[11px] sm:text-xs text-gray-500 truncate">{card.label}</div>
                             </div>
                         </div>
                     ))}
                 </div>
 
                 {/* Filter Tabs + Search */}
-                <div className="flex flex-col sm:flex-row gap-3 items-start sm:items-center">
-                    <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1">
+                <div className="flex flex-col sm:flex-row gap-2.5 items-stretch sm:items-center">
+                    <div className="flex gap-1 bg-gray-900 border border-gray-800 rounded-lg p-1 overflow-x-auto no-scrollbar">
                         {TABS.map(tab => (
                             <button
                                 key={tab.key}
                                 onClick={() => setFilter(tab.key)}
-                                className={`px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 ${filter === tab.key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
+                                className={`px-2.5 sm:px-3 py-1.5 rounded-md text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 ${filter === tab.key ? 'bg-blue-600 text-white' : 'text-gray-400 hover:text-white'}`}
                             >
                                 {tab.label}
-                                <span className={`text-xs px-1.5 py-0.5 rounded-full ${filter === tab.key ? 'bg-white/20' : 'bg-gray-700'}`}>{tab.count}</span>
+                                <span className={`text-[10px] px-1.5 py-0.2 rounded-full ${filter === tab.key ? 'bg-white/20' : 'bg-gray-700'}`}>{tab.count}</span>
                             </button>
                         ))}
                     </div>
-                    <div className="relative flex-1 max-w-xs">
+                    <div className="relative flex-1 sm:max-w-xs">
                         <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-500" />
                         <input
                             value={search}
                             onChange={e => setSearch(e.target.value)}
                             placeholder="Search by name or IMEI..."
-                            className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
+                            className="w-full bg-gray-900 border border-gray-800 rounded-lg pl-9 pr-3 py-2 text-xs sm:text-sm text-white placeholder-gray-500 focus:outline-none focus:border-blue-500"
                         />
                     </div>
                 </div>
