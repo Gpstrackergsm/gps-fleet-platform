@@ -30,6 +30,6 @@ app.set('io', io);
 // Start TCP Server
 startTcpServer(io);
 
-httpServer.listen(HTTP_PORT, () => {
-    console.log(`[HTTP] API & Socket Server running on port ${HTTP_PORT}`);
+httpServer.listen(HTTP_PORT, '0.0.0.0', () => {
+    console.log(`[HTTP] API & Socket Server running on 0.0.0.0:${HTTP_PORT}`);
 });

@@ -268,7 +268,7 @@ const server = net.createServer((socket) => {
 
 export const startTcpServer = (io: any) => {
     ioInstance = io;
-    server.listen(PORT, () => {
-        console.log(`TCP Server listening on port ${PORT}`);
+    server.listen(PORT, '0.0.0.0', () => {
+        console.log(`TCP Server listening on 0.0.0.0:${PORT}`);
     });
 };
