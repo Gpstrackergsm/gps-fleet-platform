@@ -8,7 +8,7 @@ import {
     Search, Plus, Minus, Layers, Navigation, Wifi, WifiOff,
     Gauge, Clock, Car, Radio, Battery, Zap, ZapOff,
     Compass, Key, ShieldAlert, Sliders, AlertTriangle,
-    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp
+    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ExternalLink
 } from 'lucide-react';
 
 const containerStyle = {
@@ -137,11 +137,23 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
 
         geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
             if (status === 'OK' && results && results.length > 0) {
-                const streetResult = results.find(r => 
-                    r.types.includes('street_address') || 
-                    r.types.includes('premise') || 
-                    r.types.includes('route')
-                ) || results[0];
+                // Filter out cryptic Plus Codes (e.g. MXH5+2G6, Marrakesh, Morocco)
+                const plusCodeRegex = /^[A-Z0-9]{2,8}\+[A-Z0-9]{2,}/i;
+                const valid = results.filter(r => !plusCodeRegex.test(r.formatted_address.trim()));
+                const pool = valid.length > 0 ? valid : results;
+
+                const streetResult = pool.find(r => 
+                    (r.types.includes('street_address') || r.types.includes('subpremise') || r.types.includes('premise')) &&
+                    !r.formatted_address.toLowerCase().includes('route sans nom') &&
+                    !r.formatted_address.toLowerCase().includes('unnamed road')
+                ) || pool.find(r => 
+                    r.types.includes('route') &&
+                    !r.formatted_address.toLowerCase().includes('route sans nom') &&
+                    !r.formatted_address.toLowerCase().includes('unnamed road')
+                ) || pool.find(r =>
+                    r.types.includes('neighborhood') || r.types.includes('sublocality')
+                ) || pool[0];
+
                 const cleanAddress = streetResult.formatted_address;
                 addressCache.current[cacheKey] = cleanAddress;
                 setAddresses(prev => ({ ...prev, [deviceId]: cleanAddress }));
@@ -557,31 +569,34 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         />
                     </form>
 
-                    {/* Google Map Type Selector */}
+                    {/* Google Map Type Selector (Satellite is Hybrid with full streets, POIs, and labels like Google Maps) */}
                     <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
                         <button
                             onClick={() => setMapType('hybrid')}
-                            className={`px-2 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
+                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
                                 mapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                             }`}
+                            title="Satellite view with road network, street names, and business labels (like Google Maps)"
                         >
-                            <Layers size={12} /> Hybrid
+                            <Layers size={12} /> Satellite
                         </button>
                         <button
                             onClick={() => setMapType('roadmap')}
-                            className={`px-2 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
+                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
                                 mapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                             }`}
+                            title="Standard Street Map"
                         >
-                            Road
+                            Map
                         </button>
                         <button
-                            onClick={() => setMapType('satellite')}
-                            className={`px-2 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                mapType === 'satellite' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
+                            onClick={() => setMapType('terrain')}
+                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
+                                mapType === 'terrain' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
                             }`}
+                            title="Terrain Topography"
                         >
-                            Sat
+                            Terrain
                         </button>
                     </div>
 
@@ -688,6 +703,17 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                         <span className="font-mono text-green-400">{selectedVehicle.battery_level}%</span>
                                     </div>
                                 </div>
+                                <div className="pt-2 mt-2 border-t border-zinc-800 flex justify-end">
+                                    <a
+                                        href={`https://www.google.com/maps/search/?api=1&query=${selectedVehicle.lat},${selectedVehicle.lng}`}
+                                        target="_blank"
+                                        rel="noopener noreferrer"
+                                        className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold transition-colors"
+                                    >
+                                        <span>Open in Google Maps</span>
+                                        <ExternalLink size={10} />
+                                    </a>
+                                </div>
                             </div>
                         </InfoWindow>
                     )}
@@ -767,23 +793,34 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                     </div>
                                 </div>
 
-                                <div className="flex items-center gap-2">
-                                    <div className="text-right">
-                                        <span className="text-sm md:text-base font-bold font-mono text-blue-400 block leading-tight">
-                                            {selectedVehicle.speed.toFixed(1)} <span className="text-[9px] text-zinc-500 font-normal">km/h</span>
-                                        </span>
-                                        <span className="text-[9px] text-zinc-400">{timeSince(selectedVehicle.lastUpdate)}</span>
-                                    </div>
+                                    <div className="flex items-center gap-2">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${selectedVehicle.lat},${selectedVehicle.lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors hidden sm:flex items-center gap-1 text-[11px] border border-zinc-800/80"
+                                            title="Open vehicle location in Google Maps"
+                                        >
+                                            <ExternalLink size={13} className="text-blue-400" />
+                                            <span className="hidden lg:inline text-zinc-300">Google Maps</span>
+                                        </a>
 
-                                    {/* Mobile Dismiss Button */}
-                                    <button
-                                        onClick={() => setMobileTelemetryOpen(false)}
-                                        className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 md:hidden ml-1"
-                                        title="Minimize Telemetry"
-                                    >
-                                        <ChevronDown size={18} />
-                                    </button>
-                                </div>
+                                        <div className="text-right">
+                                            <span className="text-sm md:text-base font-bold font-mono text-blue-400 block leading-tight">
+                                                {selectedVehicle.speed.toFixed(1)} <span className="text-[9px] text-zinc-500 font-normal">km/h</span>
+                                            </span>
+                                            <span className="text-[9px] text-zinc-400">{timeSince(selectedVehicle.lastUpdate)}</span>
+                                        </div>
+
+                                        {/* Mobile Dismiss Button */}
+                                        <button
+                                            onClick={() => setMobileTelemetryOpen(false)}
+                                            className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 md:hidden ml-1"
+                                            title="Minimize Telemetry"
+                                        >
+                                            <ChevronDown size={18} />
+                                        </button>
+                                    </div>
                             </div>
 
                             {/* Telemetry Metrics Strip */}
