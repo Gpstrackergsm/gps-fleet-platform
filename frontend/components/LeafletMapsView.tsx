@@ -10,7 +10,7 @@ import {
     Search, Plus, Minus, Layers, Navigation, Wifi, WifiOff,
     Gauge, Clock, Car, Radio, Battery, Zap, ZapOff,
     Compass, Key, ShieldAlert, Sliders, AlertTriangle,
-    CheckCircle2, X, ChevronDown, ChevronUp
+    CheckCircle2, X, ChevronDown, ChevronUp, MapPin
 } from 'lucide-react';
 
 // ── Types ────────────────────────────────────────────────────────────────────
@@ -156,9 +156,46 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
     const [mobileFleetOpen, setMobileFleetOpen] = useState(false);
     const [mobileTelemetryOpen, setMobileTelemetryOpen] = useState(true);
 
+    // Reverse Geocoded Addresses
+    const [addresses, setAddresses] = useState<Record<string, string>>({});
+    const addressCache = useRef<Record<string, string>>({});
+
+    const resolveAddress = useCallback(async (lat: number, lng: number, deviceId: string) => {
+        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (addressCache.current[cacheKey]) {
+            setAddresses(prev => {
+                if (prev[deviceId] === addressCache.current[cacheKey]) return prev;
+                return { ...prev, [deviceId]: addressCache.current[cacheKey] };
+            });
+            return;
+        }
+
+        try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lng}&zoom=18&addressdetails=1`);
+            if (res.ok) {
+                const data = await res.json();
+                if (data && data.display_name) {
+                    addressCache.current[cacheKey] = data.display_name;
+                    setAddresses(prev => ({ ...prev, [deviceId]: data.display_name }));
+                }
+            }
+        } catch {
+            // fallback gracefully
+        }
+    }, []);
+
     // Keep refs in sync
     useEffect(() => { vehiclesRef.current = vehicles; }, [vehicles]);
     useEffect(() => { followModeRef.current = followMode; }, [followMode]);
+
+    // Resolve addresses when vehicles update
+    useEffect(() => {
+        Object.values(vehicles).forEach(v => {
+            if (v.lat && v.lng) {
+                resolveAddress(v.lat, v.lng, v.device_id);
+            }
+        });
+    }, [vehicles, resolveAddress]);
 
     // Fetch initial fleet
     useEffect(() => {
@@ -377,8 +414,16 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
                                 </div>
 
                                 {v.company_name && (
-                                    <p className="text-[11px] text-zinc-400 mb-1">{v.company_name}</p>
+                                    <p className="text-[11px] text-zinc-400 mb-0.5">{v.company_name}</p>
                                 )}
+
+                                {/* Physical Street Address */}
+                                <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 truncate my-1">
+                                    <MapPin size={11} className="text-red-400 shrink-0" />
+                                    <span className="truncate" title={addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}>
+                                        {addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}
+                                    </span>
+                                </div>
 
                                 {/* Compact Telemetry Badges */}
                                 <div className="grid grid-cols-3 gap-1 text-[11px] text-zinc-400 bg-zinc-950/40 p-2 rounded border border-zinc-800/60 mt-2">
@@ -566,6 +611,13 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
                                             </span>
                                         </div>
 
+                                        <div className="flex items-start gap-1 text-[10px] text-zinc-300 pb-1.5 mb-2 border-b border-zinc-800">
+                                            <MapPin size={11} className="text-red-400 shrink-0 mt-0.5" />
+                                            <span className="leading-tight text-white font-medium">
+                                                {addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}
+                                            </span>
+                                        </div>
+
                                         <div className="space-y-1.5 text-xs text-zinc-300">
                                             <div className="flex justify-between">
                                                 <span className="text-zinc-500">Live Speed</span>
@@ -653,6 +705,12 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
                                             </div>
                                             <div className="text-[10px] text-zinc-400 truncate">
                                                 {selectedVehicle.plate_number ? `Plate: ${selectedVehicle.plate_number}` : `IMEI: ${selectedVehicle.device_id}`}
+                                            </div>
+                                            <div className="flex items-center gap-1.5 text-[11px] text-zinc-200 font-medium truncate mt-0.5 max-w-[220px] sm:max-w-md">
+                                                <MapPin size={12} className="text-red-400 shrink-0" />
+                                                <span className="truncate" title={addresses[selectedVehicle.device_id] || ""}>
+                                                    {addresses[selectedVehicle.device_id] || "Resolving street address..."}
+                                                </span>
                                             </div>
                                         </div>
                                     </div>

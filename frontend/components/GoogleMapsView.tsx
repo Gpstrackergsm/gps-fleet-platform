@@ -114,6 +114,70 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const [mobileFleetOpen, setMobileFleetOpen] = useState(false);
     const [mobileTelemetryOpen, setMobileTelemetryOpen] = useState(true);
 
+    // Reverse Geocoded Addresses
+    const [addresses, setAddresses] = useState<Record<string, string>>({});
+    const addressCache = useRef<Record<string, string>>({});
+    const geocoderRef = useRef<google.maps.Geocoder | null>(null);
+    const [mapSearch, setMapSearch] = useState('');
+
+    const resolveAddress = useCallback((lat: number, lng: number, deviceId: string) => {
+        if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return;
+        const cacheKey = `${lat.toFixed(4)},${lng.toFixed(4)}`;
+        if (addressCache.current[cacheKey]) {
+            setAddresses(prev => {
+                if (prev[deviceId] === addressCache.current[cacheKey]) return prev;
+                return { ...prev, [deviceId]: addressCache.current[cacheKey] };
+            });
+            return;
+        }
+
+        if (!geocoderRef.current) {
+            geocoderRef.current = new google.maps.Geocoder();
+        }
+
+        geocoderRef.current.geocode({ location: { lat, lng } }, (results, status) => {
+            if (status === 'OK' && results && results.length > 0) {
+                const streetResult = results.find(r => 
+                    r.types.includes('street_address') || 
+                    r.types.includes('premise') || 
+                    r.types.includes('route')
+                ) || results[0];
+                const cleanAddress = streetResult.formatted_address;
+                addressCache.current[cacheKey] = cleanAddress;
+                setAddresses(prev => ({ ...prev, [deviceId]: cleanAddress }));
+            }
+        });
+    }, [isLoaded]);
+
+    // Resolve addresses for vehicles
+    useEffect(() => {
+        if (isLoaded) {
+            Object.values(vehicles).forEach(v => {
+                if (v.lat && v.lng) {
+                    resolveAddress(v.lat, v.lng, v.device_id);
+                }
+            });
+        }
+    }, [isLoaded, vehicles, resolveAddress]);
+
+    const handleSearchAddress = (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!mapSearch.trim() || !isLoaded || !map) return;
+        if (!geocoderRef.current && window.google?.maps) {
+            geocoderRef.current = new google.maps.Geocoder();
+        }
+        if (geocoderRef.current) {
+            geocoderRef.current.geocode({ address: mapSearch.trim() }, (results, status) => {
+                if (status === 'OK' && results && results[0]) {
+                    map.panTo(results[0].geometry.location);
+                    map.setZoom(16);
+                } else {
+                    alert('Location not found. Please try another address.');
+                }
+            });
+        }
+    };
+
     // Catch Google Maps Billing / Auth failures
     useEffect(() => {
         (window as any).gm_authFailure = () => {
@@ -379,8 +443,16 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         </div>
 
                         {v.company_name && (
-                            <p className="text-[10px] text-zinc-400 mb-1">{v.company_name}</p>
+                            <p className="text-[10px] text-zinc-400 mb-0.5">{v.company_name}</p>
                         )}
+
+                        {/* Physical Street Address */}
+                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 truncate my-1">
+                            <MapPin size={11} className="text-red-400 shrink-0" />
+                            <span className="truncate" title={addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}>
+                                {addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}
+                            </span>
+                        </div>
 
                         {/* Compact Telemetry Badges */}
                         <div className="grid grid-cols-3 gap-1 text-[10px] text-zinc-400 bg-zinc-950/40 p-1.5 rounded border border-zinc-800/60 mt-1.5">
@@ -473,6 +545,18 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
 
                 {/* Map Controls Header Overlay (Responsive) */}
                 <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 max-w-[calc(100vw-110px)] overflow-x-auto no-scrollbar">
+                    {/* Google Address Search Form */}
+                    <form onSubmit={handleSearchAddress} className="relative hidden lg:block">
+                        <Search size={12} className="absolute left-2.5 top-1/2 -translate-y-1/2 text-zinc-400 pointer-events-none" />
+                        <input
+                            type="text"
+                            placeholder="Search any address..."
+                            value={mapSearch}
+                            onChange={e => setMapSearch(e.target.value)}
+                            className="bg-zinc-900/95 border border-zinc-700 rounded-lg pl-7 pr-2.5 py-1.5 text-xs text-white placeholder-zinc-500 focus:outline-none focus:border-blue-500 w-44 shadow-xl backdrop-blur"
+                        />
+                    </form>
+
                     {/* Google Map Type Selector */}
                     <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
                         <button
@@ -582,6 +666,12 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                         {stateLabel(selectedVehicle.state)}
                                     </span>
                                 </div>
+                                <div className="flex items-start gap-1 text-[10px] text-zinc-300 pb-1 mb-1 border-b border-zinc-800">
+                                    <MapPin size={11} className="text-red-400 shrink-0 mt-0.5" />
+                                    <span className="leading-tight text-white font-medium">
+                                        {addresses[selectedVehicle.device_id] || `${selectedVehicle.lat.toFixed(4)}, ${selectedVehicle.lng.toFixed(4)}`}
+                                    </span>
+                                </div>
                                 <div className="space-y-1 text-[11px] text-zinc-300">
                                     <div className="flex justify-between">
                                         <span className="text-zinc-400">Speed:</span>
@@ -667,6 +757,12 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                         </div>
                                         <div className="text-[10px] text-zinc-400 truncate">
                                             {selectedVehicle.plate_number ? `Plate: ${selectedVehicle.plate_number}` : `IMEI: ${selectedVehicle.device_id}`}
+                                        </div>
+                                        <div className="flex items-center gap-1.5 text-[11px] text-zinc-200 font-medium truncate mt-0.5 max-w-[220px] sm:max-w-md">
+                                            <MapPin size={12} className="text-red-400 shrink-0" />
+                                            <span className="truncate" title={addresses[selectedVehicle.device_id] || ""}>
+                                                {addresses[selectedVehicle.device_id] || "Resolving street address..."}
+                                            </span>
                                         </div>
                                     </div>
                                 </div>
