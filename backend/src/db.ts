@@ -43,36 +43,21 @@ export const transaction = async <T>(callback: (conn: mysql.PoolConnection) => P
 };
 
 export const connectDB = async () => {
-    try {
-        const connection = await pool.getConnection();
-        console.log('[DB] Connected to MySQL');
-
-        // Create DB if not exists (a bit hacky, usually done before connection)
-        // But since we are connected to specific DB, it must exist.
-        // Actually for local dev on root, we might want to connect without DB first...
-        // Let's assume user created it or we rely on the `start_all.sh` logic (which failed).
-        // Let's try to create the DB if catching an error?
-        // No, let's keep it simple. The schema init is below.
-
-        await initTables();
-        connection.release();
-    } catch (err: any) {
-        if (err.code === 'ER_BAD_DB_ERROR') {
-            console.log('[DB] Database does not exist. Attempting to create...');
-            const tempPool = mysql.createPool({
-                host: process.env.DB_HOST || 'localhost',
-                user: process.env.DB_USER || 'root',
-                password: process.env.DB_PASSWORD || '',
-            });
-            await tempPool.query(`CREATE DATABASE IF NOT EXISTS ${process.env.DB_NAME || 'gps_platform'}`);
-            console.log('[DB] Database created. Retrying connection...');
-            // Retry
-            await initTables(); // This will use the main pool which should work now? No, main pool needs reconnection or restart.
-            // Actually pool handles it often? Let's just exit and let nodemon restart or assume it works for next request
-        } else {
-            console.error('[DB] Connection failed', err);
+    let retries = 15;
+    while (retries > 0) {
+        try {
+            const connection = await pool.getConnection();
+            console.log('[DB] Connected to MySQL successfully');
+            await initTables();
+            connection.release();
+            return;
+        } catch (err: any) {
+            console.error(`[DB] Connection attempt failed: ${err.message}. Retrying in 5s... (${retries} retries left)`);
+            retries--;
+            await new Promise(resolve => setTimeout(resolve, 5000));
         }
     }
+    console.error('[DB] Could not connect to MySQL after multiple attempts. Server running in degraded mode.');
 };
 
 const initTables = async () => {
