@@ -286,58 +286,35 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                             />
                         </form>
 
-                        {/* Google Map Type Selector (Satellite is Hybrid with full streets and labels like Google Maps) */}
-                        <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                            <button
-                                onClick={() => setGoogleMapType('hybrid')}
-                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                    googleMapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                                }`}
-                                title="Satellite view with road network, street names, and business labels (like Google Maps)"
-                            >
-                                <Layers size={13} /> Satellite
-                            </button>
-                            <button
-                                onClick={() => setGoogleMapType('roadmap')}
-                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                    googleMapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                                }`}
-                                title="Standard Street Map"
-                            >
-                                Map
-                            </button>
-                            <button
-                                onClick={() => setGoogleMapType('terrain')}
-                                className={`px-2.5 py-1.5 text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                    googleMapType === 'terrain' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                                }`}
-                                title="Terrain Topography"
-                            >
-                                Terrain
-                            </button>
-                        </div>
+                        {/* Satellite On / Off Toggle (Google) */}
+                        <button
+                            onClick={() => setGoogleMapType(prev => prev === 'hybrid' ? 'roadmap' : 'hybrid')}
+                            className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                                googleMapType === 'hybrid'
+                                    ? 'bg-blue-600 border-blue-500 text-white'
+                                    : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                            }`}
+                            title={googleMapType === 'hybrid' ? 'Satellite: ON (Click to switch to Map)' : 'Satellite: OFF (Click to switch to Satellite)'}
+                        >
+                            <Layers size={13} />
+                            <span>Satellite</span>
+                        </button>
                     </>
                 )}
 
                 {engine === 'leaflet' && (
-                    <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                        <button
-                            onClick={() => setLeafletTileLayer('street')}
-                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                                leafletTileLayer === 'street' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                        >
-                            <Layers size={13} /> Street
-                        </button>
-                        <button
-                            onClick={() => setLeafletTileLayer('satellite')}
-                            className={`px-3 py-1.5 text-xs font-semibold flex items-center gap-1.5 transition-colors ${
-                                leafletTileLayer === 'satellite' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                        >
-                            <Layers size={13} /> Satellite
-                        </button>
-                    </div>
+                    <button
+                        onClick={() => setLeafletTileLayer(prev => prev === 'satellite' ? 'street' : 'satellite')}
+                        className={`px-2.5 py-1.5 text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                            leafletTileLayer === 'satellite'
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                        }`}
+                        title={leafletTileLayer === 'satellite' ? 'Satellite: ON (Click to switch to Street)' : 'Satellite: OFF (Click to switch to Satellite)'}
+                    >
+                        <Layers size={13} />
+                        <span>Satellite</span>
+                    </button>
                 )}
 
                 {/* Engine Switcher */}

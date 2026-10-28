@@ -620,25 +620,19 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
 
                     {/* Map Controls Header Overlay */}
                     <div className="absolute top-3 right-3 z-[500] flex items-center gap-1.5 max-w-[calc(100vw-110px)] overflow-x-auto no-scrollbar">
-                        {/* Tile Mode Toggle */}
-                        <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                            <button
-                                onClick={() => setTileLayer('street')}
-                                className={`px-2.5 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                    tileLayer === 'street' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                                }`}
-                            >
-                                <Layers size={12} /> Street
-                            </button>
-                            <button
-                                onClick={() => setTileLayer('satellite')}
-                                className={`px-2.5 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                    tileLayer === 'satellite' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                                }`}
-                            >
-                                Satellite
-                            </button>
-                        </div>
+                        {/* Satellite On / Off Toggle */}
+                        <button
+                            onClick={() => setTileLayer(prev => prev === 'satellite' ? 'street' : 'satellite')}
+                            className={`px-2.5 py-1.5 text-[11px] md:text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                                tileLayer === 'satellite'
+                                    ? 'bg-blue-600 border-blue-500 text-white'
+                                    : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                            }`}
+                            title={tileLayer === 'satellite' ? 'Satellite: ON (Click to switch to Street)' : 'Satellite: OFF (Click to switch to Satellite)'}
+                        >
+                            <Layers size={12} />
+                            <span>Satellite</span>
+                        </button>
 
                         {/* Follow Mode Toggle */}
                         {selectedId && (

@@ -659,36 +659,19 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         />
                     </form>
 
-                    {/* Google Map Type Selector (Satellite is Hybrid with full streets, POIs, and labels like Google Maps) */}
-                    <div className="flex bg-zinc-900 border border-zinc-700 rounded-lg overflow-hidden shadow-xl">
-                        <button
-                            onClick={() => setMapType('hybrid')}
-                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                mapType === 'hybrid' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                            title="Satellite view with road network, street names, and business labels (like Google Maps)"
-                        >
-                            <Layers size={12} /> Satellite
-                        </button>
-                        <button
-                            onClick={() => setMapType('roadmap')}
-                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                mapType === 'roadmap' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                            title="Standard Street Map"
-                        >
-                            Map
-                        </button>
-                        <button
-                            onClick={() => setMapType('terrain')}
-                            className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold flex items-center gap-1 transition-colors ${
-                                mapType === 'terrain' ? 'bg-blue-600 text-white' : 'text-zinc-400 hover:text-white hover:bg-zinc-800'
-                            }`}
-                            title="Terrain Topography"
-                        >
-                            Terrain
-                        </button>
-                    </div>
+                    {/* Satellite On / Off Toggle */}
+                    <button
+                        onClick={() => setMapType(prev => prev === 'hybrid' ? 'roadmap' : 'hybrid')}
+                        className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                            mapType === 'hybrid'
+                                ? 'bg-blue-600 border-blue-500 text-white'
+                                : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                        }`}
+                        title={mapType === 'hybrid' ? 'Satellite: ON (Click to switch to Map)' : 'Satellite: OFF (Click to switch to Satellite)'}
+                    >
+                        <Layers size={12} />
+                        <span>Satellite</span>
+                    </button>
 
                     {/* Follow Mode Toggle */}
                     {selectedId && (
