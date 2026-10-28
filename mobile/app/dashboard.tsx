@@ -1,14 +1,13 @@
 import React, { useState, useEffect, useRef, useMemo } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, ScrollView, SafeAreaView, Platform, Dimensions, Alert, Modal } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, ScrollView, SafeAreaView, Platform, Dimensions, Alert, Modal, ActivityIndicator } from 'react-native';
 import MapView, { Marker, Polyline, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Map as MapIcon, List, LogOut, Navigation, CircleParking, Calendar, Clock, ChevronRight, Activity, MapPin, Trash2, SlidersHorizontal, Play, Pause } from 'lucide-react-native';
+import { Map as MapIcon, List, LogOut, Navigation, CircleParking, Calendar, Clock, ChevronRight, Activity, MapPin, Trash2, SlidersHorizontal, Play, Pause, Key, Power, ShieldAlert, CheckCircle2, X, RefreshCw } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useSocket } from '../hooks/useSocket';
 import axios from 'axios';
 import { API_URL } from '../constants/Config';
 import FleetList from '../components/FleetList';
-// DateTimePicker temporarily removed to prevent native crash
 
 interface Vehicle {
     id: string;
@@ -37,6 +36,49 @@ interface HistoryPoint {
     id: string;
 }
 
+// Clean Google Satellite Map: Hides commercial POIs, keeping streets and road names visible
+const CUSTOM_MAP_STYLE = [
+    {
+        featureType: 'poi',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'transit.station',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'road',
+        elementType: 'labels',
+        stylers: [{ visibility: 'on' }]
+    }
+];
+
+function getVehicleState(v: Vehicle): 'moving' | 'idling' | 'parked' | 'offline' {
+    if (v.current_state) return v.current_state;
+    const lastTime = new Date(v.lastUpdate).getTime();
+    const ageMs = Date.now() - lastTime;
+    if (ageMs > 3 * 60 * 1000) return 'offline';
+    if (!v.accStatus && v.speed <= 3) return 'parked';
+    if (v.accStatus && v.speed <= 3) return 'idling';
+    return 'moving';
+}
+
+function getVehicleStateColor(state: string) {
+    if (state === 'moving') return '#22c55e'; // Green
+    if (state === 'idling') return '#f59e0b'; // Amber
+    if (state === 'parked') return '#3b82f6'; // Blue
+    return '#64748b'; // Gray
+}
+
+function getVehicleStateLabel(state: string) {
+    if (state === 'moving') return 'EN ROUTE';
+    if (state === 'idling') return 'AU RALENTI';
+    if (state === 'parked') return 'STATIONNÉ';
+    return 'HORS LIGNE';
+}
+
 export default function Dashboard() {
     const router = useRouter();
     const socket = useSocket();
@@ -45,7 +87,10 @@ export default function Dashboard() {
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const lastTrackedVehicleId = useRef<string | null>(null);
     const [durationStr, setDurationStr] = useState('');
-    const [viewMode, setViewMode] = useState<'list' | 'map'>('list'); // Default to List
+    const [viewMode, setViewMode] = useState<'list' | 'map'>('map'); // Default to clean Google Satellite Map
+    const [commandLoading, setCommandLoading] = useState(false);
+    const [showHistoryPanel, setShowHistoryPanel] = useState(false);
+    const hasAutoFitted = useRef(false);
 
     // Duration Timer Logic for Selected Vehicle
     useEffect(() => {
@@ -127,6 +172,75 @@ export default function Dashboard() {
         const interval: ReturnType<typeof setInterval> = setInterval(fetchDevices, 30000); // Poll every 30s as fallback
         return () => clearInterval(interval);
     }, []);
+
+    // Auto-fit bounds on initial load to show all fleet vehicles
+    useEffect(() => {
+        const validVehicles = Object.values(vehicles).filter(v => v.lat && v.lng);
+        if (!hasAutoFitted.current && validVehicles.length > 0 && mapRef.current) {
+            hasAutoFitted.current = true;
+            if (validVehicles.length === 1) {
+                mapRef.current.animateToRegion({
+                    latitude: validVehicles[0].lat,
+                    longitude: validVehicles[0].lng,
+                    latitudeDelta: 0.02,
+                    longitudeDelta: 0.02,
+                }, 1000);
+            } else {
+                mapRef.current.fitToCoordinates(
+                    validVehicles.map(v => ({ latitude: v.lat, longitude: v.lng })),
+                    {
+                        edgePadding: { top: 120, right: 60, bottom: 120, left: 60 },
+                        animated: true,
+                    }
+                );
+            }
+        }
+    }, [vehicles]);
+
+    const handleSendCommand = (commandType: string) => {
+        if (!selectedVehicle) return;
+
+        const actionName = commandType === 'stop_engine' ? 'couper le moteur' : 'restaurer le moteur';
+
+        Alert.alert(
+            'Confirmation commande',
+            `Êtes-vous sûr de vouloir ${actionName} pour ${selectedVehicle.name} ?`,
+            [
+                { text: 'Annuler', style: 'cancel' },
+                {
+                    text: 'Confirmer',
+                    style: commandType === 'stop_engine' ? 'destructive' : 'default',
+                    onPress: async () => {
+                        setCommandLoading(true);
+                        try {
+                            let token;
+                            if (Platform.OS !== 'web') {
+                                token = await SecureStore.getItemAsync('auth_token');
+                            } else {
+                                token = localStorage.getItem('auth_token');
+                            }
+
+                            const res = await axios.post(
+                                `${API_URL}/api/devices/${selectedVehicle.id}/command`,
+                                { commandType },
+                                { headers: { Authorization: `Bearer ${token}` } }
+                            );
+
+                            Alert.alert(
+                                res.data.success ? 'Succès' : 'Info',
+                                res.data.message || 'Commande traitée'
+                            );
+                        } catch (err: any) {
+                            const msg = err.response?.data?.error || 'Erreur lors de l\'envoi de la commande';
+                            Alert.alert('Erreur', msg);
+                        } finally {
+                            setCommandLoading(false);
+                        }
+                    }
+                }
+            ]
+        );
+    };
 
 
 
@@ -538,38 +652,56 @@ export default function Dashboard() {
                             showsUserLocation={true}
                             showsMyLocationButton={true}
                             mapType="hybrid"
+                            customMapStyle={CUSTOM_MAP_STYLE}
                         >
-                            {Object.values(vehicles).map(vehicle => (
-                                <Marker
-                                    key={vehicle.id}
-                                    coordinate={{ latitude: vehicle.lat, longitude: vehicle.lng }}
-                                    onPress={() => {
-                                        setSelectedVehicle(vehicle);
-                                        mapRef.current?.animateToRegion({
-                                            latitude: vehicle.lat,
-                                            longitude: vehicle.lng,
-                                            latitudeDelta: 0.01,
-                                            longitudeDelta: 0.01,
-                                        }, 500);
-                                    }}
-                                >
-                                    <View style={styles.markerContainer}>
-                                        <View style={styles.markerBubble}>
-                                            <Text style={styles.markerText}>{vehicle.name}</Text>
+                            {Object.values(vehicles).map(vehicle => {
+                                const state = getVehicleState(vehicle);
+                                const color = getVehicleStateColor(state);
+                                const isSelected = selectedVehicle?.id === vehicle.id;
+
+                                return (
+                                    <Marker
+                                        key={vehicle.id}
+                                        coordinate={{ latitude: vehicle.lat, longitude: vehicle.lng }}
+                                        anchor={{ x: 0.5, y: 0.8 }}
+                                        onPress={() => {
+                                            setSelectedVehicle(vehicle);
+                                            mapRef.current?.animateToRegion({
+                                                latitude: vehicle.lat,
+                                                longitude: vehicle.lng,
+                                                latitudeDelta: 0.01,
+                                                longitudeDelta: 0.01,
+                                            }, 500);
+                                        }}
+                                    >
+                                        <View style={styles.markerContainer}>
+                                            {/* Fixed Label Pill */}
+                                            <View style={[styles.markerPill, isSelected && styles.markerPillSelected]}>
+                                                <View style={[styles.markerStatusDot, { backgroundColor: color }]} />
+                                                <Text style={styles.markerPillText} numberOfLines={1}>{vehicle.name}</Text>
+                                            </View>
+
+                                            {/* State Icon Badge */}
+                                            <View style={[styles.stateIconCircle, { backgroundColor: color }]}>
+                                                {state === 'moving' ? (
+                                                    <Navigation
+                                                        size={13}
+                                                        color="#FFFFFF"
+                                                        fill="#FFFFFF"
+                                                        style={{ transform: [{ rotate: `${vehicle.course || 0}deg` }] }}
+                                                    />
+                                                ) : state === 'idling' ? (
+                                                    <Key size={12} color="#FFFFFF" />
+                                                ) : state === 'parked' ? (
+                                                    <Text style={styles.stateParkedText}>P</Text>
+                                                ) : (
+                                                    <View style={styles.stateOfflineDot} />
+                                                )}
+                                            </View>
                                         </View>
-                                        {vehicle.speed > 0 ? (
-                                            <Navigation
-                                                size={24}
-                                                color="#10B981"
-                                                fill="#10B981"
-                                                style={{ transform: [{ rotate: `${vehicle.course || 0}deg` }] }}
-                                            />
-                                        ) : (
-                                            <CircleParking size={24} color="#F59E0B" fill="#F59E0B" />
-                                        )}
-                                    </View>
-                                </Marker>
-                            ))}
+                                    </Marker>
+                                );
+                            })}
 
                             {historyPath.length > 0 && (
                                 <>
@@ -577,7 +709,7 @@ export default function Dashboard() {
                                         <Polyline
                                             key={`poly-${index}`}
                                             coordinates={segment.map(p => ({ latitude: p.latitude, longitude: p.longitude }))}
-                                            strokeColor="#4F46E5"
+                                            strokeColor="#3B82F6"
                                             strokeWidth={4}
                                         />
                                     ))}
@@ -597,7 +729,7 @@ export default function Dashboard() {
                                                     width: isSelected ? 16 : 8,
                                                     height: isSelected ? 16 : 8,
                                                     borderRadius: isSelected ? 8 : 4,
-                                                    backgroundColor: isSelected ? '#EF4444' : 'rgba(79, 70, 229, 0.8)',
+                                                    backgroundColor: isSelected ? '#EF4444' : 'rgba(59, 130, 246, 0.8)',
                                                     borderWidth: 1,
                                                     borderColor: 'white'
                                                 }} />
@@ -617,87 +749,203 @@ export default function Dashboard() {
                                     anchor={{ x: 0.5, y: 0.5 }}
                                 >
                                     <View style={styles.playbackMarker}>
-                                        <Navigation size={28} color="#10B981" fill="#10B981" />
+                                        <Navigation size={22} color="#22C55E" fill="#22C55E" />
                                     </View>
                                 </Marker>
                             )}
                         </MapView>
 
-                        {/* History Controls Overlay */}
-                        {selectedVehicle && (
-                            <View style={styles.overlayContainer}>
-                                <View style={styles.historyCard}>
-                                    <View style={styles.historyHeader}>
-                                        <Activity size={16} color="#4F46E5" />
-                                        <Text style={styles.historyTitle}>Historique & Analyse</Text>
-                                        {historyPath.length > 0 && (
-                                            <TouchableOpacity onPress={() => { setHistoryPath([]); setSelectedPoints([]); }}>
-                                                <Trash2 size={16} color="#9CA3AF" />
-                                            </TouchableOpacity>
-                                        )}
-                                    </View>
+                        {/* Selected Vehicle Telemetry & Remote Control Drawer */}
+                        {selectedVehicle && vehicles[selectedVehicle.id] && (() => {
+                            const v = vehicles[selectedVehicle.id];
+                            const state = getVehicleState(v);
+                            const stateColor = getVehicleStateColor(state);
+                            const stateLabel = getVehicleStateLabel(state);
 
-                                    <View style={styles.periodRow}>
-                                        <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(selectedVehicle.id, '6h')}>
-                                            <Text style={styles.periodText}>6h</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(selectedVehicle.id, '12h')}>
-                                            <Text style={styles.periodText}>12h</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(selectedVehicle.id, 'today')}>
-                                            <Text style={styles.periodText}>Aujourd'hui</Text>
-                                        </TouchableOpacity>
-                                        <TouchableOpacity style={[styles.periodBtn, styles.customBtn]} onPress={() => fetchHistory(selectedVehicle.id, 'custom')}>
-                                            <Calendar size={14} color="#FFF" />
-                                        </TouchableOpacity>
-                                    </View>
-
-                                    {/* Playback Controls */}
-                                    {historyPath.length > 0 && (
-                                        <View style={styles.playbackControls}>
-                                            <TouchableOpacity
-                                                style={styles.playBtn}
-                                                onPress={() => setIsPlaying(!isPlaying)}
-                                            >
-                                                {isPlaying ? (
-                                                    <Pause size={16} color="#FFF" fill="#FFF" />
-                                                ) : (
-                                                    <Play size={16} color="#FFF" fill="#FFF" />
+                            return (
+                                <View style={styles.overlayContainer}>
+                                    <View style={styles.telemetryCard}>
+                                        {/* Drawer Header */}
+                                        <View style={styles.drawerHeader}>
+                                            <View style={{ flex: 1 }}>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                    <Text style={styles.drawerTitle} numberOfLines={1}>{v.name}</Text>
+                                                    <View style={[styles.stateBadge, { backgroundColor: `${stateColor}22`, borderColor: stateColor }]}>
+                                                        <View style={[styles.stateBadgeDot, { backgroundColor: stateColor }]} />
+                                                        <Text style={[styles.stateBadgeText, { color: stateColor }]}>{stateLabel}</Text>
+                                                    </View>
+                                                </View>
+                                                {v.last_update && (
+                                                    <Text style={styles.drawerSub}>
+                                                        Mis à jour: {new Date(v.last_update).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+                                                    </Text>
                                                 )}
-                                            </TouchableOpacity>
+                                            </View>
+                                            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                                                <TouchableOpacity
+                                                    style={[styles.iconBtn, showHistoryPanel && styles.iconBtnActive]}
+                                                    onPress={() => setShowHistoryPanel(!showHistoryPanel)}
+                                                >
+                                                    <Activity size={18} color={showHistoryPanel ? '#3B82F6' : '#94A3B8'} />
+                                                </TouchableOpacity>
+                                                <TouchableOpacity
+                                                    style={styles.iconBtn}
+                                                    onPress={() => {
+                                                        setSelectedVehicle(null);
+                                                        setHistoryPath([]);
+                                                        setSelectedPoints([]);
+                                                        setShowHistoryPanel(false);
+                                                    }}
+                                                >
+                                                    <X size={18} color="#94A3B8" />
+                                                </TouchableOpacity>
+                                            </View>
+                                        </View>
 
-                                            <View style={styles.playbackInfo}>
-                                                <Text style={styles.playbackText}>
-                                                    {getPlaybackTimes().elapsed} / {getPlaybackTimes().total}
+                                        {/* Telemetry Stats Grid */}
+                                        <View style={styles.telemetryGrid}>
+                                            <View style={styles.telemetryBox}>
+                                                <Text style={styles.telemetryLabel}>VITESSE</Text>
+                                                <Text style={[styles.telemetryValue, { color: v.speed > 0 ? '#22C55E' : '#94A3B8' }]}>
+                                                    {Math.round(v.speed)} <Text style={{ fontSize: 10, fontWeight: 'normal' }}>km/h</Text>
                                                 </Text>
                                             </View>
 
+                                            <View style={styles.telemetryBox}>
+                                                <Text style={styles.telemetryLabel}>MOTEUR</Text>
+                                                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}>
+                                                    <Key size={13} color={v.accStatus ? '#22C55E' : '#64748B'} />
+                                                    <Text style={[styles.telemetryValue, { color: v.accStatus ? '#22C55E' : '#64748B' }]}>
+                                                        {v.accStatus ? 'ON' : 'OFF'}
+                                                    </Text>
+                                                </View>
+                                            </View>
+
+                                            <View style={styles.telemetryBox}>
+                                                <Text style={styles.telemetryLabel}>TRAJET</Text>
+                                                <Text style={styles.telemetryValue}>
+                                                    {v.trip_distance !== undefined ? `${v.trip_distance.toFixed(1)} km` : '--'}
+                                                </Text>
+                                            </View>
+
+                                            <View style={styles.telemetryBox}>
+                                                <Text style={styles.telemetryLabel}>DURÉE</Text>
+                                                <Text style={styles.telemetryValue}>
+                                                    {durationStr || '--'}
+                                                </Text>
+                                            </View>
+                                        </View>
+
+                                        {/* 2-Way Remote Engine Commands */}
+                                        <View style={styles.commandRow}>
                                             <TouchableOpacity
-                                                style={styles.speedBtn}
-                                                onPress={() => {
-                                                    setPlaybackSpeed(prev => prev === 1 ? 2 : prev === 2 ? 4 : 1);
-                                                }}
+                                                style={[styles.commandBtn, styles.stopEngineBtn]}
+                                                disabled={commandLoading}
+                                                onPress={() => handleSendCommand('stop_engine')}
                                             >
-                                                <Text style={styles.speedText}>{playbackSpeed}x</Text>
+                                                {commandLoading ? (
+                                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                                ) : (
+                                                    <>
+                                                        <Power size={14} color="#FFFFFF" />
+                                                        <Text style={styles.commandBtnText}>Couper Moteur</Text>
+                                                    </>
+                                                )}
+                                            </TouchableOpacity>
+
+                                            <TouchableOpacity
+                                                style={[styles.commandBtn, styles.resumeEngineBtn]}
+                                                disabled={commandLoading}
+                                                onPress={() => handleSendCommand('resume_engine')}
+                                            >
+                                                {commandLoading ? (
+                                                    <ActivityIndicator size="small" color="#FFFFFF" />
+                                                ) : (
+                                                    <>
+                                                        <RefreshCw size={14} color="#FFFFFF" />
+                                                        <Text style={styles.commandBtnText}>Rétablir Moteur</Text>
+                                                    </>
+                                                )}
                                             </TouchableOpacity>
                                         </View>
-                                    )}
 
-                                    {distanceData && (
-                                        <View style={styles.analysisBox}>
-                                            <View style={styles.analysisItem}>
-                                                <MapPin size={14} color="#EF4444" />
-                                                <Text style={styles.analysisText}>{distanceData.dist} km</Text>
+                                        {/* Collapsible History & Playback Panel */}
+                                        {showHistoryPanel && (
+                                            <View style={styles.historyDrawerSection}>
+                                                <View style={styles.historyHeader}>
+                                                    <Activity size={14} color="#3B82F6" />
+                                                    <Text style={styles.historyTitle}>Historique & Trajets</Text>
+                                                    {historyPath.length > 0 && (
+                                                        <TouchableOpacity onPress={() => { setHistoryPath([]); setSelectedPoints([]); }}>
+                                                            <Trash2 size={15} color="#94A3B8" />
+                                                        </TouchableOpacity>
+                                                    )}
+                                                </View>
+
+                                                <View style={styles.periodRow}>
+                                                    <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(v.id, '6h')}>
+                                                        <Text style={styles.periodText}>6h</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(v.id, '12h')}>
+                                                        <Text style={styles.periodText}>12h</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={styles.periodBtn} onPress={() => fetchHistory(v.id, 'today')}>
+                                                        <Text style={styles.periodText}>Aujourd'hui</Text>
+                                                    </TouchableOpacity>
+                                                    <TouchableOpacity style={[styles.periodBtn, styles.customBtn]} onPress={() => fetchHistory(v.id, 'custom')}>
+                                                        <Calendar size={13} color="#FFF" />
+                                                    </TouchableOpacity>
+                                                </View>
+
+                                                {/* Playback Controls */}
+                                                {historyPath.length > 0 && (
+                                                    <View style={styles.playbackControls}>
+                                                        <TouchableOpacity
+                                                            style={styles.playBtn}
+                                                            onPress={() => setIsPlaying(!isPlaying)}
+                                                        >
+                                                            {isPlaying ? (
+                                                                <Pause size={15} color="#FFF" fill="#FFF" />
+                                                            ) : (
+                                                                <Play size={15} color="#FFF" fill="#FFF" />
+                                                            )}
+                                                        </TouchableOpacity>
+
+                                                        <View style={styles.playbackInfo}>
+                                                            <Text style={styles.playbackText}>
+                                                                {getPlaybackTimes().elapsed} / {getPlaybackTimes().total}
+                                                            </Text>
+                                                        </View>
+
+                                                        <TouchableOpacity
+                                                            style={styles.speedBtn}
+                                                            onPress={() => {
+                                                                setPlaybackSpeed(prev => prev === 1 ? 2 : prev === 2 ? 4 : 1);
+                                                            }}
+                                                        >
+                                                            <Text style={styles.speedText}>{playbackSpeed}x</Text>
+                                                        </TouchableOpacity>
+                                                    </View>
+                                                )}
+
+                                                {distanceData && (
+                                                    <View style={styles.analysisBox}>
+                                                        <View style={styles.analysisItem}>
+                                                            <MapPin size={13} color="#EF4444" />
+                                                            <Text style={styles.analysisText}>{distanceData.dist} km</Text>
+                                                        </View>
+                                                        <View style={styles.analysisItem}>
+                                                            <Clock size={13} color="#94A3B8" />
+                                                            <Text style={styles.analysisText}>{distanceData.time}</Text>
+                                                        </View>
+                                                    </View>
+                                                )}
                                             </View>
-                                            <View style={styles.analysisItem}>
-                                                <Clock size={14} color="#6B7280" />
-                                                <Text style={styles.analysisText}>{distanceData.time}</Text>
-                                            </View>
-                                        </View>
-                                    )}
+                                        )}
+                                    </View>
                                 </View>
-                            </View>
-                        )}
+                            );
+                        })()}
 
                         {/* Custom Date Picker Modal */}
                         <Modal visible={datePickerVisible} transparent animationType="fade">
@@ -756,8 +1004,6 @@ export default function Dashboard() {
                                         </TouchableOpacity>
                                     </View>
 
-
-
                                     <TouchableOpacity style={styles.closeBtn} onPress={() => setDatePickerVisible(false)}>
                                         <Text style={styles.closeBtnText}>Annuler</Text>
                                     </TouchableOpacity>
@@ -772,96 +1018,280 @@ export default function Dashboard() {
 }
 
 const styles = StyleSheet.create({
-    container: { flex: 1, backgroundColor: '#F9FAFB' },
+    container: { flex: 1, backgroundColor: '#090D16' },
     header: {
         position: 'absolute', top: 0, left: 0, right: 0,
-        backgroundColor: 'rgba(255, 255, 255, 0.95)',
-        zIndex: 100, borderBottomWidth: 1, borderBottomColor: '#F3F4F6'
+        backgroundColor: 'rgba(15, 23, 42, 0.88)',
+        zIndex: 100, borderBottomWidth: 1, borderBottomColor: 'rgba(255, 255, 255, 0.08)'
     },
     headerContent: {
         flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
         paddingHorizontal: 16, paddingVertical: 12
     },
     headerTextContainer: { flex: 1 },
-    headerTitle: { fontSize: 18, fontWeight: '800', color: '#111' },
+    headerTitle: { fontSize: 18, fontWeight: '800', color: '#FFFFFF' },
     headerActions: { flexDirection: 'row', gap: 8 },
-    toggleButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#F3F4F6', justifyContent: 'center', alignItems: 'center' },
-    logoutButton: { width: 40, height: 40, borderRadius: 20, backgroundColor: '#FEE2E2', justifyContent: 'center', alignItems: 'center' },
+    toggleButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(255, 255, 255, 0.12)', justifyContent: 'center', alignItems: 'center' },
+    logoutButton: { width: 38, height: 38, borderRadius: 19, backgroundColor: 'rgba(239, 68, 68, 0.2)', justifyContent: 'center', alignItems: 'center' },
     contentContainer: { flex: 1 },
     map: { flex: 1 },
+
+    // Vehicle Marker Styles (Fixed Label Pill + Small State Icon)
     markerContainer: { alignItems: 'center', justifyContent: 'center' },
-    markerBubble: {
-        backgroundColor: 'white', paddingHorizontal: 8, paddingVertical: 4,
-        borderRadius: 12, borderWidth: 1, borderColor: '#E5E7EB', marginBottom: 2,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3
+    markerPill: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        backgroundColor: 'rgba(15, 23, 42, 0.92)',
+        paddingHorizontal: 8,
+        paddingVertical: 3,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.2)',
+        marginBottom: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.35,
+        shadowRadius: 4,
+        elevation: 5,
+        gap: 5
     },
-    markerText: { fontSize: 10, fontWeight: 'bold', color: '#374151' },
-    overlayContainer: { position: 'absolute', bottom: 20, left: 16, right: 16 },
-    historyCard: {
-        backgroundColor: 'white', borderRadius: 20, padding: 16,
-        shadowColor: '#000', shadowOffset: { width: 0, height: 4 }, shadowOpacity: 0.1, shadowRadius: 10, elevation: 5
+    markerPillSelected: {
+        borderColor: '#3B82F6',
+        backgroundColor: '#1E293B',
+        transform: [{ scale: 1.05 }]
     },
-    historyHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 12 },
-    historyTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: '#374151' },
-    periodRow: { flexDirection: 'row', gap: 8 },
+    markerStatusDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3
+    },
+    markerPillText: {
+        fontSize: 11,
+        fontWeight: '700',
+        color: '#FFFFFF'
+    },
+    stateIconCircle: {
+        width: 26,
+        height: 26,
+        borderRadius: 13,
+        justifyContent: 'center',
+        alignItems: 'center',
+        borderWidth: 2,
+        borderColor: '#FFFFFF',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.4,
+        shadowRadius: 3,
+        elevation: 4
+    },
+    stateParkedText: {
+        fontSize: 13,
+        fontWeight: '900',
+        color: '#FFFFFF'
+    },
+    stateOfflineDot: {
+        width: 8,
+        height: 8,
+        borderRadius: 4,
+        backgroundColor: '#FFFFFF'
+    },
+
+    // Bottom Telemetry Drawer
+    overlayContainer: {
+        position: 'absolute',
+        bottom: Platform.OS === 'ios' ? 24 : 16,
+        left: 14,
+        right: 14
+    },
+    telemetryCard: {
+        backgroundColor: 'rgba(15, 23, 42, 0.96)',
+        borderRadius: 20,
+        padding: 16,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.12)',
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 6 },
+        shadowOpacity: 0.45,
+        shadowRadius: 14,
+        elevation: 8
+    },
+    drawerHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 12
+    },
+    drawerTitle: {
+        fontSize: 16,
+        fontWeight: '800',
+        color: '#FFFFFF',
+        maxWidth: 160
+    },
+    drawerSub: {
+        fontSize: 11,
+        color: '#94A3B8',
+        marginTop: 2
+    },
+    stateBadge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 7,
+        paddingVertical: 2,
+        borderRadius: 8,
+        borderWidth: 1,
+        gap: 5
+    },
+    stateBadgeDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5
+    },
+    stateBadgeText: {
+        fontSize: 10,
+        fontWeight: '800'
+    },
+    iconBtn: {
+        width: 32,
+        height: 32,
+        borderRadius: 16,
+        backgroundColor: 'rgba(255, 255, 255, 0.08)',
+        justifyContent: 'center',
+        alignItems: 'center'
+    },
+    iconBtnActive: {
+        backgroundColor: 'rgba(59, 130, 246, 0.25)',
+        borderWidth: 1,
+        borderColor: '#3B82F6'
+    },
+
+    // Telemetry Grid
+    telemetryGrid: {
+        flexDirection: 'row',
+        backgroundColor: 'rgba(255, 255, 255, 0.04)',
+        borderRadius: 14,
+        padding: 10,
+        justifyContent: 'space-between',
+        marginBottom: 12,
+        borderWidth: 1,
+        borderColor: 'rgba(255, 255, 255, 0.06)'
+    },
+    telemetryBox: {
+        flex: 1,
+        alignItems: 'center'
+    },
+    telemetryLabel: {
+        fontSize: 9,
+        fontWeight: '700',
+        color: '#64748B',
+        letterSpacing: 0.5,
+        marginBottom: 3
+    },
+    telemetryValue: {
+        fontSize: 13,
+        fontWeight: '800',
+        color: '#FFFFFF'
+    },
+
+    // Remote Command Buttons
+    commandRow: {
+        flexDirection: 'row',
+        gap: 10
+    },
+    commandBtn: {
+        flex: 1,
+        height: 40,
+        borderRadius: 12,
+        flexDirection: 'row',
+        justifyContent: 'center',
+        alignItems: 'center',
+        gap: 6,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.2,
+        shadowRadius: 4,
+        elevation: 3
+    },
+    stopEngineBtn: {
+        backgroundColor: '#DC2626'
+    },
+    resumeEngineBtn: {
+        backgroundColor: '#16A34A'
+    },
+    commandBtnText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '800'
+    },
+
+    // Collapsible History Section
+    historyDrawerSection: {
+        marginTop: 14,
+        paddingTop: 14,
+        borderTopWidth: 1,
+        borderTopColor: 'rgba(255, 255, 255, 0.08)'
+    },
+    historyHeader: { flexDirection: 'row', alignItems: 'center', gap: 8, marginBottom: 10 },
+    historyTitle: { flex: 1, fontSize: 13, fontWeight: '700', color: '#E2E8F0' },
+    periodRow: { flexDirection: 'row', gap: 6 },
     periodBtn: {
-        flex: 1, height: 34, borderRadius: 10, backgroundColor: '#F3F4F6',
+        flex: 1, height: 32, borderRadius: 8, backgroundColor: 'rgba(255, 255, 255, 0.08)',
         justifyContent: 'center', alignItems: 'center'
     },
-    periodText: { fontSize: 11, fontWeight: '600', color: '#4B5563' },
-    customBtn: { backgroundColor: '#4F46E5', flex: 0.5 },
+    periodText: { fontSize: 11, fontWeight: '700', color: '#CBD5E1' },
+    customBtn: { backgroundColor: '#3B82F6', flex: 0.5 },
     analysisBox: {
-        marginTop: 12, paddingTop: 12, borderTopWidth: 1, borderTopColor: '#F3F4F6',
+        marginTop: 10, paddingTop: 10, borderTopWidth: 1, borderTopColor: 'rgba(255, 255, 255, 0.08)',
         flexDirection: 'row', justifyContent: 'space-around'
     },
     analysisItem: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-    analysisText: { fontSize: 12, fontWeight: '600', color: '#374151' },
-    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center' },
-    modalContent: { backgroundColor: 'white', borderRadius: 24, padding: 24, width: '85%' },
-    modalTitle: { fontSize: 18, fontWeight: 'bold', textAlign: 'center', marginBottom: 16 },
-    quickDatesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 20 },
+    analysisText: { fontSize: 12, fontWeight: '600', color: '#E2E8F0' },
+
+    modalBg: { flex: 1, backgroundColor: 'rgba(0,0,0,0.7)', justifyContent: 'center', alignItems: 'center' },
+    modalContent: { backgroundColor: '#1E293B', borderRadius: 24, padding: 24, width: '85%', borderWidth: 1, borderColor: 'rgba(255, 255, 255, 0.1)' },
+    modalTitle: { fontSize: 17, fontWeight: '800', textAlign: 'center', marginBottom: 16, color: '#FFFFFF' },
+    quickDatesContainer: { flexDirection: 'row', flexWrap: 'wrap', gap: 10, justifyContent: 'center', marginBottom: 16 },
     quickDateBtn: {
-        backgroundColor: '#4F46E5',
-        paddingHorizontal: 20,
-        paddingVertical: 12,
+        backgroundColor: '#3B82F6',
+        paddingHorizontal: 18,
+        paddingVertical: 10,
         borderRadius: 12,
         minWidth: '45%',
         alignItems: 'center'
     },
-    quickDateText: { color: '#FFF', fontWeight: '600', fontSize: 13 },
-    dateHint: { fontSize: 12, color: '#9CA3AF', textAlign: 'center', marginBottom: 8, fontStyle: 'italic' },
-    closeBtn: { marginTop: 16, padding: 12, alignItems: 'center' },
-    closeBtnText: { color: '#6B7280', fontWeight: '600' },
-    // Playback Styles
+    quickDateText: { color: '#FFF', fontWeight: '700', fontSize: 13 },
+    closeBtn: { marginTop: 12, padding: 10, alignItems: 'center' },
+    closeBtnText: { color: '#94A3B8', fontWeight: '600' },
+
+    // Playback Marker & Controls
     playbackMarker: {
-        width: 40,
-        height: 40,
-        borderRadius: 20,
-        backgroundColor: 'white',
+        width: 36,
+        height: 36,
+        borderRadius: 18,
+        backgroundColor: '#0F172A',
         justifyContent: 'center',
         alignItems: 'center',
         shadowColor: '#000',
         shadowOffset: { width: 0, height: 2 },
-        shadowOpacity: 0.3,
+        shadowOpacity: 0.4,
         shadowRadius: 4,
         elevation: 5,
-        borderWidth: 3,
-        borderColor: '#10B981'
+        borderWidth: 2,
+        borderColor: '#22C55E'
     },
     playbackControls: {
         flexDirection: 'row',
         alignItems: 'center',
         gap: 10,
-        marginTop: 12,
-        paddingTop: 12,
+        marginTop: 10,
+        paddingTop: 10,
         borderTopWidth: 1,
-        borderTopColor: '#E5E7EB'
+        borderTopColor: 'rgba(255, 255, 255, 0.08)'
     },
     playBtn: {
-        width: 36,
-        height: 36,
-        borderRadius: 18,
-        backgroundColor: '#10B981',
+        width: 34,
+        height: 34,
+        borderRadius: 17,
+        backgroundColor: '#22C55E',
         justifyContent: 'center',
         alignItems: 'center'
     },
@@ -872,17 +1302,17 @@ const styles = StyleSheet.create({
     playbackText: {
         fontSize: 12,
         fontWeight: '600',
-        color: '#6B7280'
+        color: '#94A3B8'
     },
     speedBtn: {
-        paddingHorizontal: 12,
-        paddingVertical: 8,
+        paddingHorizontal: 10,
+        paddingVertical: 6,
         borderRadius: 8,
-        backgroundColor: '#F3F4F6'
+        backgroundColor: 'rgba(255, 255, 255, 0.08)'
     },
     speedText: {
         fontSize: 12,
-        fontWeight: '600',
-        color: '#4F46E5'
+        fontWeight: '700',
+        color: '#3B82F6'
     }
 });

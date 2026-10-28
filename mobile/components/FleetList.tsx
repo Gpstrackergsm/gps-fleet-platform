@@ -1,6 +1,6 @@
 import React, { useState, useEffect, memo } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity } from 'react-native';
-import { Navigation, CircleParking, MapPin, Signal, Wifi } from 'lucide-react-native';
+import { Navigation, CircleParking, MapPin, Signal, Wifi, Key, Power } from 'lucide-react-native';
 import { GOOGLE_MAPS_API_KEY } from '../constants/Config';
 
 interface Vehicle {
@@ -26,16 +26,38 @@ interface FleetListProps {
     onVehiclePress: (vehicle: Vehicle) => void;
 }
 
+function getVehicleState(v: Vehicle): 'moving' | 'idling' | 'parked' | 'offline' {
+    if (v.current_state) return v.current_state;
+    const lastTime = new Date(v.lastUpdate).getTime();
+    const ageMs = Date.now() - lastTime;
+    if (ageMs > 3 * 60 * 1000) return 'offline';
+    if (!v.accStatus && v.speed <= 3) return 'parked';
+    if (v.accStatus && v.speed <= 3) return 'idling';
+    return 'moving';
+}
+
+function getVehicleStateColor(state: string) {
+    if (state === 'moving') return '#22C55E';
+    if (state === 'idling') return '#F59E0B';
+    if (state === 'parked') return '#3B82F6';
+    return '#64748B';
+}
+
+function getVehicleStateLabel(state: string) {
+    if (state === 'moving') return 'En route';
+    if (state === 'idling') return 'Au ralenti';
+    if (state === 'parked') return 'Stationné';
+    return 'Hors ligne';
+}
+
 // Memoized Item Component to handle individual address fetching
 const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle) => void }) => {
     const [address, setAddress] = useState<string>('Localisation...');
     const [lastFetchCoords, setLastFetchCoords] = useState<{ lat: number, lng: number } | null>(null);
 
-    const isMoving = item.speed > 5; // Standard threshold
-    const statusColor = isMoving ? '#10B981' : '#6B7280'; // Green for moving, Gray for stopped
-
-    const StatusIcon = isMoving ? Navigation : CircleParking;
-    const iconStyle = isMoving && item.course ? { transform: [{ rotate: `${item.course}deg` }] } : {};
+    const state = getVehicleState(item);
+    const stateColor = getVehicleStateColor(state);
+    const stateLabel = getVehicleStateLabel(state);
 
     // Duration & Online Status Logic
     const [durationStr, setDurationStr] = useState('');
@@ -57,10 +79,7 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
             const start = new Date(item.state_start_time).getTime();
             const lastUpdateTs = item.lastUpdate ? new Date(item.lastUpdate).getTime() : now;
 
-            // Handle clock skew: use max of (now - start) and (lastUpdate - start)
-            // This ensures we always show at least the server-reported duration
             const diffMs = Math.max(0, Math.max(now - start, lastUpdateTs - start));
-
             const totalSeconds = Math.floor(diffMs / 1000);
             const minutes = Math.floor(totalSeconds / 60);
             const hours = Math.floor(minutes / 60);
@@ -75,8 +94,6 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
         const interval = setInterval(updateStatus, 1000);
         return () => clearInterval(interval);
     }, [item.state_start_time, item.lastUpdate]);
-
-
 
     // Geocoding with simple caching
     useEffect(() => {
@@ -108,14 +125,31 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
 
     return (
         <TouchableOpacity style={styles.card} onPress={() => onPress(item)} activeOpacity={0.7}>
-            <View style={[styles.iconContainer, { backgroundColor: isMoving ? '#ECFDF5' : '#F3F4F6' }]}>
-                <StatusIcon size={24} color={isMoving ? '#10B981' : '#6B7280'} style={iconStyle} />
+            <View style={[styles.iconContainer, { backgroundColor: `${stateColor}15` }]}>
+                {state === 'moving' ? (
+                    <Navigation
+                        size={20}
+                        color={stateColor}
+                        fill={stateColor}
+                        style={item.course ? { transform: [{ rotate: `${item.course}deg` }] } : {}}
+                    />
+                ) : state === 'idling' ? (
+                    <Key size={18} color={stateColor} />
+                ) : state === 'parked' ? (
+                    <Text style={{ fontSize: 16, fontWeight: '900', color: stateColor }}>P</Text>
+                ) : (
+                    <Power size={18} color={stateColor} />
+                )}
             </View>
 
             <View style={styles.infoContainer}>
                 <View style={styles.headerRow}>
-                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center' }}>
+                    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                         <Text style={styles.name} numberOfLines={1}>{item.name}</Text>
+                        <View style={[styles.badge, { backgroundColor: `${stateColor}18`, borderColor: stateColor }]}>
+                            <View style={[styles.badgeDot, { backgroundColor: stateColor }]} />
+                            <Text style={[styles.badgeText, { color: stateColor }]}>{stateLabel}</Text>
+                        </View>
                         {item.alarm && (
                             <View style={styles.alarmBadge}>
                                 <Text style={styles.alarmText}>{item.alarm}</Text>
@@ -123,22 +157,22 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
                         )}
                     </View>
                     <Text style={styles.lastUpdateText}>
-                        {new Date(item.lastUpdate).toLocaleDateString('fr-FR', { day: '2-digit', month: '2-digit' })} {new Date(item.lastUpdate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
+                        {new Date(item.lastUpdate).toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}
                     </Text>
                 </View>
 
                 {/* Address */}
                 <View style={styles.row}>
-                    <MapPin size={12} color="#9CA3AF" style={{ marginRight: 4, marginTop: 2 }} />
+                    <MapPin size={11} color="#9CA3AF" style={{ marginRight: 4 }} />
                     <Text style={styles.addressText} numberOfLines={1}>{address}</Text>
                 </View>
 
                 {/* Status Metrics */}
                 <View style={styles.metricsRow}>
                     <View style={styles.metricItem}>
-                        <View style={[styles.statusDot, { backgroundColor: isMoving ? '#10B981' : '#EF4444' }]} />
+                        <View style={[styles.statusDot, { backgroundColor: stateColor }]} />
                         <Text style={styles.metricText}>
-                            {isMoving ? `${Math.round(item.speed)} km/h` : 'Stationné'}
+                            {state === 'moving' ? `${Math.round(item.speed)} km/h` : stateLabel}
                         </Text>
                     </View>
 
@@ -150,24 +184,24 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
 
                     {/* ACC Status */}
                     <View style={styles.metricItem}>
-                        <Text style={[styles.metricText, { color: item.accStatus ? '#10B981' : '#6B7280' }]}>
+                        <Text style={[styles.metricText, { color: item.accStatus ? '#22C55E' : '#94A3B8' }]}>
                             {item.accStatus ? 'ACC ON' : 'ACC OFF'}
                         </Text>
                     </View>
 
-                    {/* Network Status (30s Timeout) */}
+                    {/* Network Status */}
                     <View style={styles.metricItem}>
-                        <Wifi size={14} color={isOnline ? '#10B981' : '#9CA3AF'} />
+                        <Wifi size={12} color={isOnline ? '#22C55E' : '#94A3B8'} />
                     </View>
 
                     {/* GPS Status */}
                     <View style={styles.metricItem}>
-                        <Signal size={14} color={item.gpsStatus ? '#10B981' : '#9CA3AF'} />
+                        <Signal size={12} color={item.gpsStatus ? '#22C55E' : '#94A3B8'} />
                     </View>
                 </View>
             </View>
 
-            <Navigation size={16} color="#D1D5DB" />
+            <Navigation size={14} color="#CBD5E1" />
         </TouchableOpacity>
     );
 });
@@ -331,4 +365,22 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         marginLeft: 8,
     },
+    badge: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingHorizontal: 6,
+        paddingVertical: 2,
+        borderRadius: 6,
+        borderWidth: 1,
+        gap: 4
+    },
+    badgeDot: {
+        width: 5,
+        height: 5,
+        borderRadius: 2.5
+    },
+    badgeText: {
+        fontSize: 10,
+        fontWeight: '700'
+    }
 });

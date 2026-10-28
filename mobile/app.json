@@ -1,12 +1,12 @@
 {
   "expo": {
-    "name": "Geofence",
-    "slug": "geofence",
+    "name": "GPS EU",
+    "slug": "gps-eu",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "mobile",
-    "userInterfaceStyle": "automatic",
+    "scheme": "gpseu",
+    "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "android": {
       "package": "com.gpssaas.app",
