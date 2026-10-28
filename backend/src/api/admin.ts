@@ -363,4 +363,60 @@ router.get('/users/search', authenticateToken, requireAdmin, async (req: AuthReq
     }
 });
 
+// FACTORY RESET — Wipe all data except the calling admin account
+// Deletes: all positions, all devices, all geofences, all alerts, all alert_rules,
+//          all raw_logs, all non-admin users, all non-admin tenants
+router.post('/factory-reset', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    const adminUserId = req.user?.id;
+    const adminTenantId = req.user?.tenantId;
+
+    if (!adminUserId || !adminTenantId) {
+        return res.status(401).json({ error: 'Unauthorized' });
+    }
+
+    // Require a confirmation phrase in the request body for safety
+    const { confirm } = req.body;
+    if (confirm !== 'RESET_ALL_DATA') {
+        return res.status(400).json({
+            error: 'Confirmation required. Send body: { "confirm": "RESET_ALL_DATA" }'
+        });
+    }
+
+    try {
+        await transaction(async (conn) => {
+            // 1. Delete all positions (historical telemetry for ALL devices)
+            await conn.query('DELETE FROM positions');
+
+            // 2. Delete all raw_logs
+            await conn.query('DELETE FROM raw_logs WHERE 1=1');
+
+            // 3. Delete all alerts and alert_rules
+            await conn.query('DELETE FROM alerts');
+            await conn.query('DELETE FROM alert_rules');
+
+            // 4. Delete all geofences
+            await conn.query('DELETE FROM geofences');
+
+            // 5. Delete ALL devices
+            await conn.query('DELETE FROM devices');
+
+            // 6. Delete all users EXCEPT the admin
+            await conn.query('DELETE FROM users WHERE id != ?', [adminUserId]);
+
+            // 7. Delete all tenants EXCEPT admin's own tenant
+            await conn.query('DELETE FROM tenants WHERE id != ?', [adminTenantId]);
+        });
+
+        res.json({
+            success: true,
+            message: 'Factory reset complete. All GPS history, devices, clients, alerts and geofences have been deleted. Admin account preserved.',
+            admin_email: req.user?.email,
+            admin_tenant_id: adminTenantId
+        });
+    } catch (err) {
+        console.error('[Admin] Factory reset failed:', err);
+        res.status(500).json({ error: 'Factory reset failed' });
+    }
+});
+
 export default router;
