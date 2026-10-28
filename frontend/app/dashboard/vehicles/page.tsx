@@ -179,16 +179,16 @@ export default function VehiclesPage() {
                 </div>
 
                 {/* Table */}
-                <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-hidden">
+                <div className="bg-gray-900 border border-gray-800 rounded-xl overflow-visible min-h-[260px]">
                     <table className="w-full text-left">
                         <thead className="bg-gray-950/60 text-gray-500 text-xs uppercase tracking-wider border-b border-gray-800">
                             <tr>
-                                <th className="px-4 py-3">Status</th>
+                                <th className="px-4 py-3 rounded-tl-xl">Status</th>
                                 <th className="px-4 py-3">Vehicle</th>
                                 <th className="px-4 py-3 hidden md:table-cell">IMEI</th>
                                 <th className="px-4 py-3 hidden lg:table-cell">Speed</th>
                                 <th className="px-4 py-3 hidden lg:table-cell">Last Seen</th>
-                                <th className="px-4 py-3 text-right">Actions</th>
+                                <th className="px-4 py-3 text-right rounded-tr-xl">Actions</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-800/50">
@@ -234,27 +234,27 @@ export default function VehiclesPage() {
                                             <span className="text-gray-500 text-sm">{timeSince(device.last_seen || device.last_update)}</span>
                                         </td>
                                         <td className="px-4 py-3 text-right">
-                                            <div className="relative inline-block">
+                                            <div className={`relative inline-block text-left ${actionMenu === device.device_id ? 'z-30' : ''}`}>
                                                 <button
                                                     onClick={() => setActionMenu(actionMenu === device.device_id ? null : device.device_id)}
-                                                    className="text-gray-500 hover:text-white p-1.5 rounded-lg hover:bg-gray-700 transition-colors text-sm px-3"
+                                                    className="text-gray-400 hover:text-white p-1.5 rounded-lg hover:bg-gray-800 transition-colors text-sm px-3 border border-gray-700/60 bg-gray-800/40"
                                                 >
                                                     Actions ▾
                                                 </button>
                                                 {actionMenu === device.device_id && (
-                                                    <div className="absolute right-0 top-full mt-1 w-44 bg-gray-800 border border-gray-700 rounded-lg shadow-xl z-20 overflow-hidden">
-                                                        <Link href="/dashboard" onClick={() => setActionMenu(null)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-                                                            <MapPin size={14} /> View on Map
+                                                    <div className="absolute right-0 top-full mt-1.5 w-48 bg-gray-800 border border-gray-700 rounded-lg shadow-2xl z-30 py-1">
+                                                        <Link href="/dashboard" onClick={() => setActionMenu(null)} className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                                                            <MapPin size={15} className="text-blue-400" /> View on Map
                                                         </Link>
-                                                        <Link href="/dashboard/history" onClick={() => setActionMenu(null)} className="flex items-center gap-2 px-3 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white transition-colors">
-                                                            <Clock size={14} /> View History
+                                                        <Link href="/dashboard/history" onClick={() => setActionMenu(null)} className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
+                                                            <Clock size={15} className="text-emerald-400" /> View History
                                                         </Link>
-                                                        <div className="border-t border-gray-700" />
+                                                        <div className="border-t border-gray-700/80 my-1" />
                                                         <button
                                                             onClick={() => { setDeleteConfirm(device.device_id); setActionMenu(null); }}
-                                                            className="flex items-center gap-2 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 w-full transition-colors"
+                                                            className="flex items-center gap-2.5 px-3 py-2 text-sm text-red-400 hover:bg-red-500/10 w-full transition-colors text-left"
                                                         >
-                                                            <Trash2 size={14} /> Delete
+                                                            <Trash2 size={15} /> Delete Vehicle
                                                         </button>
                                                     </div>
                                                 )}
@@ -326,7 +326,7 @@ export default function VehiclesPage() {
             )}
 
             {/* Click-outside to close action menu */}
-            {actionMenu && <div className="fixed inset-0 z-10" onClick={() => setActionMenu(null)} />}
+            {actionMenu && <div className="fixed inset-0 z-20" onClick={() => setActionMenu(null)} />}
         </div>
     );
 }
