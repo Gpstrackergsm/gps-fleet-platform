@@ -68,15 +68,79 @@ function getCourseCompass(deg: number): string {
     return `${deg.toFixed(0)}° (${directions[idx]})`;
 }
 
-function makeCarIcon(state: string, course: number) {
-    const color = stateColor(state);
-    const svg = `
+function generateVehicleMarkerSvg(state: string, course: number, isSelected: boolean): string {
+    const selectedHalo = isSelected
+        ? `<circle cx="18" cy="18" r="17" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="3,2" opacity="0.95"/>`
+        : '';
+
+    if (state === 'moving') {
+        // High-precision aerodynamic directional arrow rotated by vehicle heading
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <g transform="rotate(${course || 0}, 18, 18)">
+            <!-- Contrast drop-shadow -->
+            <path d="M 18,5 L 28.5,31 L 18,25 L 7.5,31 Z" fill="#000000" fill-opacity="0.38"/>
+            <!-- Directional radar ring -->
+            <circle cx="18" cy="18" r="15" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="2,2"/>
+            <!-- Navigation Arrowhead -->
+            <path d="M 18,3.5 L 28,29.5 L 18,23.5 L 8,29.5 Z" fill="#22c55e" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
+          </g>
+        </svg>`.trim();
+    }
+
+    if (state === 'parked') {
+        // Universal Blue Parking "P" badge
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <!-- Contrast drop-shadow -->
+          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
+          <!-- Outer border ring -->
+          <circle cx="18" cy="18" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2.2"/>
+          <!-- Inner badge -->
+          <circle cx="18" cy="18" r="11" fill="#2563eb"/>
+          <!-- Bold 'P' -->
+          <text x="18" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+        </svg>`.trim();
+    }
+
+    if (state === 'idling') {
+        // Amber Idling badge with Ignition Key icon
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <!-- Contrast drop-shadow -->
+          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
+          <!-- Outer border ring -->
+          <circle cx="18" cy="18" r="14" fill="#b45309" stroke="#ffffff" stroke-width="2.2"/>
+          <!-- Inner badge -->
+          <circle cx="18" cy="18" r="11" fill="#f59e0b"/>
+          <!-- Ignition Key symbol -->
+          <g transform="translate(18, 18) scale(0.62) translate(-18, -18)">
+            <circle cx="13" cy="13" r="4.5" fill="none" stroke="#ffffff" stroke-width="2.6"/>
+            <path d="M16.5 16.5 L26 26 M22.5 22.5 L25 25 M20 25 L22.5 27.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+          </g>
+        </svg>`.trim();
+    }
+
+    // Default: offline
+    return `
     <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-      <g transform="rotate(${course}, 18, 18)">
-        <circle cx="18" cy="18" r="16" fill="${color}" fill-opacity="0.2" stroke="${color}" stroke-width="1.5"/>
-        <polygon points="18,5 25,27 18,22 11,27" fill="${color}" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
-      </g>
-    </svg>`;
+      ${selectedHalo}
+      <!-- Contrast drop-shadow -->
+      <circle cx="18" cy="19.5" r="13" fill="#000000" fill-opacity="0.3"/>
+      <!-- Outer border ring -->
+      <circle cx="18" cy="18" r="13" fill="#334155" stroke="#ffffff" stroke-width="2"/>
+      <!-- Inner badge -->
+      <circle cx="18" cy="18" r="10" fill="#64748b"/>
+      <!-- Offline dot / slash -->
+      <circle cx="18" cy="18" r="3" fill="#ffffff"/>
+    </svg>`.trim();
+}
+
+function makeCarIcon(state: string, course: number, isSelected: boolean = false) {
+    const svg = generateVehicleMarkerSvg(state, course, isSelected);
     return L.divIcon({
         html: svg,
         className: 'custom-tracker-icon',
@@ -630,7 +694,7 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
                             <Marker
                                 key={v.id}
                                 position={[v.lat, v.lng]}
-                                icon={makeCarIcon(v.state, v.course)}
+                                icon={makeCarIcon(v.state, v.course, v.id === selectedId)}
                                 eventHandlers={{ click: () => handleSelectVehicle(v.id, true) }}
                             >
                                 {showMapLabels && selectedId === v.id && (

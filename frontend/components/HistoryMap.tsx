@@ -33,14 +33,71 @@ const defaultCenter = {
 
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
 
-function makeLeafletCarIcon(course: number) {
-    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 28 28">
-      <g transform="rotate(${course}, 14, 14)">
-        <circle cx="14" cy="14" r="12" fill="#3b82f6" fill-opacity="0.3" stroke="#3b82f6" stroke-width="1.5"/>
-        <polygon points="14,3 19,21 14,17 9,21" fill="#3b82f6" stroke="white" stroke-width="1.5" stroke-linejoin="round"/>
-      </g>
-    </svg>`;
-    return L.divIcon({ html: svg, className: '', iconSize: [28, 28], iconAnchor: [14, 14] });
+function generateVehicleMarkerSvg(state: string, course: number, isSelected: boolean): string {
+    const selectedHalo = isSelected
+        ? `<circle cx="18" cy="18" r="17" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="3,2" opacity="0.95"/>`
+        : '';
+
+    if (state === 'moving') {
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <g transform="rotate(${course || 0}, 18, 18)">
+            <path d="M 18,5 L 28.5,31 L 18,25 L 7.5,31 Z" fill="#000000" fill-opacity="0.38"/>
+            <circle cx="18" cy="18" r="15" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="2,2"/>
+            <path d="M 18,3.5 L 28,29.5 L 18,23.5 L 8,29.5 Z" fill="#22c55e" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
+          </g>
+        </svg>`.trim();
+    }
+
+    if (state === 'parked') {
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
+          <circle cx="18" cy="18" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2.2"/>
+          <circle cx="18" cy="18" r="11" fill="#2563eb"/>
+          <text x="18" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+        </svg>`.trim();
+    }
+
+    if (state === 'idling') {
+        return `
+        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+          ${selectedHalo}
+          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
+          <circle cx="18" cy="18" r="14" fill="#b45309" stroke="#ffffff" stroke-width="2.2"/>
+          <circle cx="18" cy="18" r="11" fill="#f59e0b"/>
+          <g transform="translate(18, 18) scale(0.62) translate(-18, -18)">
+            <circle cx="13" cy="13" r="4.5" fill="none" stroke="#ffffff" stroke-width="2.6"/>
+            <path d="M16.5 16.5 L26 26 M22.5 22.5 L25 25 M20 25 L22.5 27.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
+          </g>
+        </svg>`.trim();
+    }
+
+    return `
+    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
+      ${selectedHalo}
+      <circle cx="18" cy="19.5" r="13" fill="#000000" fill-opacity="0.3"/>
+      <circle cx="18" cy="18" r="13" fill="#334155" stroke="#ffffff" stroke-width="2"/>
+      <circle cx="18" cy="18" r="10" fill="#64748b"/>
+      <circle cx="18" cy="18" r="3" fill="#ffffff"/>
+    </svg>`.trim();
+}
+
+function getGoogleVehicleIcon(state: string, course: number, isSelected: boolean): google.maps.Icon {
+    const svg = generateVehicleMarkerSvg(state, course, isSelected);
+    return {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        scaledSize: typeof google !== 'undefined' && google.maps?.Size ? new google.maps.Size(36, 36) : undefined,
+        anchor: typeof google !== 'undefined' && google.maps?.Point ? new google.maps.Point(18, 18) : undefined,
+    };
+}
+
+function makeLeafletCarIcon(course: number, isMoving: boolean = true) {
+    const state = isMoving ? 'moving' : 'parked';
+    const svg = generateVehicleMarkerSvg(state, course, true);
+    return L.divIcon({ html: svg, className: '', iconSize: [36, 36], iconAnchor: [18, 18] });
 }
 
 function LeafletFitRoute({ positions }: { positions: Position[] }) {
@@ -387,22 +444,17 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 />
                             )}
 
-                            {/* Moving Playback Marker (Aerodynamic Directional Arrow) */}
+                            {/* Moving Playback Marker (Dynamic Directional Arrow or Parked Badge) */}
                             {current && playIndex > 0 && (
                                 <Marker
                                     position={{ lat: current.lat, lng: current.lng }}
                                     onClick={() => setSelectedPoint(current)}
                                     zIndex={100}
-                                    icon={{
-                                        path: "M 0,-18 L 12,14 L 0,8 L -12,14 Z",
-                                        scale: 1.4,
-                                        fillColor: "#3b82f6",
-                                        fillOpacity: 1,
-                                        strokeColor: "#ffffff",
-                                        strokeWeight: 2.2,
-                                        rotation: current.course || 0,
-                                        anchor: new google.maps.Point(0, 0)
-                                    }}
+                                    icon={getGoogleVehicleIcon(
+                                        current.speed > 3 ? 'moving' : 'parked',
+                                        current.course || 0,
+                                        true
+                                    )}
                                 />
                             )}
 
@@ -551,7 +603,7 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                     {current && playIndex > 0 && (
                         <LeafletMarker
                             position={[current.lat, current.lng]}
-                            icon={makeLeafletCarIcon(current.course || 0)}
+                            icon={makeLeafletCarIcon(current.course || 0, current.speed > 3)}
                             eventHandlers={{ click: () => setSelectedPoint(current) }}
                         >
                             <Popup>
