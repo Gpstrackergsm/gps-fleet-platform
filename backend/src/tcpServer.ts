@@ -101,11 +101,24 @@ const server = net.createServer((socket) => {
                     }
                 }
 
-                // Auto-provision device if not already registered (preserves pre-assigned tenant/name)
-                await pool.execute(
-                    'INSERT INTO devices (device_id, name, status, tenant_id) VALUES (?, ?, ?, 1) ON DUPLICATE KEY UPDATE status = "online"',
-                    [parsed.deviceId, `TK103-${parsed.deviceId.slice(-4)}`, 'online']
+
+                // ── Whitelist check: only accept data from manually registered devices ──
+                // Unknown IMEIs are logged and rejected — no auto-provisioning
+                const [knownRows]: any = await pool.query(
+                    'SELECT id FROM devices WHERE device_id = ? LIMIT 1',
+                    [parsed.deviceId]
                 );
+                if (!knownRows || knownRows.length === 0) {
+                    console.log(`   [TCP REJECTED] Unknown device ${parsed.deviceId} — not registered. Add it manually via the admin panel.`);
+                    return;
+                }
+
+                // Mark known device as online
+                await pool.execute(
+                    'UPDATE devices SET status = "online" WHERE device_id = ?',
+                    [parsed.deviceId]
+                );
+
 
                 // Update positions reference table with ALL telemetry columns
                 await pool.execute(
