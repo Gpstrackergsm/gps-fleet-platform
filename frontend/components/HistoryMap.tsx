@@ -33,6 +33,24 @@ const defaultCenter = {
 
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
 
+const GOOGLE_MAP_STYLES: google.maps.MapTypeStyle[] = [
+    {
+        featureType: 'poi',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'transit.station',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'road',
+        elementType: 'labels',
+        stylers: [{ visibility: 'on' }]
+    }
+];
+
 function generateVehicleMarkerSvg(state: string, course: number, isSelected: boolean): string {
     const selectedHalo = isSelected
         ? `<circle cx="18" cy="18" r="17" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="3,2" opacity="0.95"/>`
@@ -373,6 +391,7 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 mapTypeControl: false,
                                 streetViewControl: false,
                                 fullscreenControl: false,
+                                styles: GOOGLE_MAP_STYLES
                             }}
                         >
                             {/* Full Route Polyline (Crisp Blue GPS Route) */}

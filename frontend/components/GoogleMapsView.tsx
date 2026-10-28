@@ -88,85 +88,108 @@ function timeSince(date: Date): string {
     return `${Math.floor(s / 3600)}h ago`;
 }
 
-function generateVehicleMarkerSvg(state: string, course: number, isSelected: boolean): string {
-    const selectedHalo = isSelected
-        ? `<circle cx="18" cy="18" r="17" fill="none" stroke="#38bdf8" stroke-width="2.2" stroke-dasharray="3,2" opacity="0.95"/>`
-        : '';
-
-    if (state === 'moving') {
-        // High-precision aerodynamic directional arrow rotated by vehicle heading
-        return `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-          ${selectedHalo}
-          <g transform="rotate(${course || 0}, 18, 18)">
-            <!-- Contrast drop-shadow -->
-            <path d="M 18,5 L 28.5,31 L 18,25 L 7.5,31 Z" fill="#000000" fill-opacity="0.38"/>
-            <!-- Directional radar ring -->
-            <circle cx="18" cy="18" r="15" fill="#22c55e" fill-opacity="0.2" stroke="#22c55e" stroke-width="1.2" stroke-dasharray="2,2"/>
-            <!-- Navigation Arrowhead -->
-            <path d="M 18,3.5 L 28,29.5 L 18,23.5 L 8,29.5 Z" fill="#22c55e" stroke="#ffffff" stroke-width="2.2" stroke-linejoin="round"/>
-          </g>
-        </svg>`.trim();
-    }
-
-    if (state === 'parked') {
-        // Universal Blue Parking "P" badge
-        return `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-          ${selectedHalo}
-          <!-- Contrast drop-shadow -->
-          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
-          <!-- Outer border ring -->
-          <circle cx="18" cy="18" r="14" fill="#1d4ed8" stroke="#ffffff" stroke-width="2.2"/>
-          <!-- Inner badge -->
-          <circle cx="18" cy="18" r="11" fill="#2563eb"/>
-          <!-- Bold 'P' -->
-          <text x="18" y="23" font-family="system-ui, -apple-system, sans-serif" font-size="14" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
-        </svg>`.trim();
-    }
-
-    if (state === 'idling') {
-        // Amber Idling badge with Ignition Key icon
-        return `
-        <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-          ${selectedHalo}
-          <!-- Contrast drop-shadow -->
-          <circle cx="18" cy="19.5" r="14" fill="#000000" fill-opacity="0.35"/>
-          <!-- Outer border ring -->
-          <circle cx="18" cy="18" r="14" fill="#b45309" stroke="#ffffff" stroke-width="2.2"/>
-          <!-- Inner badge -->
-          <circle cx="18" cy="18" r="11" fill="#f59e0b"/>
-          <!-- Ignition Key symbol -->
-          <g transform="translate(18, 18) scale(0.62) translate(-18, -18)">
-            <circle cx="13" cy="13" r="4.5" fill="none" stroke="#ffffff" stroke-width="2.6"/>
-            <path d="M16.5 16.5 L26 26 M22.5 22.5 L25 25 M20 25 L22.5 27.5" stroke="#ffffff" stroke-width="2.6" stroke-linecap="round" fill="none"/>
-          </g>
-        </svg>`.trim();
-    }
-
-    // Default: offline
-    return `
-    <svg xmlns="http://www.w3.org/2000/svg" width="36" height="36" viewBox="0 0 36 36">
-      ${selectedHalo}
-      <!-- Contrast drop-shadow -->
-      <circle cx="18" cy="19.5" r="13" fill="#000000" fill-opacity="0.3"/>
-      <!-- Outer border ring -->
-      <circle cx="18" cy="18" r="13" fill="#334155" stroke="#ffffff" stroke-width="2"/>
-      <!-- Inner badge -->
-      <circle cx="18" cy="18" r="10" fill="#64748b"/>
-      <!-- Offline dot / slash -->
-      <circle cx="18" cy="18" r="3" fill="#ffffff"/>
-    </svg>`.trim();
+function escapeXml(unsafe: string): string {
+    return unsafe.replace(/[<>&"']/g, c => {
+        switch (c) {
+            case '<': return '&lt;';
+            case '>': return '&gt;';
+            case '&': return '&amp;';
+            case '"': return '&quot;';
+            case "'": return '&apos;';
+            default: return c;
+        }
+    });
 }
 
-function getGoogleVehicleIcon(state: string, course: number, isSelected: boolean): google.maps.Icon {
-    const svg = generateVehicleMarkerSvg(state, course, isSelected);
+function generateMarkerWithLabelSvg(rawName: string, state: string, course: number, isSelected: boolean) {
+    const raw = (rawName || 'Vehicle').trim();
+    const name = raw.length > 16 ? raw.slice(0, 15) + '…' : raw;
+    const cleanName = escapeXml(name);
+    const charWidth = 6.4;
+    const textWidth = Math.round(Math.max(46, Math.min(125, cleanName.length * charWidth + 14)));
+    const svgWidth = Math.round(Math.max(textWidth + 8, 44));
+    const labelHeight = 16;
+    const iconSize = 22;
+    const gap = 2;
+    const svgHeight = labelHeight + gap + iconSize + 2;
+
+    const labelX = Math.round((svgWidth - textWidth) / 2);
+    const iconCenterX = Math.round(svgWidth / 2);
+    const iconCenterY = labelHeight + gap + Math.round(iconSize / 2);
+
+    let stateSvg = '';
+    if (state === 'moving') {
+        stateSvg = `
+          <g transform="rotate(${course || 0}, ${iconCenterX}, ${iconCenterY})">
+            <path d="M ${iconCenterX},${iconCenterY - 9} L ${iconCenterX + 6.5},${iconCenterY + 8} L ${iconCenterX},${iconCenterY + 4.5} L ${iconCenterX - 6.5},${iconCenterY + 8} Z" fill="#22c55e" stroke="#ffffff" stroke-width="1.8" stroke-linejoin="round"/>
+          </g>
+        `;
+    } else if (state === 'parked') {
+        stateSvg = `
+          <circle cx="${iconCenterX}" cy="${iconCenterY}" r="8.5" fill="#2563eb" stroke="#ffffff" stroke-width="1.8"/>
+          <text x="${iconCenterX}" y="${iconCenterY + 3.5}" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">P</text>
+        `;
+    } else if (state === 'idling') {
+        stateSvg = `
+          <circle cx="${iconCenterX}" cy="${iconCenterY}" r="8.5" fill="#f59e0b" stroke="#ffffff" stroke-width="1.8"/>
+          <g transform="translate(${iconCenterX}, ${iconCenterY}) scale(0.42) translate(-18, -18)">
+            <circle cx="13" cy="13" r="4.5" fill="none" stroke="#ffffff" stroke-width="3"/>
+            <path d="M16.5 16.5 L26 26 M22.5 22.5 L25 25 M20 25 L22.5 27.5" stroke="#ffffff" stroke-width="3" stroke-linecap="round" fill="none"/>
+          </g>
+        `;
+    } else {
+        stateSvg = `
+          <circle cx="${iconCenterX}" cy="${iconCenterY}" r="7.5" fill="#64748b" stroke="#ffffff" stroke-width="1.5"/>
+          <circle cx="${iconCenterX}" cy="${iconCenterY}" r="2" fill="#ffffff"/>
+        `;
+    }
+
+    const stateDotColor = state === 'moving' ? '#22c55e' : state === 'idling' ? '#f59e0b' : state === 'parked' ? '#3b82f6' : '#94a3b8';
+    const borderColor = isSelected ? '#38bdf8' : 'rgba(255,255,255,0.22)';
+    const bgFill = isSelected ? 'rgba(15, 23, 42, 0.96)' : 'rgba(10, 10, 12, 0.88)';
+
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${svgWidth}" height="${svgHeight}" viewBox="0 0 ${svgWidth} ${svgHeight}">
+      <!-- Drop shadow for the pill -->
+      <rect x="${labelX}" y="2" width="${textWidth}" height="${labelHeight}" rx="4" fill="#000000" fill-opacity="0.35"/>
+      <!-- Label Box -->
+      <rect x="${labelX}" y="1" width="${textWidth}" height="${labelHeight}" rx="4" fill="${bgFill}" stroke="${borderColor}" stroke-width="${isSelected ? 1.5 : 1}"/>
+      <circle cx="${labelX + 5.5}" cy="${1 + labelHeight / 2}" r="2.2" fill="${stateDotColor}"/>
+      <text x="${labelX + 11}" y="${1 + labelHeight / 2 + 3.2}" font-family="system-ui, -apple-system, sans-serif" font-size="9" font-weight="700" fill="#ffffff">${cleanName}</text>
+      <!-- State Icon Below Label -->
+      ${stateSvg}
+    </svg>`.trim();
+
+    return { svg, svgWidth, svgHeight, iconCenterX, iconCenterY };
+}
+
+function getGoogleVehicleIcon(name: string, state: string, course: number, isSelected: boolean): google.maps.Icon {
+    const { svg, svgWidth, svgHeight, iconCenterX, iconCenterY } = generateMarkerWithLabelSvg(name, state, course, isSelected);
     return {
         url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
-        scaledSize: typeof google !== 'undefined' && google.maps?.Size ? new google.maps.Size(36, 36) : undefined,
-        anchor: typeof google !== 'undefined' && google.maps?.Point ? new google.maps.Point(18, 18) : undefined,
+        scaledSize: typeof google !== 'undefined' && google.maps?.Size ? new google.maps.Size(svgWidth, svgHeight) : undefined,
+        anchor: typeof google !== 'undefined' && google.maps?.Point ? new google.maps.Point(iconCenterX, iconCenterY) : undefined,
     };
 }
+
+// Hide commercial POIs (casinos, hotels, restaurants, shops, landmarks) - keep only roads & street names
+const GOOGLE_MAP_STYLES: google.maps.MapTypeStyle[] = [
+    {
+        featureType: 'poi',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'transit.station',
+        elementType: 'all',
+        stylers: [{ visibility: 'off' }]
+    },
+    {
+        featureType: 'road',
+        elementType: 'labels',
+        stylers: [{ visibility: 'on' }]
+    }
+];
 
 // Static libraries array to avoid re-renders in useJsApiLoader
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
@@ -190,10 +213,10 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const hasFittedBounds = useRef(false);
     const [authError, setAuthError] = useState(false);
 
-    // Panel Visibility States (Can hide/collapse any menu part)
-    const [fleetOpen, setFleetOpen] = useState(true);
-    const [telemetryOpen, setTelemetryOpen] = useState(true);
-    const [showMapLabels, setShowMapLabels] = useState(false);
+    // Panel Visibility States: Fullscreen Clean Satellite Map by default
+    const [fleetOpen, setFleetOpen] = useState(false);
+    const [telemetryOpen, setTelemetryOpen] = useState(false);
+    const [showMapLabels, setShowMapLabels] = useState(true);
 
     // Reverse Geocoded Addresses
     const [addresses, setAddresses] = useState<Record<string, string>>({});
@@ -328,8 +351,6 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                 }
             });
             setVehicles(mapData);
-            const firstId = Object.keys(mapData)[0];
-            if (firstId) setSelectedId(firstId);
         }).catch(console.error);
 
         // Socket live telemetry stream
@@ -726,15 +747,16 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         mapTypeControl: false,
                         streetViewControl: false,
                         fullscreenControl: false,
+                        styles: GOOGLE_MAP_STYLES
                     }}
                 >
-                    {/* Render Real Directional Vehicle Markers */}
+                    {/* Render Real Directional Vehicle Markers with Fixed Labels & Small State Icon */}
                     {Object.values(vehicles).filter(v => v.lat && v.lng).map(v => (
                         <Marker
                             key={v.id}
                             position={{ lat: v.lat, lng: v.lng }}
-                            onClick={() => handleSelectVehicle(v.id, true)}
-                            icon={getGoogleVehicleIcon(v.state, v.course, v.id === selectedId)}
+                            onClick={() => handleSelectVehicle(v.id, false)}
+                            icon={getGoogleVehicleIcon(v.name || v.device_id, v.state, v.course, v.id === selectedId)}
                         />
                     ))}
 
