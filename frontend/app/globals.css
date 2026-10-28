@@ -119,3 +119,37 @@
 .safe-bottom {
   padding-bottom: max(0.5rem, env(safe-area-inset-bottom));
 }
+
+/* ── Sleek Compact Dark Google Maps InfoWindow ── */
+.gm-style .gm-style-iw-c {
+  background: rgba(24, 24, 27, 0.96) !important;
+  border: 1px solid rgba(63, 63, 70, 0.8) !important;
+  border-radius: 12px !important;
+  padding: 8px 12px !important;
+  box-shadow: 0 12px 30px -4px rgba(0, 0, 0, 0.65) !important;
+  backdrop-filter: blur(10px) !important;
+  max-width: 220px !important;
+}
+
+.gm-style .gm-style-iw-d {
+  overflow: hidden !important;
+  padding: 0 !important;
+  max-width: 200px !important;
+}
+
+.gm-style .gm-style-iw-tc::after {
+  background: rgba(24, 24, 27, 0.96) !important;
+}
+
+.gm-style .gm-ui-hover-effect {
+  top: 4px !important;
+  right: 4px !important;
+  width: 18px !important;
+  height: 18px !important;
+  filter: invert(1) grayscale(1) !important;
+  opacity: 0.65 !important;
+}
+
+.gm-style .gm-ui-hover-effect:hover {
+  opacity: 1 !important;
+}

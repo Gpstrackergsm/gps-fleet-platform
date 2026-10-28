@@ -8,7 +8,7 @@ import {
     Search, Plus, Minus, Layers, Navigation, Wifi, WifiOff,
     Gauge, Clock, Car, Radio, Battery, Zap, ZapOff,
     Compass, Key, ShieldAlert, Sliders, AlertTriangle,
-    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ExternalLink
+    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Tag, ExternalLink
 } from 'lucide-react';
 
 const containerStyle = {
@@ -110,9 +110,10 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const hasFittedBounds = useRef(false);
     const [authError, setAuthError] = useState(false);
 
-    // Mobile Responsive State
-    const [mobileFleetOpen, setMobileFleetOpen] = useState(false);
-    const [mobileTelemetryOpen, setMobileTelemetryOpen] = useState(true);
+    // Panel Visibility States (Can hide/collapse any menu part)
+    const [fleetOpen, setFleetOpen] = useState(true);
+    const [telemetryOpen, setTelemetryOpen] = useState(true);
+    const [showMapLabels, setShowMapLabels] = useState(false);
 
     // Reverse Geocoded Addresses
     const [addresses, setAddresses] = useState<Record<string, string>>({});
@@ -325,10 +326,12 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     }, []);
 
     // Select vehicle and pan smoothly
-    const handleSelectVehicle = (id: string) => {
+    const handleSelectVehicle = (id: string, toggleLabel = false) => {
         setSelectedId(id);
-        setMobileFleetOpen(false);
-        setMobileTelemetryOpen(true);
+        setTelemetryOpen(true);
+        if (toggleLabel) {
+            setShowMapLabels(prev => selectedId === id ? !prev : true);
+        }
         const v = vehicles[id];
         if (v && map) {
             map.panTo({ lat: v.lat, lng: v.lng });
@@ -382,15 +385,17 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         <span className="w-2.5 h-2.5 rounded-full bg-red-500 animate-pulse" />
                         <h2 className="text-xs md:text-sm font-bold text-white tracking-wider uppercase">Live Fleet</h2>
                     </div>
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-1.5">
                         <span className="text-[11px] bg-zinc-800 text-zinc-300 px-2 py-0.5 rounded-full font-mono">
                             {vehicleList.length} Units
                         </span>
-                        {isMobile && (
-                            <button onClick={() => setMobileFleetOpen(false)} className="text-zinc-400 hover:text-white p-1">
-                                <X size={18} />
-                            </button>
-                        )}
+                        <button
+                            onClick={() => setFleetOpen(false)}
+                            className="text-zinc-400 hover:text-white p-1 rounded hover:bg-zinc-800 transition-colors"
+                            title="Hide Fleet Panel"
+                        >
+                            <ChevronLeft size={16} />
+                        </button>
                     </div>
                 </div>
 
@@ -527,32 +532,38 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
 
     return (
         <div className="relative h-full w-full flex overflow-hidden bg-zinc-950 font-sans">
-            {/* ── Desktop Left Fleet Sidebar (Hidden on Mobile) ── */}
-            <div className="hidden md:flex md:w-80 h-full border-r border-zinc-800 flex-col z-10 shrink-0 shadow-2xl">
-                {renderFleetList(false)}
-            </div>
-
-            {/* ── Mobile Slide-Over Drawer ── */}
-            {mobileFleetOpen && (
-                <div className="fixed inset-0 z-[600] flex md:hidden animate-in fade-in duration-200">
-                    <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setMobileFleetOpen(false)} />
-                    <div className="relative w-80 max-w-[85vw] h-full z-10 flex flex-col shadow-2xl border-r border-zinc-800 animate-in slide-in-from-left duration-200">
-                        {renderFleetList(true)}
+            {/* ── Left Fleet Sidebar (Collapsible on Desktop & Mobile) ── */}
+            {fleetOpen && (
+                <>
+                    {/* Desktop Sidebar */}
+                    <div className="hidden md:flex md:w-80 h-full border-r border-zinc-800 flex-col z-10 shrink-0 shadow-2xl transition-all duration-300">
+                        {renderFleetList()}
                     </div>
-                </div>
+                    {/* Mobile Slide-Over Drawer */}
+                    <div className="fixed inset-0 z-[600] flex md:hidden animate-in fade-in duration-200">
+                        <div className="fixed inset-0 bg-black/60 backdrop-blur-xs" onClick={() => setFleetOpen(false)} />
+                        <div className="relative w-80 max-w-[85vw] h-full z-10 flex flex-col shadow-2xl border-r border-zinc-800 animate-in slide-in-from-left duration-200">
+                            {renderFleetList()}
+                        </div>
+                    </div>
+                </>
             )}
 
             {/* ── Main Google Maps Area ── */}
             <div className="relative flex-1 h-full">
-                {/* Floating Mobile Fleet Trigger Button */}
-                <button
-                    onClick={() => setMobileFleetOpen(true)}
-                    className="md:hidden absolute top-3 left-3 z-[400] bg-zinc-900/90 border border-zinc-700 text-white px-2.5 py-1.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-1.5 backdrop-blur"
-                >
-                    <Car size={13} className="text-blue-400" />
-                    <span>Fleet</span>
-                    <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">{vehicleList.length}</span>
-                </button>
+                {/* Floating Fleet Reopen Trigger Button (When Fleet Menu is Hidden) */}
+                {!fleetOpen && (
+                    <button
+                        onClick={() => setFleetOpen(true)}
+                        className="absolute top-3 left-3 z-[400] bg-zinc-900/95 border border-zinc-700 text-white px-2.5 py-1.5 rounded-lg shadow-xl text-xs font-semibold flex items-center gap-1.5 backdrop-blur hover:bg-zinc-800 transition-colors"
+                        title="Show Fleet List"
+                    >
+                        <Car size={13} className="text-blue-400" />
+                        <span>Fleet</span>
+                        <span className="bg-blue-600 text-white text-[10px] px-1.5 py-0.2 rounded-full font-mono">{vehicleList.length}</span>
+                        <ChevronRight size={13} className="text-zinc-400" />
+                    </button>
+                )}
 
                 {/* Map Controls Header Overlay (Responsive) */}
                 <div className="absolute top-3 right-3 z-[400] flex items-center gap-1.5 max-w-[calc(100vw-110px)] overflow-x-auto no-scrollbar">
@@ -624,6 +635,18 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                             <span className="hidden sm:inline">OSM</span>
                         </button>
                     )}
+
+                    {/* Toggle Vehicle Labels */}
+                    <button
+                        onClick={() => setShowMapLabels(prev => !prev)}
+                        className={`px-2 md:px-2.5 py-1.5 text-[11px] md:text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1 transition-colors ${
+                            showMapLabels ? 'bg-blue-600 border-blue-500 text-white' : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                        }`}
+                        title="Toggle vehicle label on map"
+                    >
+                        <Tag size={12} />
+                        <span className="hidden sm:inline">Labels</span>
+                    </button>
                 </div>
 
                 {/* Google Map Container */}
@@ -647,7 +670,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         <Marker
                             key={v.id}
                             position={{ lat: v.lat, lng: v.lng }}
-                            onClick={() => handleSelectVehicle(v.id)}
+                            onClick={() => handleSelectVehicle(v.id, true)}
                             icon={{
                                 path: "M 0,-18 L 12,14 L 0,8 L -12,14 Z",
                                 fillColor: stateColor(v.state),
@@ -661,58 +684,38 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         />
                     ))}
 
-                    {/* Active InfoWindow for Selected Vehicle */}
-                    {selectedVehicle && (
+                    {/* Compact Dark InfoWindow for Selected Vehicle */}
+                    {selectedVehicle && showMapLabels && (
                         <InfoWindow
                             position={{ lat: selectedVehicle.lat, lng: selectedVehicle.lng }}
-                            onCloseClick={() => setSelectedId(null)}
+                            onCloseClick={() => setShowMapLabels(false)}
                             options={{
-                                pixelOffset: new google.maps.Size(0, -25)
+                                pixelOffset: new google.maps.Size(0, -22),
+                                disableAutoPan: true
                             }}
                         >
-                            <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[170px] border border-zinc-800 shadow-xl font-sans">
-                                <div className="flex items-center justify-between pb-1 mb-1 border-b border-zinc-800">
-                                    <h4 className="font-bold text-xs text-white">{selectedVehicle.name}</h4>
+                            <div className="text-white text-xs font-sans min-w-[130px] max-w-[200px]">
+                                <div className="flex items-center justify-between gap-1 pb-1 border-b border-zinc-800">
+                                    <span className="font-bold text-white text-xs truncate">{selectedVehicle.name}</span>
                                     <span
-                                        className="text-[9px] font-bold px-1.5 py-0.2 rounded"
+                                        className="text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0"
                                         style={{ color: stateColor(selectedVehicle.state), backgroundColor: `${stateColor(selectedVehicle.state)}20` }}
                                     >
                                         {stateLabel(selectedVehicle.state)}
                                     </span>
                                 </div>
-                                <div className="flex items-start gap-1 text-[10px] text-zinc-300 pb-1 mb-1 border-b border-zinc-800">
-                                    <MapPin size={11} className="text-red-400 shrink-0 mt-0.5" />
-                                    <span className="leading-tight text-white font-medium">
-                                        {addresses[selectedVehicle.device_id] || `${selectedVehicle.lat.toFixed(4)}, ${selectedVehicle.lng.toFixed(4)}`}
+                                <div className="flex items-center justify-between pt-1 text-[11px]">
+                                    <span className="text-blue-400 font-mono font-bold">{selectedVehicle.speed.toFixed(0)} km/h</span>
+                                    <span className={selectedVehicle.acc_status ? 'text-emerald-400 text-[10px] font-semibold' : 'text-zinc-500 text-[10px]'}>
+                                        {selectedVehicle.acc_status ? 'ENG ON' : 'ENG OFF'}
                                     </span>
                                 </div>
-                                <div className="space-y-1 text-[11px] text-zinc-300">
-                                    <div className="flex justify-between">
-                                        <span className="text-zinc-400">Speed:</span>
-                                        <span className="font-mono text-blue-400 font-bold">{selectedVehicle.speed.toFixed(1)} km/h</span>
+                                {addresses[selectedVehicle.device_id] && (
+                                    <div className="text-[9px] text-zinc-400 truncate pt-1 flex items-center gap-1">
+                                        <MapPin size={9} className="text-red-400 shrink-0" />
+                                        <span className="truncate">{addresses[selectedVehicle.device_id]}</span>
                                     </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-zinc-400">Engine:</span>
-                                        <span className={selectedVehicle.acc_status ? 'text-emerald-400 font-semibold' : 'text-zinc-400'}>
-                                            {selectedVehicle.acc_status ? 'ON' : 'OFF'}
-                                        </span>
-                                    </div>
-                                    <div className="flex justify-between">
-                                        <span className="text-zinc-400">Battery:</span>
-                                        <span className="font-mono text-green-400">{selectedVehicle.battery_level}%</span>
-                                    </div>
-                                </div>
-                                <div className="pt-2 mt-2 border-t border-zinc-800 flex justify-end">
-                                    <a
-                                        href={`https://www.google.com/maps/search/?api=1&query=${selectedVehicle.lat},${selectedVehicle.lng}`}
-                                        target="_blank"
-                                        rel="noopener noreferrer"
-                                        className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold transition-colors"
-                                    >
-                                        <span>Open in Google Maps</span>
-                                        <ExternalLink size={10} />
-                                    </a>
-                                </div>
+                                )}
                             </div>
                         </InfoWindow>
                     )}
@@ -739,22 +742,23 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                 {/* ── Bottom Telemetry & 2-Way Command Deck (Fully Mobile Responsive) ── */}
                 {selectedVehicle && (
                     <>
-                        {/* Mini Floating Reopen Chip on Mobile */}
-                        {!mobileTelemetryOpen && (
+                        {/* Floating Reopen Pill when Telemetry is Hidden */}
+                        {!telemetryOpen && (
                             <button
-                                onClick={() => setMobileTelemetryOpen(true)}
-                                className="md:hidden absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] bg-zinc-900/95 border border-zinc-700 text-white px-3 py-1.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 backdrop-blur animate-in fade-in"
+                                onClick={() => setTelemetryOpen(true)}
+                                className="absolute bottom-3 left-1/2 -translate-x-1/2 z-[400] bg-zinc-900/95 border border-zinc-700 text-white px-3.5 py-1.5 rounded-full shadow-2xl text-xs font-semibold flex items-center gap-2 backdrop-blur hover:bg-zinc-800 transition-colors animate-in fade-in"
+                                title="Show vehicle telemetry"
                             >
                                 <div className="w-2 h-2 rounded-full" style={{ backgroundColor: stateColor(selectedVehicle.state) }} />
                                 <span>{selectedVehicle.name}</span>
                                 <span className="text-[10px] text-blue-400 font-mono font-bold">{selectedVehicle.speed.toFixed(0)} km/h</span>
-                                <ChevronUp size={13} className="text-zinc-400" />
+                                <ChevronUp size={14} className="text-zinc-400" />
                             </button>
                         )}
 
                         {/* Full Telemetry Card */}
-                        <div className={`absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-16 z-[400] bg-zinc-900/95 border border-zinc-800 backdrop-blur rounded-2xl shadow-2xl p-3 md:p-4 transition-all duration-200 ${!mobileTelemetryOpen ? 'hidden md:block' : 'block animate-in fade-in slide-in-from-bottom-2'}`}>
-                            {/* Card Header: Identity & Mobile Close */}
+                        <div className={`absolute bottom-2 left-2 right-2 md:bottom-4 md:left-4 md:right-16 z-[400] bg-zinc-900/95 border border-zinc-800 backdrop-blur rounded-2xl shadow-2xl p-3 md:p-4 transition-all duration-200 ${!telemetryOpen ? 'hidden' : 'block animate-in fade-in slide-in-from-bottom-2'}`}>
+                            {/* Card Header: Identity & Panel Controls */}
                             <div className="flex items-center justify-between pb-2 mb-2 border-b border-zinc-800">
                                 <div className="flex items-center gap-2.5">
                                     <div
@@ -811,13 +815,20 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                             <span className="text-[9px] text-zinc-400">{timeSince(selectedVehicle.lastUpdate)}</span>
                                         </div>
 
-                                        {/* Mobile Dismiss Button */}
+                                        {/* Minimize / Close Telemetry Buttons (Desktop & Mobile) */}
                                         <button
-                                            onClick={() => setMobileTelemetryOpen(false)}
-                                            className="p-1 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 md:hidden ml-1"
-                                            title="Minimize Telemetry"
+                                            onClick={() => setTelemetryOpen(false)}
+                                            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors ml-1"
+                                            title="Minimize Telemetry Panel"
                                         >
                                             <ChevronDown size={18} />
+                                        </button>
+                                        <button
+                                            onClick={() => { setSelectedId(null); setTelemetryOpen(false); }}
+                                            className="p-1.5 text-zinc-400 hover:text-white rounded-lg hover:bg-zinc-800 transition-colors"
+                                            title="Close Panel"
+                                        >
+                                            <X size={16} />
                                         </button>
                                     </div>
                             </div>
