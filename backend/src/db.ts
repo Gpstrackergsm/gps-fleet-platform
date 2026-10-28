@@ -246,15 +246,6 @@ const initTables = async () => {
                 );
                 console.log('[DB] Seeded initial Admin user: gsmkhalid@msn.com / admin123');
             }
-
-            // Seed user's real TK103 device
-            const deviceCheck = await query("SELECT id FROM devices WHERE device_id = '869706063068466'");
-            if ((deviceCheck.rows as any[]).length === 0) {
-                await query(
-                    "INSERT INTO devices (device_id, name, status, tenant_id, plate_number, model) VALUES ('869706063068466', 'Mercedes Sprinter', 'online', 1, '12345-A-26', 'TK103B')"
-                );
-                console.log('[DB] Seeded physical device 869706063068466');
-            }
         } catch (seedErr) {
             console.error('[DB] Error seeding initial records:', seedErr);
         }

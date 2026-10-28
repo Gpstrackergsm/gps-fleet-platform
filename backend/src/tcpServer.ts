@@ -193,11 +193,12 @@ const server = net.createServer((socket) => {
 
                 await pool.execute(updateDeviceQuery, updateParams);
 
-                // Fetch actual state_start_time
+                // Fetch actual state_start_time and tenant_id
                 const [deviceRows]: any = await pool.query(
-                    'SELECT current_state, state_start_time FROM devices WHERE device_id = ?',
+                    'SELECT tenant_id, current_state, state_start_time FROM devices WHERE device_id = ?',
                     [parsed.deviceId]
                 );
+                const deviceTenantId = deviceRows[0]?.tenant_id;
                 const actualStateStartTime = deviceRows[0]?.state_start_time || parsed.timestamp;
                 const stateStartTimeISO = new Date(actualStateStartTime).toISOString();
 
@@ -205,6 +206,7 @@ const server = net.createServer((socket) => {
                 if (ioInstance) {
                     ioInstance.emit('position', {
                         deviceId: parsed.deviceId,
+                        tenantId: deviceTenantId,
                         lat: parsed.lat,
                         lng: parsed.lng,
                         speed: parsed.speed || 0,

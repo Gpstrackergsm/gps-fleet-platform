@@ -248,13 +248,12 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
 
             setVehicles(prev => {
                 const existing = prev[data.deviceId];
+                // Strict multi-tenant isolation: only update vehicles that belong to this user's fleet
+                if (!existing) {
+                    return prev;
+                }
                 const updated: Vehicle = {
-                    id: data.deviceId,
-                    device_id: data.deviceId,
-                    name: existing?.name || data.deviceId,
-                    plate_number: existing?.plate_number,
-                    model: existing?.model,
-                    company_name: existing?.company_name,
+                    ...existing,
                     lat: data.lat,
                     lng: data.lng,
                     speed,
@@ -262,15 +261,15 @@ export default function LeafletMapsView({ onSwitchToGoogle }: LeafletMapsViewPro
                     state,
                     lastUpdate,
                     internet_status: true,
-                    gps_status: data.gpsStatus ?? existing?.gps_status ?? true,
+                    gps_status: data.gpsStatus ?? existing.gps_status ?? true,
                     acc_status: accStatus,
-                    battery_level: data.batteryLevel !== undefined ? data.batteryLevel : (existing?.battery_level ?? 100),
-                    door_status: data.doorStatus ?? existing?.door_status ?? false,
-                    satellites: data.satellites ?? existing?.satellites,
-                    gsm_signal: data.gsmSignal ?? existing?.gsm_signal,
-                    fuel_percent: data.fuelPercent ?? existing?.fuel_percent,
+                    battery_level: data.batteryLevel !== undefined ? data.batteryLevel : existing.battery_level,
+                    door_status: data.doorStatus ?? existing.door_status ?? false,
+                    satellites: data.satellites ?? existing.satellites,
+                    gsm_signal: data.gsmSignal ?? existing.gsm_signal,
+                    fuel_percent: data.fuelPercent ?? existing.fuel_percent,
                     isTcpConnected: true,
-                    sim_phone: existing?.sim_phone
+                    sim_phone: existing.sim_phone
                 };
                 return { ...prev, [data.deviceId]: updated };
             });
