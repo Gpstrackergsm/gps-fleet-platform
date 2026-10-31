@@ -48,8 +48,8 @@ export default function MapScreen() {
                     vehicleMap[d.device_id] = {
                         id: d.device_id,
                         name: d.name || `Vehicle ${d.device_id.slice(-4)}`,
-                        lat: d.lat || 33.5731,
-                        lng: d.lng || -7.5898,
+                        lat: Number(d.lat) || 31.6650,
+                        lng: Number(d.lng) || -8.0500,
                         speed: d.speed || 0,
                         course: d.course,
                         status: d.status || 'offline',
@@ -106,10 +106,10 @@ export default function MapScreen() {
     }, [socket]);
 
     const DEFAULT_REGION = {
-        latitude: 33.5731,
-        longitude: -7.5898,
-        latitudeDelta: 0.1,
-        longitudeDelta: 0.1,
+        latitude: 31.6650,
+        longitude: -8.0500,
+        latitudeDelta: 0.08,
+        longitudeDelta: 0.08,
     };
 
     return (

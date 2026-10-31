@@ -24,7 +24,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "extra": {
-      "apiUrl": "https://gpssaasplatform-production.up.railway.app",
+      "apiUrl": "https://gps-fleet-platform-production.up.railway.app",
       "googleMapsApiKey": "AIzaSyBI8V98lmgxJz-NNQdF5c6sEzWkInMp0Uc"
     },
     "plugins": [
@@ -33,7 +33,7 @@
     ],
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.gpssaas.app",
+      "bundleIdentifier": "com.gpseu.khalid.app",
       "config": {
         "googleMapsApiKey": "AIzaSyBI8V98lmgxJz-NNQdF5c6sEzWkInMp0Uc",
         "usesNonExemptEncryption": false

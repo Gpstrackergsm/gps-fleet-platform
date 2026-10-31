@@ -13,7 +13,10 @@ export default function LoginScreen() {
     const [loading, setLoading] = useState(false);
 
     const handleLogin = async () => {
-        if (!email || !password) {
+        const cleanEmail = email.trim().toLowerCase();
+        const cleanPassword = password.trim();
+
+        if (!cleanEmail || !cleanPassword) {
             Alert.alert('Erreur', 'Veuillez entrer votre email et votre mot de passe');
             return;
         }
@@ -21,10 +24,10 @@ export default function LoginScreen() {
         setLoading(true);
 
         try {
-            console.log(`Attempting login to ${API_URL}/api/auth/login`);
+            console.log(`Attempting login to ${API_URL}/api/auth/login for ${cleanEmail}`);
             const response = await axios.post(`${API_URL}/api/auth/login`, {
-                email,
-                password
+                email: cleanEmail,
+                password: cleanPassword
             });
 
             const { token, user } = response.data;
@@ -46,8 +49,13 @@ export default function LoginScreen() {
             });
 
         } catch (error: any) {
-            console.error('Login error:', error);
-            const message = error.response?.data?.error || 'Échec de la connexion. Veuillez vérifier vos identifiants.';
+            console.warn('Login failed:', error.response?.data || error.message);
+            const backendError = error.response?.data?.error;
+            const message = backendError === 'User not found'
+                ? 'Utilisateur non trouvé. Vérifiez votre adresse email.'
+                : backendError === 'Invalid password'
+                ? 'Mot de passe incorrect.'
+                : (backendError || 'Échec de la connexion. Veuillez vérifier vos identifiants.');
             Alert.alert('Échec de connexion', message);
         } finally {
             setLoading(false);
@@ -70,11 +78,12 @@ export default function LoginScreen() {
                         <Text style={styles.label}>Email</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Entrez votre email"
+                            placeholder="votre@email.com"
                             placeholderTextColor="#666"
                             value={email}
                             onChangeText={setEmail}
                             autoCapitalize="none"
+                            autoCorrect={false}
                             keyboardType="email-address"
                         />
                     </View>
@@ -83,10 +92,12 @@ export default function LoginScreen() {
                         <Text style={styles.label}>Mot de passe</Text>
                         <TextInput
                             style={styles.input}
-                            placeholder="Entrez votre mot de passe"
+                            placeholder="Mot de passe"
                             placeholderTextColor="#666"
                             value={password}
                             onChangeText={setPassword}
+                            autoCapitalize="none"
+                            autoCorrect={false}
                             secureTextEntry
                         />
                     </View>

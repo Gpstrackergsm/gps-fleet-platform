@@ -8,6 +8,7 @@ export interface TranslationDictionary {
     history: string;
     geofences: string;
     alerts: string;
+    fuelEco: string;
     reports: string;
     settings: string;
     adminPanel: string;
@@ -102,6 +103,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         history: "History",
         geofences: "Geofences",
         alerts: "Alerts",
+        fuelEco: "Fuel & Eco-Driving",
         reports: "Reports",
         settings: "Settings",
         adminPanel: "Admin Panel",
@@ -191,6 +193,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         history: "Historique",
         geofences: "Géozones",
         alerts: "Alertes",
+        fuelEco: "Éco-Carburant",
         reports: "Rapports",
         settings: "Paramètres",
         adminPanel: "Administration",
@@ -280,6 +283,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         history: "سجل الرحلات",
         geofences: "المناطق الجغرافية",
         alerts: "التنبيهات",
+        fuelEco: "الوقود والقيادة الاقتصادية",
         reports: "التقارير",
         settings: "الإعدادات",
         adminPanel: "لوحة الإدارة",
