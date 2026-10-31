@@ -183,7 +183,7 @@ export default function FuelEcoPage() {
     };
 
     return (
-        <div className="flex-1 overflow-y-auto bg-gray-950 text-white p-4 md:p-6 lg:p-8">
+        <div className="h-full overflow-y-auto bg-gray-950 text-white p-4 md:p-6 lg:p-8 pb-24">
 
             {/* Header & Controls */}
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 pb-6 border-b border-gray-800">
