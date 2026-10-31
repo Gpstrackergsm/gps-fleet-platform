@@ -1,7 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
-import { GoogleMap, useJsApiLoader, Marker, InfoWindow } from '@react-google-maps/api';
+import { GoogleMap, useJsApiLoader, Marker, InfoWindow, TrafficLayer } from '@react-google-maps/api';
 import { socket } from '@/lib/socket';
 import api from '@/lib/api';
 import {
@@ -208,6 +208,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [mapType, setMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite' | 'terrain'>('hybrid');
+    const [showTraffic, setShowTraffic] = useState(false);
     const [followMode, setFollowMode] = useState(false);
     const followModeRef = useRef(false);
     const hasFittedBounds = useRef(false);
@@ -694,6 +695,24 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         <span>Satellite</span>
                     </button>
 
+                    {/* Traffic Layer Toggle */}
+                    <button
+                        onClick={() => setShowTraffic(prev => !prev)}
+                        className={`px-2.5 md:px-3 py-1.5 text-[11px] md:text-xs font-semibold rounded-lg border shadow-xl flex items-center gap-1.5 transition-colors ${
+                            showTraffic
+                                ? 'bg-emerald-600 border-emerald-500 text-white shadow-emerald-900/30'
+                                : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:text-white hover:bg-zinc-800'
+                        }`}
+                        title={showTraffic ? 'Trafic en direct : ACTIVÉ (Cliquer pour masquer)' : 'Trafic en direct : DÉSACTIVÉ (Cliquer pour afficher)'}
+                    >
+                        <div className="flex items-center gap-0.5">
+                            <span className={`w-1.5 h-1.5 rounded-full ${showTraffic ? 'bg-red-400 animate-pulse' : 'bg-zinc-500'}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${showTraffic ? 'bg-amber-400' : 'bg-zinc-500'}`} />
+                            <span className={`w-1.5 h-1.5 rounded-full ${showTraffic ? 'bg-emerald-400' : 'bg-zinc-500'}`} />
+                        </div>
+                        <span>Trafic</span>
+                    </button>
+
                     {/* Follow Mode Toggle */}
                     {selectedId && (
                         <button
@@ -750,6 +769,9 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         styles: GOOGLE_MAP_STYLES
                     }}
                 >
+                    {/* Real-time Google Traffic Layer */}
+                    {showTraffic && <TrafficLayer />}
+
                     {/* Render Real Directional Vehicle Markers with Fixed Labels & Small State Icon */}
                     {Object.values(vehicles).filter(v => v.lat && v.lng).map(v => (
                         <Marker

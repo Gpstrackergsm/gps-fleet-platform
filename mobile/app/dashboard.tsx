@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity, SafeAreaView, Platform, Alert, ActivityIndicator } from 'react-native';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
-import { Navigation, Key, LocateFixed, Layers, X } from 'lucide-react-native';
+import { Navigation, Key, LocateFixed, Layers, X, Car } from 'lucide-react-native';
 import { useRouter } from 'expo-router';
 import * as SecureStore from 'expo-secure-store';
 import { useSocket } from '../hooks/useSocket';
@@ -49,6 +49,7 @@ export default function Dashboard() {
 
     const [activeTab, setActiveTab] = useState<TabType>('map');
     const [mapType, setMapType] = useState<'hybrid' | 'standard'>('standard');
+    const [showTraffic, setShowTraffic] = useState(false);
     const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
     const [selectedVehicle, setSelectedVehicle] = useState<Vehicle | null>(null);
     const lastTrackedVehicleId = useRef<string | null>(null);
@@ -463,6 +464,13 @@ export default function Dashboard() {
                     {activeTab === 'map' && (
                         <View style={styles.headerActions}>
                             <TouchableOpacity
+                                style={[styles.headerActionBtn, showTraffic && { backgroundColor: '#DCFCE7', borderColor: '#16A34A' }]}
+                                onPress={() => setShowTraffic(t => !t)}
+                                activeOpacity={0.7}
+                            >
+                                <Car size={18} color={showTraffic ? '#16A34A' : '#64748B'} />
+                            </TouchableOpacity>
+                            <TouchableOpacity
                                 style={styles.headerActionBtn}
                                 onPress={() => setMapType(m => (m === 'hybrid' ? 'standard' : 'hybrid'))}
                                 activeOpacity={0.7}
@@ -495,6 +503,7 @@ export default function Dashboard() {
                             showsMyLocationButton={false}
                             mapType={mapType}
                             customMapStyle={CUSTOM_MAP_STYLE}
+                            showsTraffic={showTraffic}
                         >
                             {Object.values(vehicles).map(vehicle => {
                                 const state = getVehicleState(vehicle);
