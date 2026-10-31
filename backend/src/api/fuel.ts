@@ -17,24 +17,28 @@ router.get('/analytics', authenticateToken, async (req: AuthRequest, res) => {
         const isAdmin = req.user.role === 'admin';
         const period = String(req.query.period || '7d');
 
-        // Calculate date range from period
-        let sinceDate: string;
+        // Calculate date range from period in MySQL format (YYYY-MM-DD HH:MM:SS)
         const now = new Date();
+        let targetMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
         switch (period) {
             case 'today':
-                sinceDate = new Date(now.getFullYear(), now.getMonth(), now.getDate()).toISOString();
+                targetMs = new Date(now.getFullYear(), now.getMonth(), now.getDate()).getTime();
                 break;
             case '7d':
-                sinceDate = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString();
+                targetMs = Date.now() - 7 * 24 * 60 * 60 * 1000;
                 break;
             case 'month':
-                sinceDate = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+                targetMs = new Date(now.getFullYear(), now.getMonth(), 1).getTime();
                 break;
             case '30d':
             default:
-                sinceDate = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+                targetMs = Date.now() - 30 * 24 * 60 * 60 * 1000;
                 break;
         }
+
+        const d = new Date(targetMs);
+        const pad = (n: number) => String(n).padStart(2, '0');
+        const sinceDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
         // 1. Get all devices for this tenant
         const devicesResult = await query(
