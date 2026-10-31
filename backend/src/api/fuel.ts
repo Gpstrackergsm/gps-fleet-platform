@@ -41,10 +41,11 @@ router.get('/analytics', authenticateToken, async (req: AuthRequest, res) => {
         const sinceDate = `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
 
         // 1. Get all devices for this tenant
+        const latestSpeed = '(SELECT p.speed FROM positions p WHERE p.device_id = d.device_id ORDER BY p.timestamp DESC LIMIT 1) AS speed';
         const devicesResult = await query(
             isAdmin
-                ? 'SELECT device_id, name, status, current_state, speed FROM devices ORDER BY last_seen DESC'
-                : 'SELECT device_id, name, status, current_state, speed FROM devices WHERE tenant_id = ? ORDER BY last_seen DESC',
+                ? `SELECT d.device_id, d.name, d.status, d.current_state, ${latestSpeed} FROM devices d ORDER BY d.last_seen DESC`
+                : `SELECT d.device_id, d.name, d.status, d.current_state, ${latestSpeed} FROM devices d WHERE d.tenant_id = ? ORDER BY d.last_seen DESC`,
             isAdmin ? [] : [tenantId]
         );
         const devices = devicesResult.rows as any[];
