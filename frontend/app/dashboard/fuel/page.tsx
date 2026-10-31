@@ -40,6 +40,7 @@ interface VehicleFuelStat {
     ecoGrade: 'A' | 'B' | 'C' | 'D' | 'E';
     maxSpeed: number;
     positionCount: number;
+    speedingKm: number;
 }
 
 export default function FuelEcoPage() {
@@ -119,6 +120,7 @@ export default function FuelEcoPage() {
                 ecoGrade,
                 maxSpeed: d.maxSpeed,
                 positionCount: d.positionCount,
+                speedingKm: d.speedingKm,
             };
         });
     }, [rawStats, fuelPriceMad, vehicleTypes]);
@@ -543,7 +545,9 @@ export default function FuelEcoPage() {
                                                 <th className="p-3.5">Catégorie</th>
                                                 <th className="p-3.5">Statut Actuel</th>
                                                 <th className="p-3.5">Distance</th>
+                                                <th className="p-3.5">Positions</th>
                                                 <th className="p-3.5">Temps Ralenti</th>
+                                                <th className="p-3.5">Km &gt; 100 km/h</th>
                                                 <th className="p-3.5">L gaspillés</th>
                                                 <th className="p-3.5">Pertes (MAD)</th>
                                                 <th className="p-3.5">Vit. Max</th>
@@ -595,7 +599,9 @@ export default function FuelEcoPage() {
                                                         </span>
                                                     </td>
                                                     <td className="p-3.5 text-gray-300 font-mono">{v.distanceKm} km</td>
+                                                    <td className="p-3.5 text-gray-400 font-mono">{v.positionCount.toLocaleString('fr-FR')}</td>
                                                     <td className="p-3.5 text-amber-400 font-medium">{v.idlingHours} h</td>
+                                                    <td className={`p-3.5 font-medium ${v.speedingKm > 0 ? 'text-red-400' : 'text-gray-400'}`}>{v.speedingKm} km</td>
                                                     <td className="p-3.5 text-white font-semibold">{v.totalWastedLiters} L</td>
                                                     <td className="p-3.5 font-bold text-red-400">{v.totalCostWastedMad.toLocaleString('fr-FR')} MAD</td>
                                                     <td className="p-3.5">
