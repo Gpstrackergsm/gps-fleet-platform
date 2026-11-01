@@ -225,7 +225,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             <div className="flex flex-col flex-1 overflow-hidden">
 
                 {/* ── Header ── */}
-                <header className="flex items-center h-12 px-3 md:px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 gap-2 md:gap-3">
+                <header className="relative z-50 flex items-center h-12 px-3 md:px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 gap-2 md:gap-3">
                     {/* Mobile Hamburger Menu Toggle */}
                     <button
                         onClick={() => setMobileNavOpen(true)}
