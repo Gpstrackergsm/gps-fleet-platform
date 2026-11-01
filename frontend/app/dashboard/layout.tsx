@@ -63,6 +63,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         const onDisconnect = () => setConnected(false);
         socket.on('connect', onConnect);
         socket.on('disconnect', onDisconnect);
+        if (!socket.connected) {
+            socket.connect();
+        }
         setConnected(socket.connected);
         return () => { socket.off('connect', onConnect); socket.off('disconnect', onDisconnect); };
     }, [router]);
