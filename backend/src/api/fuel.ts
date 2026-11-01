@@ -26,23 +26,33 @@ function analyze(positions: any[], threshold: number) {
     const hourlyIdle = new Array(24).fill(0);
     const days: Record<string, DayStat> = {};
     const events: IdleEvent[] = [];
-    let cur: { startMs: number; endMs: number; lat: number; lng: number } | null = null;
+    let cur: { startMs: number; endMs: number; lat: number; lng: number; slices: { t1: number; dt: number }[] } | null = null;
+
+    const day = (ms: number) => (days[dayKey(ms)] ||= { idleSeconds: 0, km: 0, speedingKm: 0 });
 
     const closeEvent = () => {
         if (cur) {
             const dur = (cur.endMs - cur.startMs) / 1000;
             if (dur >= MIN_IDLE_EVENT_S) {
+                const roundedMinutes = Math.round(dur / 60);
+                const eventSeconds = roundedMinutes * 60;
+                const scale = dur > 0 ? eventSeconds / dur : 1;
+                idleSeconds += eventSeconds;
+                for (const s of cur.slices) {
+                    const scaledDt = s.dt * scale;
+                    day(s.t1).idleSeconds += scaledDt;
+                    hourlyIdle[local(s.t1).getUTCHours()] += scaledDt;
+                }
                 events.push({
                     start: new Date(cur.startMs).toISOString(),
                     end: new Date(cur.endMs).toISOString(),
-                    minutes: Math.round(dur / 60),
+                    minutes: roundedMinutes,
                     lat: cur.lat, lng: cur.lng,
                 });
             }
             cur = null;
         }
     };
-    const day = (ms: number) => (days[dayKey(ms)] ||= { idleSeconds: 0, km: 0, speedingKm: 0 });
 
     for (let i = 1; i < positions.length; i++) {
         const prev = positions[i - 1], curr = positions[i];
@@ -57,11 +67,11 @@ function analyze(positions: any[], threshold: number) {
 
         const idle = accOn && speed < IDLE_SPEED;
         if (idle) {
-            idleSeconds += dt;
-            day(t1).idleSeconds += dt;
-            hourlyIdle[local(t1).getUTCHours()] += dt;
-            if (!cur) cur = { startMs: t0, endMs: t1, lat: Number(curr.lat), lng: Number(curr.lng) };
-            else cur.endMs = t1;
+            if (!cur) cur = { startMs: t0, endMs: t1, lat: Number(curr.lat), lng: Number(curr.lng), slices: [{ t1, dt }] };
+            else {
+                cur.endMs = t1;
+                cur.slices.push({ t1, dt });
+            }
         } else {
             closeEvent();
         }
@@ -196,7 +206,7 @@ router.get('/analytics', authenticateToken, async (req: AuthRequest, res) => {
                     const v = a.days[k];
                     return { date: k, idleHours: r2((v?.idleSeconds || 0) / 3600), km: r1(v?.km || 0), speedingKm: r1(v?.speedingKm || 0) };
                 }),
-                events: sortedEvents.slice(0, 15),
+                events: sortedEvents.slice(0, 50),
                 prev: { idleHours: r2(pa.idleSeconds / 3600), km: r1(pa.km), speedingKm: r1(pa.speedingKm) },
             };
         });

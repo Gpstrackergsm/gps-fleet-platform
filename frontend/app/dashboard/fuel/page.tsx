@@ -172,10 +172,16 @@ export default function FuelEcoPage() {
                 ? Math.max(20, Math.min(100, Math.round(100 - Math.min(50, idleRatio * 80) - Math.min(30, speedRatio * 150))))
                 : null;
 
+            // Sum of rounded per-event MAD costs so header row matches the sum of the event cards below
+            const eventsCostSum = d.events && d.events.length > 0
+                ? d.events.reduce((s, e) => s + Math.round((e.minutes / 60) * rate * fuelPrice), 0)
+                : Math.round(idleL * fuelPrice);
+            const speedCostRounded = Math.round(speedL * fuelPrice);
+
             return {
                 ...d,
                 vehicleType: vt, rate, idleL, speedL, wasteL,
-                idleCost: idleL * fuelPrice, speedCost: speedL * fuelPrice, cost: wasteL * fuelPrice,
+                idleCost: eventsCostSum, speedCost: speedCostRounded, cost: eventsCostSum + speedCostRounded,
                 prevCost: prevL * fuelPrice,
                 co2: wasteL * CO2_PER_LITER,
                 score, grade: score === null ? null : gradeOf(score),
@@ -707,7 +713,7 @@ export default function FuelEcoPage() {
                                                                     <div className="text-xs text-gray-500">{T.dNone}</div>
                                                                 ) : (
                                                                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-2">
-                                                                        {v.events.slice(0, 6).map((e, k) => (
+                                                                        {v.events.map((e, k) => (
                                                                             <a key={k} href={`https://www.google.com/maps?q=${e.lat},${e.lng}`} target="_blank" rel="noreferrer"
                                                                                 className="flex items-center justify-between gap-3 bg-gray-900 border border-gray-800 hover:border-blue-500/50 rounded-xl px-3 py-2 transition-colors">
                                                                                 <div>
