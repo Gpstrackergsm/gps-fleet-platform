@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { View, Text, FlatList, StyleSheet, TouchableOpacity, RefreshControl, ActivityIndicator } from 'react-native';
-import { ShieldAlert, AlertTriangle, Bell, Zap, MapPin, Gauge, CheckCircle, RefreshCw } from 'lucide-react-native';
+import { ShieldAlert, AlertTriangle, Bell, BellOff, Zap, MapPin, Gauge, CheckCircle, RefreshCw, Clock } from 'lucide-react-native';
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../constants/Config';
@@ -16,10 +16,54 @@ interface AlertItem {
     status?: string;
 }
 
-export default function AlertsList({ onSelectVehicle }: { onSelectVehicle?: (deviceId: string) => void }) {
+interface AlertsListProps {
+    onSelectVehicle?: (deviceId: string) => void;
+    snoozeUntil?: number | null;
+    onSnoozeChange?: (until: number | null) => void;
+}
+
+const SNOOZE_OPTIONS: { label: string; ms: number }[] = [
+    { label: '30 min', ms: 30 * 60 * 1000 },
+    { label: '1 h', ms: 60 * 60 * 1000 },
+    { label: '8 h', ms: 8 * 60 * 60 * 1000 },
+    { label: '24 h', ms: 24 * 60 * 60 * 1000 },
+];
+
+export default function AlertsList({
+    onSelectVehicle,
+    snoozeUntil = null,
+    onSnoozeChange,
+}: AlertsListProps) {
     const [alerts, setAlerts] = useState<AlertItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
+    const [now, setNow] = useState(Date.now());
+
+    // Update countdown every 15s while snoozed
+    useEffect(() => {
+        if (!snoozeUntil || snoozeUntil <= Date.now()) return;
+        const id = setInterval(() => {
+            const current = Date.now();
+            setNow(current);
+            if (snoozeUntil && current >= snoozeUntil && onSnoozeChange) {
+                onSnoozeChange(null);
+            }
+        }, 15000);
+        return () => clearInterval(id);
+    }, [snoozeUntil, onSnoozeChange]);
+
+    const isSnoozed = Boolean(snoozeUntil && snoozeUntil > now);
+
+    const getRemainingLabel = () => {
+        if (!snoozeUntil || snoozeUntil <= now) return '';
+        const diffMin = Math.ceil((snoozeUntil - now) / 60000);
+        if (diffMin >= 60) {
+            const h = Math.floor(diffMin / 60);
+            const m = diffMin % 60;
+            return m > 0 ? `${h} h ${m} min restantes` : `${h} h restantes`;
+        }
+        return `${diffMin} min restantes`;
+    };
 
     const fetchAlerts = useCallback(async () => {
         try {
@@ -79,6 +123,60 @@ export default function AlertsList({ onSelectVehicle }: { onSelectVehicle?: (dev
         }
     };
 
+    const renderSnoozeBar = () => (
+        <View style={[styles.snoozeCard, isSnoozed && styles.snoozeCardActive]}>
+            <View style={styles.snoozeHeader}>
+                <View style={styles.snoozeLeft}>
+                    <View style={[styles.snoozeIconBox, isSnoozed && styles.snoozeIconBoxActive]}>
+                        {isSnoozed ? (
+                            <BellOff size={18} color="#D97706" />
+                        ) : (
+                            <Bell size={18} color="#2563EB" />
+                        )}
+                    </View>
+                    <View style={{ flex: 1 }}>
+                        <Text style={styles.snoozeTitle}>
+                            {isSnoozed ? 'Notifications en pause (Snooze)' : 'Notifications actives'}
+                        </Text>
+                        <Text style={styles.snoozeSub}>
+                            {isSnoozed
+                                ? `Bannières désactivées · ${getRemainingLabel()}`
+                                : 'Suspendez temporairement les alertes à l’écran :'}
+                        </Text>
+                    </View>
+                </View>
+
+                {isSnoozed && (
+                    <TouchableOpacity
+                        style={styles.resumeBtn}
+                        onPress={() => onSnoozeChange && onSnoozeChange(null)}
+                        activeOpacity={0.8}
+                    >
+                        <Text style={styles.resumeBtnText}>Réactiver</Text>
+                    </TouchableOpacity>
+                )}
+            </View>
+
+            <View style={styles.snoozePillsRow}>
+                {SNOOZE_OPTIONS.map((opt) => (
+                    <TouchableOpacity
+                        key={opt.label}
+                        style={styles.snoozePill}
+                        onPress={() => {
+                            const until = Date.now() + opt.ms;
+                            setNow(Date.now());
+                            onSnoozeChange && onSnoozeChange(until);
+                        }}
+                        activeOpacity={0.75}
+                    >
+                        <Clock size={12} color="#475569" />
+                        <Text style={styles.snoozePillText}>{opt.label}</Text>
+                    </TouchableOpacity>
+                ))}
+            </View>
+        </View>
+    );
+
     const renderItem = ({ item }: { item: AlertItem }) => {
         const badgeColors = getSeverityBadgeColor(item.severity);
         const date = new Date(item.timestamp);
@@ -136,6 +234,7 @@ export default function AlertsList({ onSelectVehicle }: { onSelectVehicle?: (dev
                 data={alerts}
                 keyExtractor={item => String(item.id)}
                 renderItem={renderItem}
+                ListHeaderComponent={renderSnoozeBar}
                 contentContainerStyle={styles.listContent}
                 refreshControl={
                     <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#2563EB" />
@@ -166,6 +265,89 @@ const styles = StyleSheet.create({
     listContent: {
         padding: 16,
         paddingBottom: 100,
+    },
+    snoozeCard: {
+        backgroundColor: '#FFFFFF',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 14,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        shadowColor: '#0F172A',
+        shadowOffset: { width: 0, height: 2 },
+        shadowOpacity: 0.04,
+        shadowRadius: 6,
+        elevation: 2,
+    },
+    snoozeCardActive: {
+        backgroundColor: '#FFFBEB',
+        borderColor: '#FDE68A',
+    },
+    snoozeHeader: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'space-between',
+        marginBottom: 10,
+    },
+    snoozeLeft: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 10,
+        flex: 1,
+    },
+    snoozeIconBox: {
+        width: 38,
+        height: 38,
+        borderRadius: 10,
+        backgroundColor: '#EFF6FF',
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    snoozeIconBoxActive: {
+        backgroundColor: '#FEF3C7',
+    },
+    snoozeTitle: {
+        fontSize: 14,
+        fontWeight: '800',
+        color: '#0F172A',
+    },
+    snoozeSub: {
+        fontSize: 11,
+        color: '#64748B',
+        marginTop: 1,
+    },
+    resumeBtn: {
+        backgroundColor: '#D97706',
+        paddingHorizontal: 12,
+        paddingVertical: 7,
+        borderRadius: 10,
+        marginLeft: 8,
+    },
+    resumeBtnText: {
+        color: '#FFFFFF',
+        fontSize: 12,
+        fontWeight: '700',
+    },
+    snoozePillsRow: {
+        flexDirection: 'row',
+        gap: 8,
+    },
+    snoozePill: {
+        flex: 1,
+        flexDirection: 'row',
+        alignItems: 'center',
+        justifyContent: 'center',
+        gap: 4,
+        backgroundColor: '#F1F5F9',
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+        paddingVertical: 8,
+        borderRadius: 10,
+    },
+    snoozePillText: {
+        fontSize: 12,
+        fontWeight: '700',
+        color: '#334155',
     },
     centerContainer: {
         flex: 1,
@@ -242,7 +424,7 @@ const styles = StyleSheet.create({
         alignItems: 'center',
         justifyContent: 'center',
         padding: 40,
-        marginTop: 60,
+        marginTop: 30,
     },
     emptyTitle: {
         fontSize: 18,

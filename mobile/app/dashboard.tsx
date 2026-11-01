@@ -60,12 +60,47 @@ export default function Dashboard() {
     // Notification state
     const [activeBanner, setActiveBanner] = useState<BannerAlert | null>(null);
     const [unreadAlertCount, setUnreadAlertCount] = useState(0);
+    const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
+    const snoozeUntilRef = useRef<number | null>(null);
     const speedAlertSentRef = useRef<Record<string, number>>({}); // deviceId -> last alert timestamp
     const offlineAlertSentRef = useRef<Record<string, number>>({}); // deviceId -> last alert timestamp
     const SPEED_THRESHOLD = 100; // km/h
     const OFFLINE_THRESHOLD_MS = 5 * 60 * 1000; // 5 minutes
 
+    useEffect(() => {
+        (async () => {
+            try {
+                const raw = await SecureStore.getItemAsync('alerts_snooze_until');
+                if (raw) {
+                    const ts = Number(raw);
+                    if (ts > Date.now()) {
+                        setSnoozeUntil(ts);
+                        snoozeUntilRef.current = ts;
+                    }
+                }
+            } catch { /* ignore */ }
+        })();
+    }, []);
+
+    const handleSnoozeChange = async (until: number | null) => {
+        setSnoozeUntil(until);
+        snoozeUntilRef.current = until;
+        if (until && until > Date.now()) {
+            setActiveBanner(null);
+        }
+        try {
+            if (until) {
+                await SecureStore.setItemAsync('alerts_snooze_until', String(until));
+            } else {
+                await SecureStore.deleteItemAsync('alerts_snooze_until');
+            }
+        } catch { /* ignore */ }
+    };
+
     const showBanner = (banner: BannerAlert) => {
+        if (snoozeUntilRef.current && Date.now() < snoozeUntilRef.current) {
+            return; // notifications are snoozed
+        }
         setActiveBanner(banner);
         setUnreadAlertCount(prev => prev + 1);
     };
@@ -650,9 +685,11 @@ export default function Dashboard() {
                     />
                 )}
 
-                {/* TAB 4: ALERTES */}
+                {/* TAB 5: ALERTES */}
                 {activeTab === 'alerts' && (
                     <AlertsList
+                        snoozeUntil={snoozeUntil}
+                        onSnoozeChange={handleSnoozeChange}
                         onSelectVehicle={(deviceId) => {
                             if (vehicles[deviceId]) {
                                 handleVehiclePress(vehicles[deviceId]);
