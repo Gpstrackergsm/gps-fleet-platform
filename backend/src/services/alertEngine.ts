@@ -8,6 +8,7 @@ export interface TelemetryPoint {
     course: number;
     timestamp: Date;
     alarm?: string;
+    accStatus?: boolean;
 }
 
 // Haversine distance in meters
@@ -40,6 +41,8 @@ function isPointInPolygon(point: [number, number], polygon: [number, number][]):
 // In-memory state tracking for geofence entry/exit detection
 // Key: `${deviceId}_${geofenceId}` -> boolean (wasInside)
 const geofenceStateMap = new Map<string, boolean>();
+// Key: `${deviceId}` -> boolean (accStatus)
+const accStateMap = new Map<string, boolean>();
 
 export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInstance: any): Promise<void> {
     try {
@@ -53,6 +56,28 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
 
         const tenantId = device.tenant_id;
         const vehicleName = device.name || telemetry.deviceId;
+
+        // 1b. Real Engine (ACC) ON / OFF transition detection
+        if (telemetry.accStatus !== undefined) {
+            const currAcc = Boolean(telemetry.accStatus);
+            const prevAcc = accStateMap.get(telemetry.deviceId);
+            if (prevAcc !== undefined && prevAcc !== currAcc) {
+                await emitAndSaveAlert({
+                    tenantId,
+                    deviceId: telemetry.deviceId,
+                    ruleId: null,
+                    type: currAcc ? 'engine_on' : 'engine_off',
+                    severity: 'low',
+                    message: currAcc
+                        ? `Contact mis : Moteur allumé (${vehicleName})`
+                        : `Contact coupé : Moteur arrêté (${vehicleName})`,
+                    lat: telemetry.lat,
+                    lng: telemetry.lng,
+                    speed: telemetry.speed,
+                }, ioInstance);
+            }
+            accStateMap.set(telemetry.deviceId, currAcc);
+        }
 
         // 2. Fetch active geofences for this tenant
         const geofencesRes = await query(
@@ -142,8 +167,10 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
         );
         const rules = rulesRes.rows as any[];
 
+        let hasOverspeedRule = false;
         for (const rule of rules) {
             if (rule.type === 'overspeed' && rule.threshold_value > 0) {
+                hasOverspeedRule = true;
                 if (telemetry.speed > rule.threshold_value) {
                     await emitAndSaveAlert({
                         tenantId,
@@ -151,13 +178,27 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                         ruleId: rule.id,
                         type: 'overspeed',
                         severity: telemetry.speed > rule.threshold_value + 30 ? 'critical' : 'high',
-                        message: `Speed alert: "${vehicleName}" reached ${telemetry.speed.toFixed(0)} km/h (limit: ${rule.threshold_value} km/h)`,
+                        message: `Excès de vitesse : "${vehicleName}" à ${telemetry.speed.toFixed(0)} km/h (limite : ${rule.threshold_value} km/h)`,
                         lat: telemetry.lat,
                         lng: telemetry.lng,
                         speed: telemetry.speed,
                     }, ioInstance);
                 }
             }
+        }
+
+        if (!hasOverspeedRule && telemetry.speed >= 100) {
+            await emitAndSaveAlert({
+                tenantId,
+                deviceId: telemetry.deviceId,
+                ruleId: null,
+                type: 'overspeed',
+                severity: telemetry.speed >= 120 ? 'critical' : 'high',
+                message: `Excès de vitesse : "${vehicleName}" à ${telemetry.speed.toFixed(0)} km/h (limite : 100 km/h)`,
+                lat: telemetry.lat,
+                lng: telemetry.lng,
+                speed: telemetry.speed,
+            }, ioInstance);
         }
     } catch (err) {
         console.error('[AlertEngine] Error evaluating alerts:', err);

@@ -4,6 +4,7 @@ import { ShieldAlert, AlertTriangle, Bell, BellOff, Zap, MapPin, Gauge, CheckCir
 import axios from 'axios';
 import * as SecureStore from 'expo-secure-store';
 import { API_URL } from '../constants/Config';
+import { useSocket } from '../hooks/useSocket';
 
 interface AlertItem {
     id: string | number;
@@ -34,6 +35,7 @@ export default function AlertsList({
     snoozeUntil = null,
     onSnoozeChange,
 }: AlertsListProps) {
+    const socket = useSocket();
     const [alerts, setAlerts] = useState<AlertItem[]>([]);
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
@@ -87,6 +89,28 @@ export default function AlertsList({
     useEffect(() => {
         fetchAlerts();
     }, [fetchAlerts]);
+
+    useEffect(() => {
+        if (!socket) return;
+        const onAlert = (data: any) => {
+            if (!data) return;
+            const item: AlertItem = {
+                id: data.id || `live-${Date.now()}`,
+                device_id: data.deviceId || data.device_id || '',
+                vehicle_name: data.vehicle_name,
+                type: data.type || 'alert',
+                severity: data.severity || 'medium',
+                message: data.message,
+                timestamp: data.timestamp || new Date().toISOString(),
+                status: data.status || 'unacknowledged',
+            };
+            setAlerts(prev => [item, ...prev.filter(a => String(a.id) !== String(item.id))]);
+        };
+        socket.on('alert', onAlert);
+        return () => {
+            socket.off('alert', onAlert);
+        };
+    }, [socket]);
 
     const onRefresh = () => {
         setRefreshing(true);

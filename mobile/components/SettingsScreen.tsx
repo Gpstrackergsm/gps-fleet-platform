@@ -1,15 +1,28 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
-import { Map, Globe, LogOut, CheckCircle2, Key } from 'lucide-react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
+import { Map, Globe, LogOut, CheckCircle2, Key, Gauge, WifiOff } from 'lucide-react-native';
+
+export interface NotificationPrefs {
+    engine: boolean;
+    speed: boolean;
+    offline: boolean;
+}
 
 interface SettingsScreenProps {
     onLogout: () => void;
     mapType: 'hybrid' | 'standard';
     onToggleMapType: (type: 'hybrid' | 'standard') => void;
-    onTestEngineAlert?: (state: 'on' | 'off') => void;
+    notifPrefs: NotificationPrefs;
+    onChangeNotifPrefs: (prefs: NotificationPrefs) => void;
 }
 
-export default function SettingsScreen({ onLogout, mapType, onToggleMapType, onTestEngineAlert }: SettingsScreenProps) {
+export default function SettingsScreen({
+    onLogout,
+    mapType,
+    onToggleMapType,
+    notifPrefs,
+    onChangeNotifPrefs,
+}: SettingsScreenProps) {
     const confirmLogout = () => {
         Alert.alert(
             'Déconnexion',
@@ -19,6 +32,13 @@ export default function SettingsScreen({ onLogout, mapType, onToggleMapType, onT
                 { text: 'Se déconnecter', style: 'destructive', onPress: onLogout },
             ]
         );
+    };
+
+    const togglePref = (key: keyof NotificationPrefs) => {
+        onChangeNotifPrefs({
+            ...notifPrefs,
+            [key]: !notifPrefs[key],
+        });
     };
 
     return (
@@ -64,47 +84,64 @@ export default function SettingsScreen({ onLogout, mapType, onToggleMapType, onT
                 </TouchableOpacity>
             </View>
 
-            {/* Section: Test Notifications Moteur ON / OFF */}
-            {onTestEngineAlert && (
-                <>
-                    <Text style={styles.sectionHeader}>TEST DES NOTIFICATIONS</Text>
-                    <View style={styles.sectionCard}>
-                        <TouchableOpacity
-                            style={styles.settingRow}
-                            onPress={() => onTestEngineAlert('on')}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.rowLeft}>
-                                <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
-                                    <Key size={18} color="#16A34A" />
-                                </View>
-                                <View>
-                                    <Text style={styles.settingLabel}>Tester Alerte Moteur ALLUMÉ</Text>
-                                    <Text style={styles.settingSub}>Simuler contact mis (Moteur ON)</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
-
-                        <View style={styles.divider} />
-
-                        <TouchableOpacity
-                            style={styles.settingRow}
-                            onPress={() => onTestEngineAlert('off')}
-                            activeOpacity={0.7}
-                        >
-                            <View style={styles.rowLeft}>
-                                <View style={[styles.iconBox, { backgroundColor: '#FEF3C7' }]}>
-                                    <Key size={18} color="#D97706" />
-                                </View>
-                                <View>
-                                    <Text style={styles.settingLabel}>Tester Alerte Moteur ÉTEINT</Text>
-                                    <Text style={styles.settingSub}>Simuler coupure contact (Moteur OFF)</Text>
-                                </View>
-                            </View>
-                        </TouchableOpacity>
+            {/* Section: Notifications en temps réel */}
+            <Text style={styles.sectionHeader}>NOTIFICATIONS EN TEMPS RÉEL</Text>
+            <View style={styles.sectionCard}>
+                <View style={styles.settingRow}>
+                    <View style={styles.rowLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
+                            <Key size={18} color="#16A34A" />
+                        </View>
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.settingLabel}>Contact Moteur (ON / OFF)</Text>
+                            <Text style={styles.settingSub}>Alerte réelle dès l'allumage ou l'arrêt du moteur</Text>
+                        </View>
                     </View>
-                </>
-            )}
+                    <Switch
+                        value={notifPrefs.engine}
+                        onValueChange={() => togglePref('engine')}
+                        trackColor={{ false: '#CBD5E1', true: '#16A34A' }}
+                    />
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.settingRow}>
+                    <View style={styles.rowLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: '#FEE2E2' }]}>
+                            <Gauge size={18} color="#DC2626" />
+                        </View>
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.settingLabel}>Excès de Vitesse ({'>'} 100 km/h)</Text>
+                            <Text style={styles.settingSub}>Alerte réelle en cas de dépassement de limite</Text>
+                        </View>
+                    </View>
+                    <Switch
+                        value={notifPrefs.speed}
+                        onValueChange={() => togglePref('speed')}
+                        trackColor={{ false: '#CBD5E1', true: '#2563EB' }}
+                    />
+                </View>
+
+                <View style={styles.divider} />
+
+                <View style={styles.settingRow}>
+                    <View style={styles.rowLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: '#FEF3C7' }]}>
+                            <WifiOff size={18} color="#D97706" />
+                        </View>
+                        <View style={{ flex: 1, paddingRight: 10 }}>
+                            <Text style={styles.settingLabel}>Perte de Signal GPS</Text>
+                            <Text style={styles.settingSub}>Alerte réelle si un véhicule passe hors ligne</Text>
+                        </View>
+                    </View>
+                    <Switch
+                        value={notifPrefs.offline}
+                        onValueChange={() => togglePref('offline')}
+                        trackColor={{ false: '#CBD5E1', true: '#D97706' }}
+                    />
+                </View>
+            </View>
 
             {/* Logout */}
             <TouchableOpacity style={styles.logoutCard} onPress={confirmLogout} activeOpacity={0.7}>

@@ -228,7 +228,7 @@ const server = net.createServer((socket) => {
                     console.log(`   [SOCKET] Emitted rich position for ${parsed.deviceId}`);
                 }
 
-                // Evaluate Enterprise Alert Rules (Geofencing, Overspeed)
+                // Evaluate Enterprise Alert Rules (Geofencing, Overspeed, Ignition)
                 evaluateTelemetryAlerts({
                     deviceId: parsed.deviceId,
                     lat: parsed.lat,
@@ -236,7 +236,8 @@ const server = net.createServer((socket) => {
                     speed: parsed.speed || 0,
                     course: parsed.course || 0,
                     timestamp: parsed.timestamp || new Date(),
-                    alarm: parsed.alarm
+                    alarm: parsed.alarm,
+                    accStatus: Boolean(parsed.accStatus)
                 }, ioInstance).catch(e => console.error('[AlertEngine] Evaluation error:', e));
 
             } catch (err) {

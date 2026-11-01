@@ -12,7 +12,7 @@ import BottomNav, { TabType } from '../components/BottomNav';
 import HistoryView from '../components/HistoryView';
 import AlertsList from '../components/AlertsList';
 import AlertBanner, { BannerAlert } from '../components/AlertBanner';
-import SettingsScreen from '../components/SettingsScreen';
+import SettingsScreen, { NotificationPrefs } from '../components/SettingsScreen';
 import FuelEcoView from '../components/FuelEcoView';
 
 // Clean Google Satellite Map: only street/road names visible, all POI icons hidden
@@ -62,6 +62,16 @@ export default function Dashboard() {
     const [unreadAlertCount, setUnreadAlertCount] = useState(0);
     const [snoozeUntil, setSnoozeUntil] = useState<number | null>(null);
     const snoozeUntilRef = useRef<number | null>(null);
+    const [notifPrefs, setNotifPrefs] = useState<NotificationPrefs>({
+        engine: true,
+        speed: true,
+        offline: true,
+    });
+    const notifPrefsRef = useRef<NotificationPrefs>({
+        engine: true,
+        speed: true,
+        offline: true,
+    });
     const speedAlertSentRef = useRef<Record<string, number>>({}); // deviceId -> last alert timestamp
     const offlineAlertSentRef = useRef<Record<string, number>>({}); // deviceId -> last alert timestamp
     const SPEED_THRESHOLD = 100; // km/h
@@ -78,9 +88,28 @@ export default function Dashboard() {
                         snoozeUntilRef.current = ts;
                     }
                 }
+                const prefsRaw = await SecureStore.getItemAsync('notification_prefs');
+                if (prefsRaw) {
+                    const parsed = JSON.parse(prefsRaw);
+                    const merged: NotificationPrefs = {
+                        engine: parsed.engine !== false,
+                        speed: parsed.speed !== false,
+                        offline: parsed.offline !== false,
+                    };
+                    setNotifPrefs(merged);
+                    notifPrefsRef.current = merged;
+                }
             } catch { /* ignore */ }
         })();
     }, []);
+
+    const handleChangeNotifPrefs = async (next: NotificationPrefs) => {
+        setNotifPrefs(next);
+        notifPrefsRef.current = next;
+        try {
+            await SecureStore.setItemAsync('notification_prefs', JSON.stringify(next));
+        } catch { /* ignore */ }
+    };
 
     const handleSnoozeChange = async (until: number | null) => {
         setSnoozeUntil(until);
@@ -104,50 +133,6 @@ export default function Dashboard() {
         setActiveBanner(banner);
         setUnreadAlertCount(prev => prev + 1);
     };
-
-    const handleTestEngineAlert = (state: 'on' | 'off') => {
-        const vehicleName = selectedVehicle?.name || (Object.values(vehicles)[0]?.name) || 'V1';
-        showBanner({
-            id: `test-engine-${Date.now()}`,
-            type: 'engine',
-            subType: state,
-            vehicleName: vehicleName,
-            message: state === 'on' ? 'Contact mis : Moteur allumé' : 'Contact coupé : Moteur arrêté',
-            timestamp: Date.now(),
-        });
-    };
-
-    // Demonstration test notifications for user testing (3s and 9s after launch)
-    useEffect(() => {
-        const timerOn = setTimeout(() => {
-            const vName = (Object.values(vehicles)[0]?.name) || 'V1';
-            showBanner({
-                id: `demo-engine-on-${Date.now()}`,
-                type: 'engine',
-                subType: 'on',
-                vehicleName: vName,
-                message: 'Contact mis : Moteur allumé (Test)',
-                timestamp: Date.now(),
-            });
-        }, 3000);
-
-        const timerOff = setTimeout(() => {
-            const vName = (Object.values(vehicles)[0]?.name) || 'V1';
-            showBanner({
-                id: `demo-engine-off-${Date.now()}`,
-                type: 'engine',
-                subType: 'off',
-                vehicleName: vName,
-                message: 'Contact coupé : Moteur arrêté (Test)',
-                timestamp: Date.now(),
-            });
-        }, 9000);
-
-        return () => {
-            clearTimeout(timerOn);
-            clearTimeout(timerOff);
-        };
-    }, []);
 
 
     // Duration Timer Logic for Selected Vehicle
@@ -311,7 +296,7 @@ export default function Dashboard() {
                     const prevAcc = existing.accStatus === 1 || existing.accStatus === true;
                     const currAcc = data.accStatus === 1 || data.accStatus === true;
 
-                    if (prevAcc !== currAcc) {
+                    if (prevAcc !== currAcc && notifPrefsRef.current.engine) {
                         const now = Date.now();
                         showBanner({
                             id: `engine-${deviceId}-${now}`,
@@ -327,7 +312,7 @@ export default function Dashboard() {
                 }
 
                 // Speed alert — max one notification per vehicle every 2 minutes
-                if (speed >= SPEED_THRESHOLD) {
+                if (speed >= SPEED_THRESHOLD && notifPrefsRef.current.speed) {
                     const lastSent = speedAlertSentRef.current[deviceId] || 0;
                     const now = Date.now();
                     if (now - lastSent > 2 * 60 * 1000) {
@@ -346,14 +331,35 @@ export default function Dashboard() {
             });
         });
 
+        socket.on('alert', (alertData: any) => {
+            if (!alertData) return;
+            const alertType = String(alertData.type || '').toLowerCase();
+            if (alertType.includes('speed') && !notifPrefsRef.current.speed) return;
+            if ((alertType.includes('engine') || alertType.includes('acc')) && !notifPrefsRef.current.engine) return;
+            setVehicles(current => {
+                const vName = current[alertData.deviceId]?.name || alertData.vehicle_name || `Véhicule ${String(alertData.deviceId || '').slice(-4)}`;
+                showBanner({
+                    id: `srv-alert-${alertData.id || Date.now()}`,
+                    type: alertType.includes('engine') ? 'engine' : 'speed',
+                    subType: alertType.includes('off') ? 'off' : 'on',
+                    vehicleName: vName,
+                    message: alertData.message || 'Nouvelle alerte détectée',
+                    timestamp: Date.now(),
+                });
+                return current;
+            });
+        });
+
         return () => {
             socket.off('position');
+            socket.off('alert');
         };
     }, [socket]);
 
     // Offline vehicle detection — check every 2 minutes
     useEffect(() => {
         const checkOffline = () => {
+            if (!notifPrefsRef.current.offline) return;
             const now = Date.now();
             setVehicles(current => {
                 Object.values(current).forEach(v => {
@@ -698,13 +704,14 @@ export default function Dashboard() {
                     />
                 )}
 
-                {/* TAB 5: PARAMÈTRES */}
+                {/* TAB 6: PARAMÈTRES */}
                 {activeTab === 'settings' && (
                     <SettingsScreen
                         onLogout={handleLogout}
                         mapType={mapType}
                         onToggleMapType={setMapType}
-                        onTestEngineAlert={handleTestEngineAlert}
+                        notifPrefs={notifPrefs}
+                        onChangeNotifPrefs={handleChangeNotifPrefs}
                     />
                 )}
             </View>
