@@ -33,11 +33,11 @@ export default function LanguageSelector({ compact = false, className = '' }: La
     };
 
     return (
-        <div ref={dropdownRef} className={`relative inline-block text-left ${className}`}>
+        <div ref={dropdownRef} className={`relative inline-block text-start ${className}`}>
             <button
                 type="button"
                 onClick={() => setOpen(!open)}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-zinc-900/90 hover:bg-zinc-800 border border-zinc-700/80 text-zinc-200 text-xs font-medium transition-all shadow-sm ${
+                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg bg-gray-950/60 hover:bg-gray-800 border border-gray-800 text-gray-200 text-xs font-medium transition-all shadow-sm ${
                     open ? 'ring-2 ring-blue-500/50 border-blue-500' : ''
                 }`}
                 title="Select Language / Choisir la langue / اختر اللغة"
@@ -47,12 +47,12 @@ export default function LanguageSelector({ compact = false, className = '' }: La
                 {!compact && (
                     <span className="font-semibold">{current.name}</span>
                 )}
-                <ChevronDown size={12} className={`text-zinc-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
+                <ChevronDown size={12} className={`text-gray-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`} />
             </button>
 
             {open && (
-                <div className="absolute right-0 mt-1.5 w-40 rounded-xl bg-zinc-900 border border-zinc-700/80 shadow-2xl py-1.5 z-[999] backdrop-blur-md animate-in fade-in zoom-in-95 duration-150">
-                    <div className="px-3 py-1 text-[10px] uppercase font-semibold text-zinc-500 border-b border-zinc-800">
+                <div className="absolute end-0 mt-1.5 w-40 rounded-xl bg-gray-900 border border-gray-800 shadow-2xl py-1.5 z-[999] backdrop-blur-md">
+                    <div className="px-3 py-1 text-[10px] uppercase font-semibold text-gray-500 border-b border-gray-800">
                         Language / Langue / اللغة
                     </div>
                     {languages.map((l) => (
@@ -60,10 +60,10 @@ export default function LanguageSelector({ compact = false, className = '' }: La
                             key={l.code}
                             type="button"
                             onClick={() => handleSelect(l.code)}
-                            className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors text-left ${
+                            className={`w-full flex items-center justify-between px-3 py-2 text-xs transition-colors text-start ${
                                 l.code === language
                                     ? 'bg-blue-600/20 text-blue-400 font-semibold'
-                                    : 'text-zinc-300 hover:bg-zinc-800 hover:text-white'
+                                    : 'text-gray-300 hover:bg-gray-800 hover:text-white'
                             }`}
                         >
                             <span className="flex items-center gap-2">
