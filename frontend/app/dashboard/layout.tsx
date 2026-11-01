@@ -10,6 +10,7 @@ import {
 } from 'lucide-react';
 import { socket } from '@/lib/socket';
 import LanguageSelector from '@/components/LanguageSelector';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useLanguage } from '@/lib/LanguageContext';
 
 function Clock24() {
@@ -242,6 +243,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                     </div>
 
                     {/* Language Selector in Header */}
+                    <ThemeToggle />
                     <LanguageSelector compact={true} />
 
                     <Clock24 />

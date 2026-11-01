@@ -11,6 +11,7 @@ import {
     CartesianGrid, PieChart, Pie, Cell, Legend,
 } from 'recharts';
 import api from '@/lib/api';
+import { useTheme } from '@/lib/useTheme';
 
 type Period = 'today' | '7d' | '30d' | 'month';
 type VType = 'light' | 'van' | 'truck';
@@ -66,11 +67,6 @@ const gradeBadge: Record<Grade, string> = {
     E: 'bg-red-500/20 text-red-400 border-red-500/40',
 };
 
-const tooltipStyle = {
-    contentStyle: { background: '#0b1220', border: '1px solid #1f2937', borderRadius: 12, fontSize: 12, color: '#e5e7eb' },
-    labelStyle: { color: '#9ca3af' },
-    cursor: { fill: 'rgba(148,163,184,0.08)' },
-};
 
 function Trend({ cur, prev }: { cur: number; prev: number }) {
     if (!(prev > 0)) return <span className="text-[11px] text-gray-500 flex items-center gap-1"><Minus size={12} />Pas de période de comparaison</span>;
@@ -86,6 +82,18 @@ function Trend({ cur, prev }: { cur: number; prev: number }) {
 }
 
 export default function FuelEcoPage() {
+    const { theme } = useTheme();
+    const light = theme === 'light';
+    const c = {
+        grid: light ? '#e2e8f0' : '#1f2937',
+        text: light ? '#64748b' : '#9ca3af',
+        textStrong: light ? '#334155' : '#d1d5db',
+    };
+    const tooltipStyle = {
+        contentStyle: { background: light ? '#ffffff' : '#0b1220', border: `1px solid ${light ? '#cbd5e1' : '#1f2937'}`, borderRadius: 12, fontSize: 12, color: light ? '#0f172a' : '#e5e7eb' },
+        labelStyle: { color: c.text },
+        cursor: { fill: light ? 'rgba(15,23,42,0.05)' : 'rgba(148,163,184,0.08)' },
+    };
     const [data, setData] = useState<ApiResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
@@ -444,9 +452,9 @@ export default function FuelEcoPage() {
                             <div className="h-64">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={dailyChart} margin={{ top: 5, right: 5, left: -15, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                                        <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
-                                        <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke={c.grid} vertical={false} />
+                                        <XAxis dataKey="label" tick={{ fill: c.text, fontSize: 11 }} axisLine={false} tickLine={false} interval={xInterval} />
+                                        <YAxis tick={{ fill: c.text, fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <Tooltip {...tooltipStyle} formatter={(v: any) => `${fmt(Number(v))} MAD`} />
                                         <Legend wrapperStyle={{ fontSize: 12 }} />
                                         <Bar dataKey="idle" name="Ralenti" stackId="a" fill="#f59e0b" radius={[0, 0, 0, 0]} />
@@ -484,9 +492,9 @@ export default function FuelEcoPage() {
                             <div className="h-56">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={hourlyChart} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                                        <XAxis dataKey="hour" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} interval={1} />
-                                        <YAxis tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke={c.grid} vertical={false} />
+                                        <XAxis dataKey="hour" tick={{ fill: c.text, fontSize: 10 }} axisLine={false} tickLine={false} interval={1} />
+                                        <YAxis tick={{ fill: c.text, fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <Tooltip {...tooltipStyle} formatter={(v: any, n: any) => (n === 'hours' ? `${fmt(Number(v), 1)} h` : `${fmt(Number(v))} MAD`)} />
                                         <Bar dataKey="hours" name="hours" fill="#f59e0b" radius={[4, 4, 0, 0]} />
                                     </BarChart>
@@ -500,9 +508,9 @@ export default function FuelEcoPage() {
                             <div className="h-56">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={topWasters} layout="vertical" margin={{ top: 0, right: 10, left: 10, bottom: 0 }}>
-                                        <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" horizontal={false} />
-                                        <XAxis type="number" tick={{ fill: '#9ca3af', fontSize: 11 }} axisLine={false} tickLine={false} />
-                                        <YAxis type="category" dataKey="name" width={50} tick={{ fill: '#d1d5db', fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <CartesianGrid strokeDasharray="3 3" stroke={c.grid} horizontal={false} />
+                                        <XAxis type="number" tick={{ fill: c.text, fontSize: 11 }} axisLine={false} tickLine={false} />
+                                        <YAxis type="category" dataKey="name" width={50} tick={{ fill: c.textStrong, fontSize: 11 }} axisLine={false} tickLine={false} />
                                         <Tooltip {...tooltipStyle} formatter={(v: any) => `${fmt(Number(v))} MAD`} />
                                         <Bar dataKey="idle" name="Ralenti" stackId="a" fill="#f59e0b" />
                                         <Bar dataKey="speed" name="Vitesse" stackId="a" fill="#ef4444" radius={[0, 4, 4, 0]} />
@@ -653,9 +661,9 @@ export default function FuelEcoPage() {
                                                                     <div className="h-44">
                                                                         <ResponsiveContainer width="100%" height="100%">
                                                                             <BarChart data={v.dailyCost.map(x => ({ label: dd(x.date), idle: Math.round(x.idleCost), speed: Math.round(x.speedCost) }))} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                                                                                <XAxis dataKey="label" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} interval={xInterval} />
-                                                                                <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke={c.grid} vertical={false} />
+                                                                                <XAxis dataKey="label" tick={{ fill: c.text, fontSize: 10 }} axisLine={false} tickLine={false} interval={xInterval} />
+                                                                                <YAxis tick={{ fill: c.text, fontSize: 10 }} axisLine={false} tickLine={false} />
                                                                                 <Tooltip {...tooltipStyle} formatter={(val: any) => `${fmt(Number(val))} MAD`} />
                                                                                 <Bar dataKey="idle" name="Ralenti" stackId="a" fill="#f59e0b" />
                                                                                 <Bar dataKey="speed" name="Vitesse" stackId="a" fill="#ef4444" radius={[3, 3, 0, 0]} />
@@ -668,9 +676,9 @@ export default function FuelEcoPage() {
                                                                     <div className="h-44">
                                                                         <ResponsiveContainer width="100%" height="100%">
                                                                             <BarChart data={v.hourlyIdle.map((h, idx) => ({ hour: `${idx}h`, h }))} margin={{ top: 5, right: 5, left: -20, bottom: 0 }}>
-                                                                                <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" vertical={false} />
-                                                                                <XAxis dataKey="hour" tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
-                                                                                <YAxis tick={{ fill: '#9ca3af', fontSize: 10 }} axisLine={false} tickLine={false} />
+                                                                                <CartesianGrid strokeDasharray="3 3" stroke={c.grid} vertical={false} />
+                                                                                <XAxis dataKey="hour" tick={{ fill: c.text, fontSize: 10 }} axisLine={false} tickLine={false} interval={2} />
+                                                                                <YAxis tick={{ fill: c.text, fontSize: 10 }} axisLine={false} tickLine={false} />
                                                                                 <Tooltip {...tooltipStyle} formatter={(val: any) => `${fmt(Number(val), 2)} h`} />
                                                                                 <Bar dataKey="h" name="Ralenti" fill="#f59e0b" radius={[3, 3, 0, 0]} />
                                                                             </BarChart>

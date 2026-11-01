@@ -29,6 +29,14 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <script
+          dangerouslySetInnerHTML={{
+            __html:
+              "try{var r=document.documentElement;r.classList.add(localStorage.getItem('theme')==='light'?'light':'dark')}catch(e){document.documentElement.classList.add('dark')}",
+          }}
+        />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
