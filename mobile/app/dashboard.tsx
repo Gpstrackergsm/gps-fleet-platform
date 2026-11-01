@@ -13,6 +13,7 @@ import HistoryView from '../components/HistoryView';
 import AlertsList from '../components/AlertsList';
 import AlertBanner, { BannerAlert } from '../components/AlertBanner';
 import SettingsScreen from '../components/SettingsScreen';
+import FuelEcoView from '../components/FuelEcoView';
 
 // Clean Google Satellite Map: only street/road names visible, all POI icons hidden
 const CUSTOM_MAP_STYLE = [
@@ -413,6 +414,8 @@ export default function Dashboard() {
                 return selectedVehicle ? selectedVehicle.name : 'Carte de Suivi';
             case 'vehicles':
                 return `Flotte (${Object.keys(vehicles).length})`;
+            case 'fuel':
+                return 'Éco-Carburant & Coûts';
             case 'history':
                 return 'Historique & Replay';
             case 'alerts':
@@ -632,7 +635,12 @@ export default function Dashboard() {
                     />
                 )}
 
-                {/* TAB 3: HISTORIQUE (Dedicated Replay Screen) */}
+                {/* TAB 3: ÉCO-CARBURANT */}
+                {activeTab === 'fuel' && (
+                    <FuelEcoView />
+                )}
+
+                {/* TAB 4: HISTORIQUE (Dedicated Replay Screen) */}
                 {activeTab === 'history' && (
                     <HistoryView
                         vehicles={vehicles}

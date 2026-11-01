@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Platform } from 'react-native';
-import { Map, Car, Clock, Bell, Settings } from 'lucide-react-native';
+import { Map, Car, Fuel, Clock, Bell, Settings } from 'lucide-react-native';
 import * as Haptics from 'expo-haptics';
 
-export type TabType = 'map' | 'vehicles' | 'history' | 'alerts' | 'settings';
+export type TabType = 'map' | 'vehicles' | 'fuel' | 'history' | 'alerts' | 'settings';
 
 interface BottomNavProps {
     activeTab: TabType;
@@ -27,6 +27,7 @@ export default function BottomNav({ activeTab, onTabChange, vehicleCount = 0, al
     const tabs: { key: TabType; label: string; icon: any; badge?: number }[] = [
         { key: 'map', label: 'Carte', icon: Map },
         { key: 'vehicles', label: 'Véhicules', icon: Car, badge: vehicleCount },
+        { key: 'fuel', label: 'Carburant', icon: Fuel },
         { key: 'history', label: 'Historique', icon: Clock },
         { key: 'alerts', label: 'Alertes', icon: Bell, badge: alertCount },
         { key: 'settings', label: 'Paramètres', icon: Settings },
@@ -109,7 +110,7 @@ const styles = StyleSheet.create({
         justifyContent: 'center',
     },
     tabLabel: {
-        fontSize: 11,
+        fontSize: 10,
         fontWeight: '500',
         color: '#64748B',
         marginTop: 3,
