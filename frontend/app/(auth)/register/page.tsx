@@ -521,33 +521,9 @@ export default function RegisterPage() {
                         </div>
 
                         {/* Delivery banner */}
-                        {emailDelivered ? (
-                            <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-300 text-xs text-center">
-                                {L.emailSentBadge}
-                            </div>
-                        ) : fallbackCode ? (
-                            <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between gap-3">
-                                <div>
-                                    <p className="text-[11px] text-amber-300/90 font-medium">
-                                        {L.instantCodeLabel}
-                                    </p>
-                                    <p className="font-mono text-lg font-extrabold tracking-widest text-amber-400 mt-0.5">
-                                        {fallbackCode}
-                                    </p>
-                                </div>
-                                <button
-                                    type="button"
-                                    onClick={() => {
-                                        const chars = fallbackCode.slice(0, 6).split('');
-                                        setDigits(chars);
-                                        handleVerifyCode(undefined, fallbackCode);
-                                    }}
-                                    className="px-3 py-1.5 rounded-lg bg-amber-500 hover:bg-amber-400 text-black font-bold text-xs transition-colors shrink-0"
-                                >
-                                    {L.autoFillBtn}
-                                </button>
-                            </div>
-                        ) : null}
+                        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/25 text-blue-300 text-xs text-center">
+                            {L.emailSentBadge}
+                        </div>
 
                         <form onSubmit={e => handleVerifyCode(e)} className="space-y-6">
                             {/* 6-Digit OTP Boxes */}

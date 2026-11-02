@@ -1,6 +1,7 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import nodemailer from 'nodemailer';
 import { query } from '../db';
 import { authenticateToken, AuthRequest } from '../middleware/auth';
 
@@ -11,11 +12,31 @@ function generateSixDigitCode(): string {
     return String(Math.floor(100000 + Math.random() * 900000));
 }
 
+async function getEmailSettings(): Promise<Record<string, string>> {
+    const cfg: Record<string, string> = {};
+    try {
+        const res = await query('SELECT setting_key, setting_value FROM system_settings');
+        for (const row of (res.rows as any[])) {
+            cfg[row.setting_key] = row.setting_value;
+        }
+    } catch { /* ignore if table not ready */ }
+    return cfg;
+}
+
 async function sendVerificationEmail(
     email: string,
     code: string,
     companyName: string
 ): Promise<{ delivered: boolean; provider?: string }> {
+    const dbCfg = await getEmailSettings();
+    const resendKey = process.env.RESEND_API_KEY || dbCfg.RESEND_API_KEY;
+    const brevoKey = process.env.BREVO_API_KEY || dbCfg.BREVO_API_KEY;
+    const smtpHost = process.env.SMTP_HOST || dbCfg.SMTP_HOST;
+    const smtpPort = Number(process.env.SMTP_PORT || dbCfg.SMTP_PORT || 465);
+    const smtpUser = process.env.SMTP_USER || dbCfg.SMTP_USER;
+    const smtpPass = process.env.SMTP_PASS || dbCfg.SMTP_PASS;
+    const fromEmail = process.env.EMAIL_FROM || dbCfg.EMAIL_FROM || smtpUser || 'TrackPro GPS <no-reply@gps-eu.com>';
+
     const subject = `${code} est votre code de vérification TrackPro GPS`;
     const html = `
         <div style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 520px; margin: 0 auto; background: #09090b; color: #ffffff; border-radius: 16px; padding: 32px; border: 1px solid #27272a;">
@@ -37,18 +58,41 @@ async function sendVerificationEmail(
         </div>
     `;
 
-    // 1. Try Resend HTTP API if configured
-    if (process.env.RESEND_API_KEY) {
+    // 1. Try SMTP (Gmail / Outlook / Custom SMTP via Nodemailer)
+    if (smtpHost && smtpUser && smtpPass) {
         try {
-            const fromEmail = process.env.EMAIL_FROM || 'TrackPro GPS <onboarding@resend.dev>';
+            const transporter = nodemailer.createTransport({
+                host: smtpHost,
+                port: smtpPort,
+                secure: smtpPort === 465,
+                auth: {
+                    user: smtpUser,
+                    pass: smtpPass,
+                },
+            });
+            await transporter.sendMail({
+                from: fromEmail.includes('<') ? fromEmail : `"TrackPro GPS" <${smtpUser}>`,
+                to: email,
+                subject,
+                html,
+            });
+            return { delivered: true, provider: 'smtp' };
+        } catch (err) {
+            console.warn('[Auth] SMTP email error:', err);
+        }
+    }
+
+    // 2. Try Resend HTTP API if configured
+    if (resendKey) {
+        try {
             const resp = await fetch('https://api.resend.com/emails', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${process.env.RESEND_API_KEY}`,
+                    'Authorization': `Bearer ${resendKey}`,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
-                    from: fromEmail,
+                    from: fromEmail.includes('<') ? fromEmail : 'TrackPro GPS <onboarding@resend.dev>',
                     to: [email],
                     subject,
                     html,
@@ -63,14 +107,14 @@ async function sendVerificationEmail(
         }
     }
 
-    // 2. Try Brevo (Sendinblue) HTTP API if configured
-    if (process.env.BREVO_API_KEY) {
+    // 3. Try Brevo (Sendinblue) HTTP API if configured
+    if (brevoKey) {
         try {
-            const senderEmail = process.env.EMAIL_FROM_ADDRESS || 'no-reply@gps-eu.com';
+            const senderEmail = process.env.EMAIL_FROM_ADDRESS || dbCfg.EMAIL_FROM_ADDRESS || smtpUser || 'no-reply@gps-eu.com';
             const resp = await fetch('https://api.brevo.com/v3/smtp/email', {
                 method: 'POST',
                 headers: {
-                    'api-key': process.env.BREVO_API_KEY,
+                    'api-key': brevoKey,
                     'Content-Type': 'application/json',
                 },
                 body: JSON.stringify({
@@ -133,8 +177,6 @@ router.post('/register/send-code', async (req, res) => {
             message: 'Verification code sent',
             email: cleanEmail,
             emailDelivered: mailResult.delivered,
-            // Provide fallback code if no external email provider key is configured yet
-            ...(mailResult.delivered ? {} : { verificationCode: code }),
         });
     } catch (err) {
         console.error('[Auth] send-code error:', err);
@@ -257,7 +299,6 @@ router.post('/register/resend-code', async (req, res) => {
             message: 'New verification code sent',
             email: cleanEmail,
             emailDelivered: mailResult.delivered,
-            ...(mailResult.delivered ? {} : { verificationCode: newCode }),
         });
     } catch (err) {
         console.error('[Auth] resend-code error:', err);

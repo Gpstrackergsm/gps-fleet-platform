@@ -196,6 +196,14 @@ const initTables = async () => {
         );
     `;
 
+    const createSystemSettingsTable = `
+        CREATE TABLE IF NOT EXISTS system_settings (
+            setting_key VARCHAR(100) PRIMARY KEY,
+            setting_value TEXT NOT NULL,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        );
+    `;
+
     try {
         await query(createDevicesTable);
         await query(createPositionsTable);
@@ -206,6 +214,7 @@ const initTables = async () => {
         await query(createAlertRulesTable);
         await query(createAlertsTable);
         await query(createEmailVerificationsTable);
+        await query(createSystemSettingsTable);
 
         // Manual Migration for existing tables (Blind ALTERs)
         try { await query("ALTER TABLE positions ADD COLUMN internet_status BOOLEAN DEFAULT FALSE"); } catch { }
