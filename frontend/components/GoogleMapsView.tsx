@@ -718,10 +718,6 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                 </span>
                             </div>
 
-                            {v.company_name && (
-                                <p className="text-[10px] text-zinc-400 mb-0.5">{v.company_name}</p>
-                            )}
-
                             {/* Physical Street Address */}
                             <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 truncate my-1">
                                 <MapPin size={11} className="text-red-400 shrink-0" />
