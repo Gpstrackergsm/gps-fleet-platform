@@ -28,7 +28,7 @@ export default function Home() {
             </div>
           </Link>
 
-          {/* Right Header: Language Switcher & Sign In */}
+          {/* Right Header: Language Switcher, Sign In & Sign Up */}
           <div className="flex items-center gap-3">
             {/* Language Selector (English / Français / العربية) */}
             <LanguageSelector />
@@ -43,12 +43,12 @@ export default function Home() {
               </Button>
             </Link>
 
-            <Link href="/login" className="hidden sm:inline-block">
+            <Link href="/register">
               <Button
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold px-4 rounded-lg shadow-lg shadow-blue-600/30 transition-all hover:shadow-blue-600/50"
               >
-                {t('launchDashboard')}
+                {t('signUp')}
               </Button>
             </Link>
           </div>
@@ -84,12 +84,12 @@ export default function Home() {
 
           {/* CTA Buttons */}
           <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-center pt-2 animate-in fade-in slide-in-from-bottom-10 duration-700 delay-300 fill-mode-both">
-            <Link href="/login" className="w-full sm:w-auto">
+            <Link href="/register" className="w-full sm:w-auto">
               <Button
                 size="lg"
                 className="w-full sm:w-auto bg-white text-black hover:bg-zinc-200 text-base font-bold px-8 py-6 rounded-full shadow-2xl hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
               >
-                <span>{t('launchDashboard')}</span>
+                <span>{t('signUp')}</span>
                 <ArrowIcon className="h-5 w-5 shrink-0" />
               </Button>
             </Link>

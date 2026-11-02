@@ -181,6 +181,21 @@ const initTables = async () => {
         );
     `;
 
+    const createEmailVerificationsTable = `
+        CREATE TABLE IF NOT EXISTS email_verifications (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            email VARCHAR(100) NOT NULL,
+            code VARCHAR(10) NOT NULL,
+            company_name VARCHAR(100) NOT NULL,
+            phone VARCHAR(30),
+            password_hash VARCHAR(255) NOT NULL,
+            attempts INT DEFAULT 0,
+            expires_at DATETIME NOT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_email_verif (email)
+        );
+    `;
+
     try {
         await query(createDevicesTable);
         await query(createPositionsTable);
@@ -190,6 +205,7 @@ const initTables = async () => {
         await query(createGeofencesTable);
         await query(createAlertRulesTable);
         await query(createAlertsTable);
+        await query(createEmailVerificationsTable);
 
         // Manual Migration for existing tables (Blind ALTERs)
         try { await query("ALTER TABLE positions ADD COLUMN internet_status BOOLEAN DEFAULT FALSE"); } catch { }
