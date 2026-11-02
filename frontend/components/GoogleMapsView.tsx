@@ -774,27 +774,29 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                 </div>
                             </div>
 
-                            {/* Bottom Row: Plate/ID | Last Update | Option 14: Replay Button */}
+                            {/* Bottom Row: Last Update | Option 14: Replay Button */}
                             <div className="flex items-center justify-between text-[9px] text-zinc-500 mt-1.5 px-0.5">
-                                <span className="font-mono text-zinc-400">{v.plate_number || v.device_id.slice(-6)}</span>
                                 <div className="flex items-center gap-2">
+                                    {v.plate_number && (
+                                        <span className="font-mono text-zinc-400">{v.plate_number}</span>
+                                    )}
                                     <span className="flex items-center gap-1">
                                         <Clock size={9} />
                                         {timeSince(v.lastUpdate)}
                                     </span>
-                                    <button
-                                        type="button"
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            router.push(`/dashboard/history?device=${encodeURIComponent(v.device_id)}`);
-                                        }}
-                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 font-semibold text-[9px] transition-colors"
-                                        title="Ouvrir le Replay / Historique du jour"
-                                    >
-                                        <History size={10} />
-                                        <span>Replay</span>
-                                    </button>
                                 </div>
+                                <button
+                                    type="button"
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        router.push(`/dashboard/history?device=${encodeURIComponent(v.device_id)}`);
+                                    }}
+                                    className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 font-semibold text-[9px] transition-colors"
+                                    title="Ouvrir le Replay / Historique du jour"
+                                >
+                                    <History size={10} />
+                                    <span>Replay</span>
+                                </button>
                             </div>
                         </div>
                     );
