@@ -5,7 +5,7 @@ import { GoogleMap, useJsApiLoader, Marker, Polyline, InfoWindow } from '@react-
 import { MapContainer, TileLayer, Polyline as LeafletPolyline, CircleMarker, Marker as LeafletMarker, Popup, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import L from 'leaflet';
-import { Layers, Globe, Navigation, Clock, Gauge, Play, MapPin, ExternalLink, Search } from 'lucide-react';
+import { Layers, Globe, Navigation, Clock, Gauge, Play, MapPin, ExternalLink, Search, X } from 'lucide-react';
 
 interface Position {
     id: number;
@@ -14,6 +14,125 @@ interface Position {
     speed: number;
     course: number;
     timestamp: string;
+}
+
+interface RouteSegment {
+    passLevel: number;
+    color: string;
+    weight: number;
+    zIndex: number;
+    googlePath: { lat: number; lng: number }[];
+    leafletPath: [number, number][];
+}
+
+const PASS_STYLES: { color: string; weight: number; zIndex: number; label: string }[] = [
+    { color: '#2563eb', weight: 6, zIndex: 10, label: 'Aller (1er passage)' },
+    { color: '#f97316', weight: 4, zIndex: 20, label: 'Retour (2e passage)' },
+    { color: '#a855f7', weight: 3.5, zIndex: 30, label: '3e passage' },
+    { color: '#ec4899', weight: 3, zIndex: 40, label: '4e passage+' },
+];
+
+function haversineMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    const R = 6371000;
+    const toRad = (deg: number) => deg * (Math.PI / 180);
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+}
+
+function buildColoredRouteSegments(history: Position[]): { segments: RouteSegment[]; maxPassLevel: number } {
+    if (history.length < 2) return { segments: [], maxPassLevel: 0 };
+
+    const n = history.length;
+    const cumDist = new Float64Array(n);
+    for (let i = 1; i < n; i++) {
+        cumDist[i] = cumDist[i - 1] + haversineMeters(
+            history[i - 1].lat,
+            history[i - 1].lng,
+            history[i].lat,
+            history[i].lng
+        );
+    }
+
+    // Detect how many times each segment [i-1 -> i] overlaps an earlier corridor (>= 220m of driving earlier, within 95m radius)
+    const rawPass = new Int8Array(n);
+    for (let i = 1; i < n; i++) {
+        let passes = 0;
+        let lastMatchedDist = -1000;
+        const pLat = (history[i - 1].lat + history[i].lat) / 2;
+        const pLng = (history[i - 1].lng + history[i].lng) / 2;
+
+        for (let j = 0; j < i; j++) {
+            if (cumDist[i] - cumDist[j] < 220) break;
+            if (cumDist[j] - lastMatchedDist < 220) continue;
+            const d = haversineMeters(pLat, pLng, history[j].lat, history[j].lng);
+            if (d <= 95) {
+                passes++;
+                lastMatchedDist = cumDist[j];
+                if (passes >= 3) break;
+            }
+        }
+        rawPass[i] = Math.min(3, passes);
+    }
+
+    // Smooth short gaps (< 180m) so a return trip doesn't flicker at intersections
+    const smoothedPass = new Int8Array(n);
+    let activePass = 0;
+    let holdUntilDist = -1;
+    for (let i = 1; i < n; i++) {
+        if (rawPass[i] > 0) {
+            activePass = rawPass[i];
+            holdUntilDist = cumDist[i] + 180;
+            smoothedPass[i] = activePass;
+        } else if (cumDist[i] <= holdUntilDist) {
+            smoothedPass[i] = activePass;
+        } else {
+            activePass = 0;
+            smoothedPass[i] = 0;
+        }
+    }
+
+    // Group contiguous segments with the same passLevel
+    const segments: RouteSegment[] = [];
+    let maxPassLevel = 0;
+    let curLevel = smoothedPass[1];
+    let curPoints: Position[] = [history[0], history[1]];
+    if (curLevel > maxPassLevel) maxPassLevel = curLevel;
+
+    for (let i = 2; i < n; i++) {
+        const lvl = smoothedPass[i];
+        if (lvl > maxPassLevel) maxPassLevel = lvl;
+        if (lvl === curLevel) {
+            curPoints.push(history[i]);
+        } else {
+            const style = PASS_STYLES[Math.min(curLevel, PASS_STYLES.length - 1)];
+            segments.push({
+                passLevel: curLevel,
+                color: style.color,
+                weight: style.weight,
+                zIndex: style.zIndex,
+                googlePath: curPoints.map(p => ({ lat: p.lat, lng: p.lng })),
+                leafletPath: curPoints.map(p => [p.lat, p.lng] as [number, number]),
+            });
+            curLevel = lvl;
+            curPoints = [history[i - 1], history[i]];
+        }
+    }
+
+    if (curPoints.length >= 2) {
+        const style = PASS_STYLES[Math.min(curLevel, PASS_STYLES.length - 1)];
+        segments.push({
+            passLevel: curLevel,
+            color: style.color,
+            weight: style.weight,
+            zIndex: style.zIndex,
+            googlePath: curPoints.map(p => ({ lat: p.lat, lng: p.lng })),
+            leafletPath: curPoints.map(p => [p.lat, p.lng] as [number, number]),
+        });
+    }
+
+    return { segments, maxPassLevel };
 }
 
 interface HistoryMapProps {
@@ -242,9 +361,9 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
     const start = history[0] || null;
     const end = history.length > 1 ? history[history.length - 1] : null;
 
-    // Convert history for Google Maps path
-    const googlePath = useMemo(() => {
-        return history.map(p => ({ lat: p.lat, lng: p.lng }));
+    // Build multi-color route segments (Aller = Blue, Retour / duplicate pass = Orange, 3rd pass = Purple)
+    const { segments: coloredSegments, maxPassLevel } = useMemo(() => {
+        return buildColoredRouteSegments(history);
     }, [history]);
 
 
@@ -278,16 +397,40 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
         setMap(null);
     }, []);
 
-    const leafletPositions = useMemo(() => {
-        return history.map(p => [p.lat, p.lng] as [number, number]);
-    }, [history]);
-
     const leafletTileUrl = leafletTileLayer === 'street'
         ? 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png'
         : 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
 
     return (
         <div className="flex-1 relative min-h-0 h-full w-full bg-zinc-950 font-sans overflow-hidden">
+            {/* ── Route Pass Color Legend (shown when route has points) ── */}
+            {history.length > 1 && (
+                <div className="absolute bottom-3 left-3 z-[400] bg-zinc-900/95 border border-zinc-700/80 rounded-xl px-3 py-1.5 shadow-xl backdrop-blur flex flex-wrap items-center gap-3 text-[11px] text-zinc-200 pointer-events-none">
+                    <span className="flex items-center gap-1.5 font-medium">
+                        <span className="w-3.5 h-1.5 rounded-full bg-[#2563eb]" />
+                        <span>Aller</span>
+                    </span>
+                    {maxPassLevel >= 1 && (
+                        <span className="flex items-center gap-1.5 font-medium">
+                            <span className="w-3.5 h-1.5 rounded-full bg-[#f97316]" />
+                            <span>Retour</span>
+                        </span>
+                    )}
+                    {maxPassLevel >= 2 && (
+                        <span className="flex items-center gap-1.5 font-medium">
+                            <span className="w-3.5 h-1.5 rounded-full bg-[#a855f7]" />
+                            <span>3e passage</span>
+                        </span>
+                    )}
+                    {maxPassLevel >= 3 && (
+                        <span className="flex items-center gap-1.5 font-medium">
+                            <span className="w-3.5 h-1.5 rounded-full bg-[#ec4899]" />
+                            <span>4e+</span>
+                        </span>
+                    )}
+                </div>
+            )}
+
             {/* ── Top Header Controls Overlay ── */}
             <div className="absolute top-3 right-3 z-[400] flex items-center gap-2">
                 {engine === 'google' && isLoaded && (
@@ -394,17 +537,33 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 styles: GOOGLE_MAP_STYLES
                             }}
                         >
-                            {/* Full Route Polyline (Crisp Blue GPS Route) */}
-                            {googlePath.length > 1 && (
+                            {/* Multi-Color Route Polylines (Blue = Aller, Orange = Retour/Duplicate, Purple = 3rd Pass) */}
+                            {coloredSegments.map((seg, idx) => (
                                 <Polyline
-                                    path={googlePath}
+                                    key={`g-seg-${idx}`}
+                                    path={seg.googlePath}
                                     options={{
-                                        strokeColor: "#2563eb",
-                                        strokeOpacity: 0.85,
-                                        strokeWeight: 4,
+                                        strokeColor: seg.color,
+                                        strokeOpacity: seg.passLevel === 0 ? 0.88 : 0.95,
+                                        strokeWeight: seg.weight,
+                                        zIndex: seg.zIndex,
+                                        icons: typeof google !== 'undefined' && google.maps?.SymbolPath ? [
+                                            {
+                                                icon: {
+                                                    path: google.maps.SymbolPath.FORWARD_CLOSED_ARROW,
+                                                    scale: 2,
+                                                    strokeColor: '#ffffff',
+                                                    strokeWeight: 0.8,
+                                                    fillColor: seg.color,
+                                                    fillOpacity: 1,
+                                                },
+                                                offset: '60px',
+                                                repeat: '160px',
+                                            }
+                                        ] : undefined,
                                     }}
                                 />
-                            )}
+                            ))}
 
                             {/* Start Pin (Green) */}
                             {start && (
@@ -462,11 +621,21 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                     options={{ pixelOffset: new google.maps.Size(0, -20) }}
                                 >
                                     <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[200px] max-w-[280px] border border-zinc-800 shadow-xl font-sans">
-                                        <div className="flex items-center justify-between pb-1 mb-1 border-b border-zinc-800">
+                                        <div className="flex items-center justify-between gap-2 pb-1 mb-1 border-b border-zinc-800">
                                             <span className="font-bold text-xs text-white">
                                                 {selectedPoint === start ? '🟢 Trip Start' : (selectedPoint === end && end !== start ? '🔴 Trip End' : (selectedPoint === current ? '🚗 Replay Position' : '📍 Route Point'))}
                                             </span>
-                                            <span className="text-[10px] font-mono text-blue-400 font-bold">{selectedPoint.speed.toFixed(1)} km/h</span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[10px] font-mono text-blue-400 font-bold">{selectedPoint.speed.toFixed(1)} km/h</span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedPoint(null)}
+                                                    className="p-0.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                                                    title="Fermer"
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
                                         </div>
 
                                         {/* Physical Street Address */}
@@ -526,9 +695,15 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                     />
                     <LeafletFitRoute positions={history} />
 
-                    {leafletPositions.length > 1 && (
-                        <LeafletPolyline positions={leafletPositions} color="#2563eb" weight={4} opacity={0.85} />
-                    )}
+                    {coloredSegments.map((seg, idx) => (
+                        <LeafletPolyline
+                            key={`l-seg-${idx}`}
+                            positions={seg.leafletPath}
+                            color={seg.color}
+                            weight={seg.weight}
+                            opacity={seg.passLevel === 0 ? 0.88 : 0.95}
+                        />
+                    ))}
 
                     {start && (
                         <CircleMarker
