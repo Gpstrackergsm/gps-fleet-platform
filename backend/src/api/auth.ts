@@ -395,13 +395,90 @@ router.post('/login', async (req, res) => {
     }
 });
 
+// GET USER PROFILE
+router.get('/profile', authenticateToken, async (req: AuthRequest, res) => {
+    const userId = req.user.id;
+    try {
+        const result = await query(
+            `SELECT u.id, u.email, u.phone, u.role, u.tenant_id, t.name AS company_name
+             FROM users u
+             LEFT JOIN tenants t ON u.tenant_id = t.id
+             WHERE u.id = ?`,
+            [userId]
+        );
+        const rows = result.rows as any[];
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Utilisateur introuvable.' });
+        }
+        const u = rows[0];
+        res.json({
+            id: u.id,
+            email: u.email,
+            phone: u.phone || '',
+            role: u.role,
+            companyName: u.company_name || '',
+        });
+    } catch (err) {
+        console.error('[Auth] Failed to fetch profile:', err);
+        res.status(500).json({ error: 'Impossible de charger le profil.' });
+    }
+});
+
+// CHANGE PASSWORD (with current password verification)
+router.post('/change-password', authenticateToken, async (req: AuthRequest, res) => {
+    const { currentPassword, newPassword } = req.body;
+    const userId = req.user.id;
+
+    if (!currentPassword || !newPassword) {
+        return res.status(400).json({ error: 'Veuillez renseigner le mot de passe actuel et le nouveau mot de passe.' });
+    }
+    if (String(newPassword).length < 6) {
+        return res.status(400).json({ error: 'Le nouveau mot de passe doit contenir au moins 6 caractères.' });
+    }
+
+    try {
+        const result = await query('SELECT id, password_hash FROM users WHERE id = ?', [userId]);
+        const rows = result.rows as any[];
+        if (rows.length === 0) {
+            return res.status(404).json({ error: 'Utilisateur introuvable.' });
+        }
+
+        const user = rows[0];
+        const isValid = await bcrypt.compare(String(currentPassword), user.password_hash);
+        if (!isValid) {
+            return res.status(400).json({ error: 'Le mot de passe actuel est incorrect.' });
+        }
+
+        const hashedPassword = await bcrypt.hash(String(newPassword), 10);
+        await query('UPDATE users SET password_hash = ? WHERE id = ?', [hashedPassword, userId]);
+
+        res.json({ message: 'Mot de passe mis à jour avec succès.' });
+    } catch (err) {
+        console.error('[Auth] Failed to change password:', err);
+        res.status(500).json({ error: 'Erreur lors du changement de mot de passe.' });
+    }
+});
+
 // UPDATE USER PROFILE
 router.put('/profile', authenticateToken, async (req: AuthRequest, res) => {
-    const { password, companyName, phone } = req.body;
+    const { password, currentPassword, companyName, phone } = req.body;
     const userId = req.user.id;
     const tenantId = req.user.tenantId;
 
     try {
+        if (password) {
+            if (String(password).length < 6) {
+                return res.status(400).json({ error: 'Le mot de passe doit contenir au moins 6 caractères.' });
+            }
+            if (currentPassword) {
+                const resUser = await query('SELECT password_hash FROM users WHERE id = ?', [userId]);
+                const u = (resUser.rows as any[])[0];
+                if (!u || !(await bcrypt.compare(String(currentPassword), u.password_hash))) {
+                    return res.status(400).json({ error: 'Le mot de passe actuel est incorrect.' });
+                }
+            }
+        }
+
         await import('../db').then(m => m.transaction(async (conn) => {
             // 1. Update Password if provided
             if (password) {

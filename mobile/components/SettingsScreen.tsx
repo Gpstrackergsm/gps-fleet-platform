@@ -1,6 +1,20 @@
-import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert, Switch } from 'react-native';
-import { Map, Globe, LogOut, CheckCircle2, Key, Gauge, WifiOff } from 'lucide-react-native';
+import React, { useState } from 'react';
+import {
+    View,
+    Text,
+    StyleSheet,
+    TouchableOpacity,
+    ScrollView,
+    Alert,
+    Switch,
+    TextInput,
+    ActivityIndicator,
+    Platform,
+} from 'react-native';
+import { Map, Globe, LogOut, CheckCircle2, Key, Gauge, WifiOff, Lock, ChevronDown, ChevronUp } from 'lucide-react-native';
+import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import { API_URL } from '../constants/Config';
 
 export interface NotificationPrefs {
     engine: boolean;
@@ -23,6 +37,12 @@ export default function SettingsScreen({
     notifPrefs,
     onChangeNotifPrefs,
 }: SettingsScreenProps) {
+    const [showPwdForm, setShowPwdForm] = useState(false);
+    const [currentPassword, setCurrentPassword] = useState('');
+    const [newPassword, setNewPassword] = useState('');
+    const [confirmPassword, setConfirmPassword] = useState('');
+    const [pwdLoading, setPwdLoading] = useState(false);
+
     const confirmLogout = () => {
         Alert.alert(
             'Déconnexion',
@@ -41,8 +61,48 @@ export default function SettingsScreen({
         });
     };
 
+    const handleChangePassword = async () => {
+        if (!currentPassword || !newPassword || !confirmPassword) {
+            Alert.alert('Champs requis', 'Veuillez remplir tous les champs de mot de passe.');
+            return;
+        }
+        if (newPassword.length < 6) {
+            Alert.alert('Mot de passe trop court', 'Le nouveau mot de passe doit contenir au moins 6 caractères.');
+            return;
+        }
+        if (newPassword !== confirmPassword) {
+            Alert.alert('Erreur', 'Les nouveaux mots de passe ne correspondent pas.');
+            return;
+        }
+
+        setPwdLoading(true);
+        try {
+            const token =
+                Platform.OS !== 'web'
+                    ? await SecureStore.getItemAsync('auth_token')
+                    : localStorage.getItem('auth_token');
+
+            await axios.post(
+                `${API_URL}/api/auth/change-password`,
+                { currentPassword, newPassword },
+                { headers: token ? { Authorization: `Bearer ${token}` } : {} }
+            );
+
+            setCurrentPassword('');
+            setNewPassword('');
+            setConfirmPassword('');
+            setShowPwdForm(false);
+            Alert.alert('Succès', 'Votre mot de passe a été modifié avec succès !');
+        } catch (err: any) {
+            const msg = err.response?.data?.error || 'Impossible de modifier le mot de passe.';
+            Alert.alert('Erreur', msg);
+        } finally {
+            setPwdLoading(false);
+        }
+    };
+
     return (
-        <ScrollView style={styles.container} contentContainerStyle={styles.content}>
+        <ScrollView style={styles.container} contentContainerStyle={styles.content} keyboardShouldPersistTaps="handled">
 
             {/* Section: Affichage Carte */}
             <Text style={styles.sectionHeader}>AFFICHAGE CARTE</Text>
@@ -143,6 +203,78 @@ export default function SettingsScreen({
                 </View>
             </View>
 
+            {/* Section: Sécurité & Mot de passe */}
+            <Text style={styles.sectionHeader}>SÉCURITÉ DU COMPTE</Text>
+            <View style={styles.sectionCard}>
+                <TouchableOpacity
+                    style={styles.settingRow}
+                    onPress={() => setShowPwdForm(v => !v)}
+                    activeOpacity={0.7}
+                >
+                    <View style={styles.rowLeft}>
+                        <View style={[styles.iconBox, { backgroundColor: '#EFF6FF' }]}>
+                            <Lock size={18} color="#2563EB" />
+                        </View>
+                        <View style={{ flex: 1 }}>
+                            <Text style={styles.settingLabel}>Changer le mot de passe</Text>
+                            <Text style={styles.settingSub}>Mettre à jour votre mot de passe de connexion</Text>
+                        </View>
+                    </View>
+                    {showPwdForm ? (
+                        <ChevronUp size={18} color="#64748B" />
+                    ) : (
+                        <ChevronDown size={18} color="#64748B" />
+                    )}
+                </TouchableOpacity>
+
+                {showPwdForm && (
+                    <View style={styles.pwdFormContainer}>
+                        <Text style={styles.inputLabel}>Mot de passe actuel</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            value={currentPassword}
+                            onChangeText={setCurrentPassword}
+                            placeholder="Votre mot de passe actuel"
+                            placeholderTextColor="#94A3B8"
+                            secureTextEntry
+                        />
+
+                        <Text style={styles.inputLabel}>Nouveau mot de passe (min. 6 caractères)</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            value={newPassword}
+                            onChangeText={setNewPassword}
+                            placeholder="Nouveau mot de passe"
+                            placeholderTextColor="#94A3B8"
+                            secureTextEntry
+                        />
+
+                        <Text style={styles.inputLabel}>Confirmer le nouveau mot de passe</Text>
+                        <TextInput
+                            style={styles.textInput}
+                            value={confirmPassword}
+                            onChangeText={setConfirmPassword}
+                            placeholder="Répétez le nouveau mot de passe"
+                            placeholderTextColor="#94A3B8"
+                            secureTextEntry
+                        />
+
+                        <TouchableOpacity
+                            style={[styles.savePwdBtn, pwdLoading && { opacity: 0.7 }]}
+                            onPress={handleChangePassword}
+                            disabled={pwdLoading}
+                            activeOpacity={0.8}
+                        >
+                            {pwdLoading ? (
+                                <ActivityIndicator size="small" color="#FFFFFF" />
+                            ) : (
+                                <Text style={styles.savePwdBtnText}>Enregistrer le nouveau mot de passe</Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                )}
+            </View>
+
             {/* Logout */}
             <TouchableOpacity style={styles.logoutCard} onPress={confirmLogout} activeOpacity={0.7}>
                 <LogOut size={20} color="#EF4444" style={{ marginRight: 10 }} />
@@ -211,6 +343,43 @@ const styles = StyleSheet.create({
         height: 1,
         backgroundColor: '#F1F5F9',
         marginLeft: 64,
+    },
+    pwdFormContainer: {
+        paddingHorizontal: 16,
+        paddingBottom: 16,
+        paddingTop: 8,
+        borderTopWidth: 1,
+        borderTopColor: '#F1F5F9',
+    },
+    inputLabel: {
+        fontSize: 12,
+        fontWeight: '600',
+        color: '#475569',
+        marginTop: 10,
+        marginBottom: 5,
+    },
+    textInput: {
+        backgroundColor: '#F8FAFC',
+        borderWidth: 1,
+        borderColor: '#CBD5E1',
+        borderRadius: 10,
+        paddingHorizontal: 12,
+        paddingVertical: 10,
+        fontSize: 14,
+        color: '#0F172A',
+    },
+    savePwdBtn: {
+        marginTop: 16,
+        backgroundColor: '#2563EB',
+        borderRadius: 12,
+        paddingVertical: 12,
+        alignItems: 'center',
+        justifyContent: 'center',
+    },
+    savePwdBtnText: {
+        color: '#FFFFFF',
+        fontSize: 14,
+        fontWeight: '700',
     },
     logoutCard: {
         flexDirection: 'row',
