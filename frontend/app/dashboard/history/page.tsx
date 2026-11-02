@@ -1,9 +1,10 @@
 "use client"
 
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useMemo } from 'react';
 import dynamic from 'next/dynamic';
 import api from '@/lib/api';
-import { Play, Pause, SkipBack, Download, ChevronDown, ChevronUp, Gauge, Clock, Route, TrendingUp, Flag, Car, X, SlidersHorizontal, ExternalLink } from 'lucide-react';
+import { Play, Pause, SkipBack, Download, ChevronDown, ChevronUp, Car, X, SlidersHorizontal, ExternalLink, MapPin } from 'lucide-react';
+import type { ParkingStop } from '@/components/HistoryMap';
 
 // ── Types ────────────────────────────────────────────────────────────────────
 interface Position {
@@ -95,6 +96,132 @@ function calcStats(positions: Position[]): TripStats | null {
     };
 }
 
+// ── Detect Parkings / Stops (≥ 2 minutes) ────────────────────────────────────
+function formatStopDuration(sec: number): string {
+    const h = Math.floor(sec / 3600);
+    const m = Math.floor((sec % 3600) / 60);
+    const s = Math.floor(sec % 60);
+    if (h > 0) return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    if (m > 0) return `${m}m`;
+    return `${s}s`;
+}
+
+function detectParkings(positions: Position[], minDurationSec = 120): ParkingStop[] {
+    if (!positions || positions.length < 2) return [];
+
+    const rawStops: {
+        lat: number;
+        lng: number;
+        startMs: number;
+        endMs: number;
+        positionIndex: number;
+    }[] = [];
+
+    let i = 0;
+    const n = positions.length;
+
+    while (i < n) {
+        const anchor = positions[i];
+        const anchorMs = new Date(anchor.timestamp).getTime();
+
+        if (anchor.speed <= 4) {
+            let j = i;
+            let sumLat = anchor.lat;
+            let sumLng = anchor.lng;
+            let count = 1;
+
+            while (j + 1 < n) {
+                const next = positions[j + 1];
+                const distFromAnchorKm = haversine(anchor.lat, anchor.lng, next.lat, next.lng);
+                const distFromPrevKm = haversine(positions[j].lat, positions[j].lng, next.lat, next.lng);
+
+                if (distFromAnchorKm <= 0.085 && (next.speed <= 4 || distFromPrevKm <= 0.045)) {
+                    j++;
+                    sumLat += next.lat;
+                    sumLng += next.lng;
+                    count++;
+                } else {
+                    break;
+                }
+            }
+
+            let endMs = new Date(positions[j].timestamp).getTime();
+            // Handle tracker sleep while parked (ACC OFF -> next point sent upon departure near same spot)
+            if (j + 1 < n) {
+                const dep = positions[j + 1];
+                const distDepKm = haversine(positions[j].lat, positions[j].lng, dep.lat, dep.lng);
+                if (distDepKm <= 0.16) {
+                    endMs = new Date(dep.timestamp).getTime();
+                }
+            }
+
+            const durationSec = Math.floor((endMs - anchorMs) / 1000);
+            if (durationSec >= minDurationSec) {
+                rawStops.push({
+                    lat: sumLat / count,
+                    lng: sumLng / count,
+                    startMs: anchorMs,
+                    endMs,
+                    positionIndex: i,
+                });
+            }
+
+            i = Math.max(i + 1, j + 1);
+        } else {
+            // Also detect if two consecutive points are at the exact same spot with a long time gap (sleep)
+            if (i + 1 < n) {
+                const next = positions[i + 1];
+                const distKm = haversine(anchor.lat, anchor.lng, next.lat, next.lng);
+                const nextMs = new Date(next.timestamp).getTime();
+                const gapSec = Math.floor((nextMs - anchorMs) / 1000);
+                if (distKm <= 0.065 && gapSec >= minDurationSec) {
+                    rawStops.push({
+                        lat: (anchor.lat + next.lat) / 2,
+                        lng: (anchor.lng + next.lng) / 2,
+                        startMs: anchorMs,
+                        endMs: nextMs,
+                        positionIndex: i,
+                    });
+                    i = i + 1;
+                    continue;
+                }
+            }
+            i++;
+        }
+    }
+
+    // Merge consecutive stops that are at the same spot separated by a brief GPS jitter (< 90s)
+    const merged: typeof rawStops = [];
+    for (const st of rawStops) {
+        if (merged.length > 0) {
+            const prev = merged[merged.length - 1];
+            const distKm = haversine(prev.lat, prev.lng, st.lat, st.lng);
+            const gapSec = (st.startMs - prev.endMs) / 1000;
+            if (distKm <= 0.085 && gapSec <= 90) {
+                prev.endMs = Math.max(prev.endMs, st.endMs);
+                prev.lat = (prev.lat + st.lat) / 2;
+                prev.lng = (prev.lng + st.lng) / 2;
+                continue;
+            }
+        }
+        merged.push({ ...st });
+    }
+
+    return merged.map((st, idx) => {
+        const durationSec = Math.max(0, Math.floor((st.endMs - st.startMs) / 1000));
+        return {
+            index: idx + 1,
+            lat: st.lat,
+            lng: st.lng,
+            startTime: new Date(st.startMs).toISOString(),
+            endTime: new Date(st.endMs).toISOString(),
+            durationSec,
+            durationText: formatStopDuration(durationSec),
+            positionIndex: st.positionIndex,
+        };
+    });
+}
+
 // ── CSV Export ────────────────────────────────────────────────────────────────
 function exportCSV(history: Position[], vehicleName: string) {
     const header = 'Timestamp,Speed_kmh,Latitude,Longitude,Course\n';
@@ -127,8 +254,12 @@ export default function HistoryPage() {
     const [playSpeed, setPlaySpeed] = useState(5);
     const [showTable, setShowTable] = useState(false);
     const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+    const [focusedParking, setFocusedParking] = useState<ParkingStop | null>(null);
     const playRef = useRef(false);
     const indexRef = useRef(0);
+
+    const parkings = useMemo(() => detectParkings(history), [history]);
+    const totalParkingSec = useMemo(() => parkings.reduce((acc, p) => acc + p.durationSec, 0), [parkings]);
 
     useEffect(() => {
         const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
@@ -146,6 +277,7 @@ export default function HistoryPage() {
             setLoading(true);
             setPlaying(false);
             setPlayIndex(0);
+            setFocusedParking(null);
             setMobileFiltersOpen(false);
             const start = new Date(startDate + 'T00:00:00').toISOString();
             const end = new Date(endDate + 'T23:59:59').toISOString();
@@ -166,6 +298,7 @@ export default function HistoryPage() {
         setLoading(true);
         setPlaying(false);
         setPlayIndex(0);
+        setFocusedParking(null);
         setMobileFiltersOpen(false); // Auto-close on mobile so user sees map
         try {
             const start = new Date(startDate + 'T00:00:00').toISOString();
@@ -266,10 +399,75 @@ export default function HistoryPage() {
                             <span className="text-blue-400 font-bold text-sm">{stats.maxSpeed} km/h</span>
                         </div>
                         <div className="bg-gray-800 rounded-lg p-2.5">
-                            <span className="text-gray-500 block">Avg Speed</span>
-                            <span className="text-white font-bold text-sm">{stats.avgSpeed} km/h</span>
+                            <span className="text-gray-500 block">Parkings ({parkings.length})</span>
+                            <span className="text-amber-400 font-bold text-sm">{totalParkingSec > 0 ? formatStopDuration(totalParkingSec) : '0m'}</span>
                         </div>
                     </div>
+                </div>
+            )}
+
+            {/* Parkings / Stops List */}
+            {history.length > 0 && (
+                <div className="p-4 border-b border-gray-800 space-y-2.5">
+                    <div className="flex items-center justify-between">
+                        <h3 className="text-xs font-semibold text-gray-400 uppercase tracking-wider flex items-center gap-1.5">
+                            <span className="w-4 h-4 rounded bg-amber-500 text-gray-950 font-black text-[10px] inline-flex items-center justify-center">P</span>
+                            <span>Parkings / Arrêts ({parkings.length})</span>
+                        </h3>
+                        {totalParkingSec > 0 && (
+                            <span className="text-[11px] font-bold text-amber-400 bg-amber-500/10 border border-amber-500/20 px-1.5 py-0.5 rounded">
+                                Total: {formatStopDuration(totalParkingSec)}
+                            </span>
+                        )}
+                    </div>
+
+                    {parkings.length === 0 ? (
+                        <div className="text-xs text-gray-500 bg-gray-800/50 rounded-lg p-2.5 text-center">
+                            Aucun parking détecté (≥ 2 min)
+                        </div>
+                    ) : (
+                        <div className="space-y-1.5 max-h-52 overflow-y-auto pr-1">
+                            {parkings.map(p => {
+                                const isFocused = focusedParking?.index === p.index;
+                                const startStr = new Date(p.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                const endStr = new Date(p.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+                                return (
+                                    <button
+                                        key={p.index}
+                                        onClick={() => {
+                                            setPlaying(false);
+                                            setPlayIndex(p.positionIndex);
+                                            setFocusedParking({ ...p });
+                                            if (isMobile) setMobileFiltersOpen(false);
+                                        }}
+                                        className={`w-full text-left p-2 rounded-lg border transition-all flex items-center justify-between gap-2 ${
+                                            isFocused
+                                                ? 'bg-amber-500/15 border-amber-500/50 text-white'
+                                                : 'bg-gray-800/70 hover:bg-gray-800 border-gray-700/60 text-gray-300'
+                                        }`}
+                                    >
+                                        <div className="flex items-center gap-2 min-w-0">
+                                            <span className="w-6 h-6 rounded-md bg-amber-500 text-gray-950 font-extrabold text-[11px] flex items-center justify-center shrink-0 shadow-xs">
+                                                P{p.index}
+                                            </span>
+                                            <div className="min-w-0">
+                                                <div className="text-xs font-semibold text-white truncate">
+                                                    {startStr} <span className="text-gray-500">→</span> {endStr}
+                                                </div>
+                                                <div className="text-[10px] text-gray-400 flex items-center gap-1 truncate">
+                                                    <MapPin size={10} className="text-amber-400 shrink-0" />
+                                                    <span>{p.lat.toFixed(4)}, {p.lng.toFixed(4)}</span>
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <span className="px-2 py-0.5 rounded-full text-[11px] font-bold bg-amber-500/20 text-amber-300 border border-amber-500/30 shrink-0">
+                                            {p.durationText}
+                                        </span>
+                                    </button>
+                                );
+                            })}
+                        </div>
+                    )}
                 </div>
             )}
 
@@ -378,9 +576,14 @@ export default function HistoryPage() {
                 >
                     <SlidersHorizontal size={13} className="text-blue-400" />
                     <span>Filter Trip</span>
+                    {parkings.length > 0 && (
+                        <span className="ml-0.5 px-1.5 py-0.2 rounded bg-amber-500 text-gray-950 font-extrabold text-[10px]">
+                            {parkings.length}P
+                        </span>
+                    )}
                 </button>
 
-                <HistoryMap history={history} playIndex={playIndex} />
+                <HistoryMap history={history} playIndex={playIndex} parkings={parkings} focusedParking={focusedParking} />
 
                 {/* Mobile Floating Bottom Playback Bar */}
                 {history.length > 0 && (

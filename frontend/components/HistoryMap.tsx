@@ -135,9 +135,22 @@ function buildColoredRouteSegments(history: Position[]): { segments: RouteSegmen
     return { segments, maxPassLevel };
 }
 
+export interface ParkingStop {
+    index: number;
+    lat: number;
+    lng: number;
+    startTime: string;
+    endTime: string;
+    durationSec: number;
+    durationText: string;
+    positionIndex: number;
+}
+
 interface HistoryMapProps {
     history: Position[];
     playIndex: number;
+    parkings?: ParkingStop[];
+    focusedParking?: ParkingStop | null;
 }
 
 const containerStyle = {
@@ -169,6 +182,42 @@ const GOOGLE_MAP_STYLES: google.maps.MapTypeStyle[] = [
         stylers: [{ visibility: 'on' }]
     }
 ];
+
+function generateParkingBadgeSvg(index: number, durationText: string, isSelected: boolean): { svg: string; width: number; height: number } {
+    const pLabel = `P${index}`;
+    const durLabel = durationText;
+    const pWidth = Math.max(20, pLabel.length * 7 + 8);
+    const durWidth = Math.max(30, durLabel.length * 6.5 + 12);
+    const totalW = Math.round(pWidth + durWidth);
+    const pillH = 20;
+    const totalH = pillH + 7;
+    const borderCol = isSelected ? '#38bdf8' : '#3b82f6';
+
+    const svg = `
+    <svg xmlns="http://www.w3.org/2000/svg" width="${totalW}" height="${totalH}" viewBox="0 0 ${totalW} ${totalH}">
+      <rect x="0.5" y="0.5" width="${totalW - 1}" height="${pillH - 1}" rx="5" fill="#0f172a" fill-opacity="0.95" stroke="${borderCol}" stroke-width="${isSelected ? 1.8 : 1.2}"/>
+      <rect x="1" y="1" width="${pWidth}" height="${pillH - 2}" rx="4" fill="#2563eb"/>
+      <text x="${Math.round(pWidth / 2) + 1}" y="14" font-family="system-ui, -apple-system, sans-serif" font-size="10" font-weight="900" fill="#ffffff" text-anchor="middle">${pLabel}</text>
+      <text x="${Math.round(pWidth + durWidth / 2)}" y="13.8" font-family="system-ui, -apple-system, sans-serif" font-size="9.5" font-weight="700" fill="#f8fafc" text-anchor="middle">${durLabel}</text>
+      <path d="M ${Math.round(totalW / 2) - 4},${pillH} L ${Math.round(totalW / 2) + 4},${pillH} L ${Math.round(totalW / 2)},${totalH - 1} Z" fill="${borderCol}"/>
+    </svg>`.trim();
+
+    return { svg, width: totalW, height: totalH };
+}
+
+function getGoogleParkingIcon(index: number, durationText: string, isSelected: boolean): google.maps.Icon {
+    const { svg, width, height } = generateParkingBadgeSvg(index, durationText, isSelected);
+    return {
+        url: `data:image/svg+xml;charset=UTF-8,${encodeURIComponent(svg)}`,
+        scaledSize: typeof google !== 'undefined' && google.maps?.Size ? new google.maps.Size(width, height) : undefined,
+        anchor: typeof google !== 'undefined' && google.maps?.Point ? new google.maps.Point(Math.round(width / 2), height - 1) : undefined,
+    };
+}
+
+function makeLeafletParkingIcon(index: number, durationText: string, isSelected = false) {
+    const { svg, width, height } = generateParkingBadgeSvg(index, durationText, isSelected);
+    return L.divIcon({ html: svg, className: '', iconSize: [width, height], iconAnchor: [Math.round(width / 2), height - 1] });
+}
 
 function generateVehicleMarkerSvg(state: string, course: number, isSelected: boolean): string {
     const selectedHalo = isSelected
@@ -249,13 +298,14 @@ function LeafletFitRoute({ positions }: { positions: Position[] }) {
     return null;
 }
 
-export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
+export default function HistoryMap({ history, playIndex, parkings = [], focusedParking = null }: HistoryMapProps) {
     // Default engine: Google Maps
     const [engine, setEngine] = useState<'google' | 'leaflet'>('google');
     const [googleMapType, setGoogleMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite' | 'terrain'>('hybrid');
     const [leafletTileLayer, setLeafletTileLayer] = useState<'street' | 'satellite'>('street');
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [selectedPoint, setSelectedPoint] = useState<Position | null>(null);
+    const [selectedParking, setSelectedParking] = useState<ParkingStop | null>(null);
 
     // Reverse Geocoded Address State
     const [pointAddress, setPointAddress] = useState<string | null>(null);
@@ -330,14 +380,28 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
         }
     }, [engine, isLoaded]);
 
-    // Auto resolve address when selectedPoint changes
+    // Auto resolve address when selectedPoint or selectedParking changes
     useEffect(() => {
-        if (selectedPoint) {
+        if (selectedParking) {
+            resolvePointAddress(selectedParking.lat, selectedParking.lng);
+        } else if (selectedPoint) {
             resolvePointAddress(selectedPoint.lat, selectedPoint.lng);
         } else {
             setPointAddress(null);
         }
-    }, [selectedPoint, resolvePointAddress]);
+    }, [selectedPoint, selectedParking, resolvePointAddress]);
+
+    // When focusedParking is clicked from the sidebar list, pan & zoom to it and open its InfoWindow
+    useEffect(() => {
+        if (focusedParking) {
+            setSelectedPoint(null);
+            setSelectedParking(focusedParking);
+            if (map) {
+                map.panTo({ lat: focusedParking.lat, lng: focusedParking.lng });
+                map.setZoom(17);
+            }
+        }
+    }, [focusedParking, map]);
 
     const handleSearchAddress = (e: React.FormEvent) => {
         e.preventDefault();
@@ -403,7 +467,7 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
 
     return (
         <div className="flex-1 relative min-h-0 h-full w-full bg-zinc-950 font-sans overflow-hidden">
-            {/* ── Route Pass Color Legend (shown when route has points) ── */}
+            {/* ── Route Pass & Parking Color Legend (shown when route has points) ── */}
             {history.length > 1 && (
                 <div className="absolute bottom-3 left-3 z-[400] bg-zinc-900/95 border border-zinc-700/80 rounded-xl px-3 py-1.5 shadow-xl backdrop-blur flex flex-wrap items-center gap-3 text-[11px] text-zinc-200 pointer-events-none">
                     <span className="flex items-center gap-1.5 font-medium">
@@ -426,6 +490,12 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                         <span className="flex items-center gap-1.5 font-medium">
                             <span className="w-3.5 h-1.5 rounded-full bg-[#ec4899]" />
                             <span>4e+</span>
+                        </span>
+                    )}
+                    {parkings.length > 0 && (
+                        <span className="flex items-center gap-1.5 font-medium pl-1 border-l border-zinc-700">
+                            <span className="px-1 py-0.2 rounded bg-blue-600 text-white text-[9px] font-black leading-none">P</span>
+                            <span>Parkings ({parkings.length})</span>
                         </span>
                     )}
                 </div>
@@ -570,7 +640,7 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 <Marker
                                     position={{ lat: start.lat, lng: start.lng }}
                                     title="Trip Start"
-                                    onClick={() => setSelectedPoint(start)}
+                                    onClick={() => { setSelectedParking(null); setSelectedPoint(start); }}
                                     icon={{
                                         path: google.maps.SymbolPath.CIRCLE,
                                         scale: 9,
@@ -587,7 +657,7 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 <Marker
                                     position={{ lat: end.lat, lng: end.lng }}
                                     title="Trip End"
-                                    onClick={() => setSelectedPoint(end)}
+                                    onClick={() => { setSelectedParking(null); setSelectedPoint(end); }}
                                     icon={{
                                         path: google.maps.SymbolPath.CIRCLE,
                                         scale: 9,
@@ -599,12 +669,27 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 />
                             )}
 
+                            {/* Parking Stop Markers with Duration Pill (P1 25m, P2 1h 10m...) */}
+                            {parkings.map(pStop => (
+                                <Marker
+                                    key={`g-park-${pStop.index}`}
+                                    position={{ lat: pStop.lat, lng: pStop.lng }}
+                                    title={`Parking #${pStop.index} (${pStop.durationText})`}
+                                    zIndex={80 + pStop.index}
+                                    onClick={() => {
+                                        setSelectedPoint(null);
+                                        setSelectedParking(pStop);
+                                    }}
+                                    icon={getGoogleParkingIcon(pStop.index, pStop.durationText, selectedParking?.index === pStop.index)}
+                                />
+                            ))}
+
                             {/* Moving Playback Marker (Dynamic Directional Arrow or Parked Badge) */}
                             {current && playIndex > 0 && (
                                 <Marker
                                     position={{ lat: current.lat, lng: current.lng }}
-                                    onClick={() => setSelectedPoint(current)}
-                                    zIndex={100}
+                                    onClick={() => { setSelectedParking(null); setSelectedPoint(current); }}
+                                    zIndex={120}
                                     icon={getGoogleVehicleIcon(
                                         current.speed > 3 ? 'moving' : 'parked',
                                         current.course || 0,
@@ -613,8 +698,75 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                                 />
                             )}
 
+                            {/* Parking Stop InfoWindow */}
+                            {selectedParking && (
+                                <InfoWindow
+                                    position={{ lat: selectedParking.lat, lng: selectedParking.lng }}
+                                    onCloseClick={() => setSelectedParking(null)}
+                                    options={{ pixelOffset: new google.maps.Size(0, -24) }}
+                                >
+                                    <div className="bg-zinc-900 text-white rounded-lg p-2.5 min-w-[210px] max-w-[280px] border border-zinc-800 shadow-xl font-sans">
+                                        <div className="flex items-center justify-between gap-2 pb-1.5 mb-1.5 border-b border-zinc-800">
+                                            <span className="font-bold text-xs text-white flex items-center gap-1.5">
+                                                <span className="px-1.5 py-0.5 rounded bg-blue-600 text-white text-[10px] font-black">P{selectedParking.index}</span>
+                                                <span>Parking #{selectedParking.index}</span>
+                                            </span>
+                                            <div className="flex items-center gap-1.5">
+                                                <span className="text-[10px] font-mono bg-blue-500/20 text-blue-300 border border-blue-500/30 px-1.5 py-0.5 rounded font-bold">
+                                                    {selectedParking.durationText}
+                                                </span>
+                                                <button
+                                                    type="button"
+                                                    onClick={() => setSelectedParking(null)}
+                                                    className="p-0.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                                                    title="Fermer"
+                                                >
+                                                    <X size={13} />
+                                                </button>
+                                            </div>
+                                        </div>
+
+                                        {/* Physical Street Address */}
+                                        <div className="flex items-start gap-1 text-[10px] text-zinc-300 pb-1.5 mb-1.5 border-b border-zinc-800">
+                                            <MapPin size={11} className="text-red-400 shrink-0 mt-0.5" />
+                                            <span className="leading-tight text-white font-medium">
+                                                {addressLoading && !pointAddress ? "Resolving street address..." : (pointAddress || `${selectedParking.lat.toFixed(5)}, ${selectedParking.lng.toFixed(5)}`)}
+                                            </span>
+                                        </div>
+
+                                        <div className="text-[11px] text-zinc-300 space-y-0.5">
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Arrivée :</span>
+                                                <span className="font-mono text-zinc-200">{new Date(selectedParking.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Départ :</span>
+                                                <span className="font-mono text-zinc-200">{new Date(selectedParking.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' })}</span>
+                                            </div>
+                                            <div className="flex justify-between">
+                                                <span className="text-zinc-500">Durée totale :</span>
+                                                <span className="font-mono text-blue-400 font-bold">{selectedParking.durationText}</span>
+                                            </div>
+                                        </div>
+
+                                        {/* Direct Google Maps Link */}
+                                        <div className="pt-2 mt-2 border-t border-zinc-800 flex justify-end">
+                                            <a
+                                                href={`https://www.google.com/maps/search/?api=1&query=${selectedParking.lat},${selectedParking.lng}`}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="text-[10px] text-blue-400 hover:text-blue-300 flex items-center gap-1 font-semibold transition-colors"
+                                            >
+                                                <span>Open in Google Maps</span>
+                                                <ExternalLink size={10} />
+                                            </a>
+                                        </div>
+                                    </div>
+                                </InfoWindow>
+                            )}
+
                             {/* Point Info Window */}
-                            {selectedPoint && (
+                            {selectedPoint && !selectedParking && (
                                 <InfoWindow
                                     position={{ lat: selectedPoint.lat, lng: selectedPoint.lng }}
                                     onCloseClick={() => setSelectedPoint(null)}
@@ -703,6 +855,43 @@ export default function HistoryMap({ history, playIndex }: HistoryMapProps) {
                             weight={seg.weight}
                             opacity={seg.passLevel === 0 ? 0.88 : 0.95}
                         />
+                    ))}
+
+                    {parkings.map(pStop => (
+                        <LeafletMarker
+                            key={`l-park-${pStop.index}`}
+                            position={[pStop.lat, pStop.lng]}
+                            icon={makeLeafletParkingIcon(pStop.index, pStop.durationText, selectedParking?.index === pStop.index)}
+                            eventHandlers={{
+                                click: () => {
+                                    setSelectedPoint(null);
+                                    setSelectedParking(pStop);
+                                }
+                            }}
+                        >
+                            <Popup>
+                                <div className="text-xs text-zinc-900 font-sans min-w-[175px]">
+                                    <div className="font-bold text-blue-600 mb-0.5">🅿️ Parking #{pStop.index} — {pStop.durationText}</div>
+                                    <div className="text-[10px] text-zinc-600 mb-1 leading-tight">
+                                        {pointAddress || `${pStop.lat.toFixed(5)}, ${pStop.lng.toFixed(5)}`}
+                                    </div>
+                                    <div className="text-[10px] text-zinc-500">
+                                        {new Date(pStop.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })} → {new Date(pStop.endTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                    </div>
+                                    <div className="mt-1.5 pt-1 border-t border-zinc-200">
+                                        <a
+                                            href={`https://www.google.com/maps/search/?api=1&query=${pStop.lat},${pStop.lng}`}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="text-[10px] text-blue-600 font-semibold flex items-center gap-1"
+                                        >
+                                            <span>Open in Google Maps</span>
+                                            <ExternalLink size={9} />
+                                        </a>
+                                    </div>
+                                </div>
+                            </Popup>
+                        </LeafletMarker>
                     ))}
 
                     {start && (
