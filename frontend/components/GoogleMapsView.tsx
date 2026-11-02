@@ -1,6 +1,7 @@
 "use client"
 
 import React, { useEffect, useState, useCallback, useRef, useMemo } from 'react';
+import { useRouter } from 'next/navigation';
 import { GoogleMap, useJsApiLoader, Marker, InfoWindow, TrafficLayer } from '@react-google-maps/api';
 import { socket } from '@/lib/socket';
 import api from '@/lib/api';
@@ -8,7 +9,8 @@ import {
     Search, Plus, Minus, Layers, Navigation, Wifi, WifiOff,
     Gauge, Clock, Car, Radio, Battery, Zap, ZapOff,
     Compass, Key, ShieldAlert, Sliders, AlertTriangle,
-    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Tag, ExternalLink
+    CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Tag, ExternalLink,
+    Route, Fuel, TrendingUp, History
 } from 'lucide-react';
 
 const containerStyle = {
@@ -35,6 +37,7 @@ interface Vehicle {
     speed: number;
     course: number;
     state: 'moving' | 'parked' | 'idling' | 'offline';
+    stateStartTime: Date;
     lastUpdate: Date;
     internet_status: boolean;
     gps_status: boolean;
@@ -46,6 +49,25 @@ interface Vehicle {
     fuel_percent?: number;
     isTcpConnected?: boolean;
     sim_phone?: string;
+}
+
+interface DailyVehicleStats {
+    distanceKm: number;
+    wasteMad: number;
+    maxSpeed: number;
+}
+
+const FUEL_IDLE_RATES: Record<string, number> = { light: 1.3, van: 1.8, truck: 3.0 };
+const SPEED_EXTRA_L_PER_100KM = 2.2;
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+    if ([lat1, lon1, lat2, lon2].some(isNaN)) return 0;
+    const R = 6371;
+    const toRad = (deg: number) => deg * (Math.PI / 180);
+    const dLat = toRad(lat2 - lat1);
+    const dLon = toRad(lon2 - lon1);
+    const a = Math.sin(dLat / 2) ** 2 + Math.cos(toRad(lat1)) * Math.cos(toRad(lat2)) * Math.sin(dLon / 2) ** 2;
+    return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
 }
 
 interface GoogleMapsViewProps {
@@ -86,6 +108,20 @@ function timeSince(date: Date): string {
     if (s < 60) return `${Math.max(0, s)}s ago`;
     if (s < 3600) return `${Math.floor(s / 60)}m ago`;
     return `${Math.floor(s / 3600)}h ago`;
+}
+
+function formatStateDuration(date: Date): string {
+    const s = Math.max(0, Math.floor((Date.now() - date.getTime()) / 1000));
+    if (s < 60) return '< 1m';
+    if (s < 3600) return `${Math.floor(s / 60)}m`;
+    if (s < 86400) {
+        const h = Math.floor(s / 3600);
+        const m = Math.floor((s % 3600) / 60);
+        return m > 0 ? `${h}h ${m}m` : `${h}h`;
+    }
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    return h > 0 ? `${d}j ${h}h` : `${d}j`;
 }
 
 function escapeXml(unsafe: string): string {
@@ -195,6 +231,7 @@ const GOOGLE_MAP_STYLES: google.maps.MapTypeStyle[] = [
 const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
 
 export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProps) {
+    const router = useRouter();
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyCnQRiDe3A6Rs9kKAOYJmA4OrOqz8_y7kM",
@@ -205,6 +242,8 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const [map, setMap] = useState<google.maps.Map | null>(null);
     const [vehicles, setVehicles] = useState<Record<string, Vehicle>>({});
     const vehiclesRef = useRef<Record<string, Vehicle>>({});
+    const [dailyStats, setDailyStats] = useState<Record<string, DailyVehicleStats>>({});
+    const [, setTick] = useState(0);
     const [selectedId, setSelectedId] = useState<string | null>(null);
     const [search, setSearch] = useState('');
     const [mapType, setMapType] = useState<google.maps.MapTypeId | 'hybrid' | 'roadmap' | 'satellite' | 'terrain'>('hybrid');
@@ -224,6 +263,60 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
     const addressCache = useRef<Record<string, string>>({});
     const geocoderRef = useRef<google.maps.Geocoder | null>(null);
     const [mapSearch, setMapSearch] = useState('');
+
+    // Refresh relative timers (state duration & last update) every 15s
+    useEffect(() => {
+        const timer = setInterval(() => setTick(n => n + 1), 15000);
+        return () => clearInterval(timer);
+    }, []);
+
+    // Fetch Today's Distance (km), Fuel Waste (MAD), and Max Speed (km/h) per vehicle
+    const fetchTodayStats = useCallback(async () => {
+        try {
+            let vehicleTypes: Record<string, string> = {};
+            let fuelPrice = 13.5;
+            if (typeof window !== 'undefined') {
+                try {
+                    const rawTypes = localStorage.getItem('fuel_vehicle_types');
+                    if (rawTypes) vehicleTypes = JSON.parse(rawTypes);
+                    const rawPrice = localStorage.getItem('fuel_price');
+                    if (rawPrice) fuelPrice = Number(rawPrice) || 13.5;
+                } catch { /* ignore */ }
+            }
+
+            const res = await api.get('/fuel/analytics?period=today&threshold=100');
+            const devicesList: any[] = res.data?.devices || [];
+            const statsMap: Record<string, DailyVehicleStats> = {};
+
+            devicesList.forEach((d: any) => {
+                const vt = vehicleTypes[d.device_id] || 'light';
+                const rate = FUEL_IDLE_RATES[vt] || 1.3;
+                const idleL = (Number(d.idleHours) || 0) * rate;
+                const speedL = ((Number(d.speedingKm) || 0) / 100) * SPEED_EXTRA_L_PER_100KM;
+                const eventsCostSum = Array.isArray(d.events) && d.events.length > 0
+                    ? d.events.reduce((s: number, e: any) => s + Math.round(((Number(e.minutes) || 0) / 60) * rate * fuelPrice), 0)
+                    : Math.round(idleL * fuelPrice * 10) / 10;
+                const speedCostRounded = Math.round(speedL * fuelPrice * 10) / 10;
+                const totalMad = Math.round((eventsCostSum + speedCostRounded) * 10) / 10;
+
+                statsMap[d.device_id] = {
+                    distanceKm: Number(d.distanceKm) || 0,
+                    wasteMad: totalMad >= 1 ? Math.round(totalMad) : totalMad,
+                    maxSpeed: Number(d.maxSpeed) || 0,
+                };
+            });
+
+            setDailyStats(statsMap);
+        } catch (err) {
+            console.error('Failed to fetch daily vehicle stats:', err);
+        }
+    }, []);
+
+    useEffect(() => {
+        fetchTodayStats();
+        const interval = setInterval(fetchTodayStats, 60000);
+        return () => clearInterval(interval);
+    }, [fetchTodayStats]);
 
     const resolveAddress = useCallback((lat: number, lng: number, deviceId: string) => {
         if (!isLoaded || typeof window === 'undefined' || !window.google?.maps) return;
@@ -323,6 +416,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
             res.data.forEach((d: any) => {
                 if (d.lat && d.lng) {
                     const lastUpdate = d.last_update ? new Date(d.last_update) : new Date(0);
+                    const stateStartTime = d.state_start_time ? new Date(d.state_start_time) : lastUpdate;
                     const speed = d.speed || 0;
                     const accStatus = Boolean(d.acc_status);
                     mapData[d.device_id] = {
@@ -337,6 +431,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         speed,
                         course: d.course || 0,
                         state: d.current_state || getState(speed, accStatus, lastUpdate),
+                        stateStartTime,
                         lastUpdate,
                         internet_status: d.internet_status || false,
                         gps_status: d.gps_status || false,
@@ -368,6 +463,29 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                 if (!existing) {
                     return prev;
                 }
+
+                // Update daily distance & maxSpeed incrementally in real-time
+                if (data.lat && data.lng) {
+                    const deltaKm = speed >= 5 ? haversineKm(existing.lat, existing.lng, data.lat, data.lng) : 0;
+                    setDailyStats(prevStats => {
+                        const cur = prevStats[data.deviceId] || { distanceKm: 0, wasteMad: 0, maxSpeed: 0 };
+                        return {
+                            ...prevStats,
+                            [data.deviceId]: {
+                                ...cur,
+                                distanceKm: Math.round((cur.distanceKm + (deltaKm < 5 ? deltaKm : 0)) * 10) / 10,
+                                maxSpeed: speed < 220 ? Math.max(cur.maxSpeed, Math.round(speed)) : cur.maxSpeed,
+                            }
+                        };
+                    });
+                }
+
+                const stateStartTime = data.stateStartTime
+                    ? new Date(data.stateStartTime)
+                    : existing.state !== state
+                        ? lastUpdate
+                        : existing.stateStartTime;
+
                 const updated: Vehicle = {
                     ...existing,
                     lat: data.lat,
@@ -375,6 +493,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                     speed,
                     course: data.course || 0,
                     state,
+                    stateStartTime,
                     lastUpdate,
                     internet_status: true,
                     gps_status: data.gpsStatus ?? existing.gps_status ?? true,
@@ -539,68 +658,151 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                 {filtered.length === 0 && (
                     <div className="p-8 text-center text-zinc-500 text-xs">No matching vehicles found</div>
                 )}
-                {filtered.map(v => (
-                    <button
-                        key={v.id}
-                        onClick={() => handleSelectVehicle(v.id)}
-                        className={`w-full text-left p-3 transition-colors relative ${
-                            selectedId === v.id ? 'bg-zinc-800/80 border-l-4 border-l-blue-500' : 'hover:bg-zinc-800/40'
-                        }`}
-                    >
-                        <div className="flex items-center justify-between mb-1">
-                            <div className="flex items-center gap-2">
-                                <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stateColor(v.state) }} />
-                                <span className="font-semibold text-white text-xs md:text-sm truncate max-w-[140px] md:max-w-[160px]">{v.name}</span>
-                            </div>
-                            <span
-                                className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.2 rounded"
-                                style={{ color: stateColor(v.state), backgroundColor: `${stateColor(v.state)}15` }}
-                            >
-                                {stateLabel(v.state)}
-                            </span>
-                        </div>
+                {filtered.map(v => {
+                    const stats = dailyStats[v.device_id];
+                    const isOverspeed = v.speed > 100;
+                    const idleMinutes = v.state === 'idling'
+                        ? Math.floor((Date.now() - v.stateStartTime.getTime()) / 60000)
+                        : 0;
+                    const isLongIdle = v.state === 'idling' && idleMinutes >= 3;
 
-                        {v.company_name && (
-                            <p className="text-[10px] text-zinc-400 mb-0.5">{v.company_name}</p>
-                        )}
+                    const alertBorderClass = isOverspeed
+                        ? 'border-l-4 border-l-red-500 bg-red-950/20 ring-1 ring-inset ring-red-500/60 animate-pulse'
+                        : isLongIdle
+                            ? 'border-l-4 border-l-amber-500 bg-amber-950/15 ring-1 ring-inset ring-amber-500/50 animate-pulse'
+                            : selectedId === v.id
+                                ? 'bg-zinc-800/80 border-l-4 border-l-blue-500'
+                                : 'hover:bg-zinc-800/40';
 
-                        {/* Physical Street Address */}
-                        <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 truncate my-1">
-                            <MapPin size={11} className="text-red-400 shrink-0" />
-                            <span className="truncate" title={addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}>
-                                {addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}
-                            </span>
-                        </div>
+                    return (
+                        <div
+                            key={v.id}
+                            role="button"
+                            tabIndex={0}
+                            onClick={() => handleSelectVehicle(v.id)}
+                            onKeyDown={(e) => {
+                                if (e.key === 'Enter' || e.key === ' ') handleSelectVehicle(v.id);
+                            }}
+                            className={`w-full text-left p-3 transition-colors relative cursor-pointer ${alertBorderClass}`}
+                        >
+                            {/* Option 22: Blinking Visual Alert Banner (Overspeed > 100 km/h or Idling >= 3 min) */}
+                            {isOverspeed && (
+                                <div className="mb-1.5 px-2 py-0.5 rounded bg-red-500/20 border border-red-500/50 text-red-300 text-[9px] font-bold flex items-center justify-between animate-pulse">
+                                    <span className="flex items-center gap-1">
+                                        <AlertTriangle size={10} className="text-red-400 shrink-0" />
+                                        EXCÈS DE VITESSE (&gt; 100 km/h)
+                                    </span>
+                                    <span className="font-mono">{v.speed.toFixed(0)} km/h</span>
+                                </div>
+                            )}
+                            {!isOverspeed && isLongIdle && (
+                                <div className="mb-1.5 px-2 py-0.5 rounded bg-amber-500/20 border border-amber-500/50 text-amber-300 text-[9px] font-bold flex items-center justify-between animate-pulse">
+                                    <span className="flex items-center gap-1">
+                                        <AlertTriangle size={10} className="text-amber-400 shrink-0" />
+                                        RALENTI PROLONGÉ
+                                    </span>
+                                    <span className="font-mono">{idleMinutes} min</span>
+                                </div>
+                            )}
 
-                        {/* Compact Telemetry Badges */}
-                        <div className="grid grid-cols-3 gap-1 text-[10px] text-zinc-400 bg-zinc-950/40 p-1.5 rounded border border-zinc-800/60 mt-1.5">
-                            <div className="flex items-center gap-1">
-                                <Gauge size={11} className="text-blue-400 shrink-0" />
-                                <span className="font-mono text-zinc-200">{v.speed.toFixed(0)} <span className="text-[8px] text-zinc-500">km/h</span></span>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                                <Battery size={11} className="text-green-400 shrink-0" />
-                                <span className="font-mono text-zinc-200">{v.battery_level}%</span>
-                            </div>
-
-                            <div className="flex items-center gap-1">
-                                <Key size={11} className={v.acc_status ? 'text-emerald-400 shrink-0' : 'text-zinc-600 shrink-0'} />
-                                <span className={`text-[9px] ${v.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
-                                    {v.acc_status ? 'ENG ON' : 'ENG OFF'}
+                            <div className="flex items-center justify-between mb-1">
+                                <div className="flex items-center gap-2">
+                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stateColor(v.state) }} />
+                                    <span className="font-semibold text-white text-xs md:text-sm truncate max-w-[140px] md:max-w-[160px]">{v.name}</span>
+                                </div>
+                                <span
+                                    className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.2 rounded"
+                                    style={{ color: stateColor(v.state), backgroundColor: `${stateColor(v.state)}15` }}
+                                >
+                                    {stateLabel(v.state)}
                                 </span>
                             </div>
-                        </div>
 
-                        <div className="flex items-center justify-between text-[9px] text-zinc-500 mt-1.5 px-0.5">
-                            <span className="font-mono text-zinc-400">{v.plate_number || v.device_id.slice(-6)}</span>
-                            <span className="flex items-center gap-1">
-                                <Clock size={9} />
-                                {timeSince(v.lastUpdate)}
-                            </span>
+                            {v.company_name && (
+                                <p className="text-[10px] text-zinc-400 mb-0.5">{v.company_name}</p>
+                            )}
+
+                            {/* Physical Street Address */}
+                            <div className="flex items-center gap-1.5 text-[10px] text-zinc-300 truncate my-1">
+                                <MapPin size={11} className="text-red-400 shrink-0" />
+                                <span className="truncate" title={addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}>
+                                    {addresses[v.device_id] || `${v.lat.toFixed(4)}, ${v.lng.toFixed(4)}`}
+                                </span>
+                            </div>
+
+                            {/* Compact Telemetry Grid (Row 1: Live Speed | State Duration [Option 1] | Engine) + (Row 2: Today Km [Option 2] | Waste MAD [Option 3] | Max Speed [Option 6]) */}
+                            <div className="bg-zinc-950/40 p-1.5 rounded border border-zinc-800/60 mt-1.5 space-y-1.5">
+                                <div className="grid grid-cols-3 gap-1 text-[10px] text-zinc-400">
+                                    <div className="flex items-center gap-1">
+                                        <Gauge size={11} className="text-blue-400 shrink-0" />
+                                        <span className="font-mono text-zinc-200">{v.speed.toFixed(0)} <span className="text-[8px] text-zinc-500">km/h</span></span>
+                                    </div>
+
+                                    {/* Option 1: Durée de l'état actuel (replaces 100% battery) */}
+                                    <div className="flex items-center gap-1" title="Durée dans l'état actuel">
+                                        <Clock size={11} className="shrink-0" style={{ color: stateColor(v.state) }} />
+                                        <span className="font-mono text-zinc-200 truncate">{formatStateDuration(v.stateStartTime)}</span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1">
+                                        <Key size={11} className={v.acc_status ? 'text-emerald-400 shrink-0' : 'text-zinc-600 shrink-0'} />
+                                        <span className={`text-[9px] ${v.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
+                                            {v.acc_status ? 'ENG ON' : 'ENG OFF'}
+                                        </span>
+                                    </div>
+                                </div>
+
+                                {/* Row 2: Daily Metrics (Option 2: Distance km | Option 3: Fuel Waste MAD | Option 6: Max Speed) */}
+                                <div className="grid grid-cols-3 gap-1 text-[10px] text-zinc-400 pt-1 border-t border-zinc-800/50">
+                                    <div className="flex items-center gap-1" title="Distance parcourue aujourd'hui">
+                                        <Route size={11} className="text-sky-400 shrink-0" />
+                                        <span className="font-mono text-zinc-200 truncate">
+                                            {(stats?.distanceKm ?? 0).toFixed(1)} <span className="text-[8px] text-zinc-500">km</span>
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1" title="Gaspillage / Ralenti aujourd'hui (MAD)">
+                                        <Fuel size={11} className="text-amber-400 shrink-0" />
+                                        <span className="font-mono text-amber-300 truncate">
+                                            {stats?.wasteMad ?? 0} <span className="text-[8px] text-amber-500/80">MAD</span>
+                                        </span>
+                                    </div>
+
+                                    <div className="flex items-center gap-1" title="Vitesse maximale aujourd'hui">
+                                        <TrendingUp size={11} className="text-purple-400 shrink-0" />
+                                        <span className="font-mono text-zinc-200 truncate">
+                                            <span className="text-[8px] text-zinc-500 mr-0.5">Max</span>
+                                            {Math.round(Math.max(stats?.maxSpeed ?? 0, v.speed < 220 ? v.speed : 0))}
+                                        </span>
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Bottom Row: Plate/ID | Last Update | Option 14: Replay Button */}
+                            <div className="flex items-center justify-between text-[9px] text-zinc-500 mt-1.5 px-0.5">
+                                <span className="font-mono text-zinc-400">{v.plate_number || v.device_id.slice(-6)}</span>
+                                <div className="flex items-center gap-2">
+                                    <span className="flex items-center gap-1">
+                                        <Clock size={9} />
+                                        {timeSince(v.lastUpdate)}
+                                    </span>
+                                    <button
+                                        type="button"
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            router.push(`/dashboard/history?device=${encodeURIComponent(v.device_id)}`);
+                                        }}
+                                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white border border-blue-500/30 font-semibold text-[9px] transition-colors"
+                                        title="Ouvrir le Replay / Historique du jour"
+                                    >
+                                        <History size={10} />
+                                        <span>Replay</span>
+                                    </button>
+                                </div>
+                            </div>
                         </div>
-                    </button>
-                ))}
+                    );
+                })}
             </div>
         </div>
     );
@@ -895,6 +1097,16 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                 </div>
 
                                     <div className="flex items-center gap-2">
+                                        <button
+                                            type="button"
+                                            onClick={() => router.push(`/dashboard/history?device=${encodeURIComponent(selectedVehicle.device_id)}`)}
+                                            className="p-1.5 bg-blue-600/20 hover:bg-blue-600 text-blue-400 hover:text-white rounded-lg transition-colors flex items-center gap-1 text-[11px] font-semibold border border-blue-500/30"
+                                            title="Ouvrir le Replay / Historique du jour"
+                                        >
+                                            <History size={13} />
+                                            <span className="hidden sm:inline">Replay</span>
+                                        </button>
+
                                         <a
                                             href={`https://www.google.com/maps/search/?api=1&query=${selectedVehicle.lat},${selectedVehicle.lng}`}
                                             target="_blank"
@@ -932,7 +1144,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                             </div>
 
                             {/* Telemetry Metrics Strip */}
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 text-center">
+                            <div className="grid grid-cols-5 gap-1.5 text-center">
                                 <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
                                     <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Engine</span>
                                     <span className={`text-[11px] font-bold ${selectedVehicle.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
@@ -940,20 +1152,28 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                     </span>
                                 </div>
                                 <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
-                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Battery</span>
-                                    <span className="text-[11px] font-bold font-mono text-green-400">{selectedVehicle.battery_level}%</span>
+                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Durée État</span>
+                                    <span className="text-[11px] font-bold font-mono" style={{ color: stateColor(selectedVehicle.state) }}>
+                                        {formatStateDuration(selectedVehicle.stateStartTime)}
+                                    </span>
                                 </div>
                                 <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
-                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Sats/GSM</span>
-                                    <span className="text-[11px] font-mono text-purple-400">{selectedVehicle.satellites ?? '--'}/{selectedVehicle.gsm_signal ?? '--'}</span>
+                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Distance (Jour)</span>
+                                    <span className="text-[11px] font-bold font-mono text-sky-400">
+                                        {(dailyStats[selectedVehicle.device_id]?.distanceKm ?? 0).toFixed(1)} km
+                                    </span>
                                 </div>
                                 <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
-                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Heading</span>
-                                    <span className="text-[11px] font-mono text-amber-400">{getCourseCompass(selectedVehicle.course)}</span>
+                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Ralenti (MAD)</span>
+                                    <span className="text-[11px] font-bold font-mono text-amber-400">
+                                        {dailyStats[selectedVehicle.device_id]?.wasteMad ?? 0} MAD
+                                    </span>
                                 </div>
-                                <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40 hidden sm:block">
-                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Coordinates</span>
-                                    <span className="text-[10px] font-mono text-zinc-300 truncate block">{selectedVehicle.lat.toFixed(4)}, {selectedVehicle.lng.toFixed(4)}</span>
+                                <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
+                                    <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Vitesse Max</span>
+                                    <span className="text-[11px] font-bold font-mono text-purple-400">
+                                        {Math.round(Math.max(dailyStats[selectedVehicle.device_id]?.maxSpeed ?? 0, selectedVehicle.speed < 220 ? selectedVehicle.speed : 0))} km/h
+                                    </span>
                                 </div>
                             </div>
                         </div>

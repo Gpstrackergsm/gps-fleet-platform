@@ -131,7 +131,34 @@ export default function HistoryPage() {
     const indexRef = useRef(0);
 
     useEffect(() => {
-        api.get('/devices').then(r => setDevices(r.data)).catch(console.error);
+        const params = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+        const preselectedDevice = params?.get('device') || '';
+
+        api.get('/devices').then(r => {
+            setDevices(r.data);
+            if (preselectedDevice) {
+                setSelectedDevice(preselectedDevice);
+            }
+        }).catch(console.error);
+
+        if (preselectedDevice) {
+            setSelectedDevice(preselectedDevice);
+            setLoading(true);
+            setPlaying(false);
+            setPlayIndex(0);
+            setMobileFiltersOpen(false);
+            const start = new Date(startDate + 'T00:00:00').toISOString();
+            const end = new Date(endDate + 'T23:59:59').toISOString();
+            api.get(`/devices/${preselectedDevice}/history`, { params: { start, end } })
+                .then(res => {
+                    const cleaned = filterGpsSpikes(res.data);
+                    setHistory(cleaned);
+                    setStats(calcStats(cleaned));
+                })
+                .catch(console.error)
+                .finally(() => setLoading(false));
+        }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchHistory = async () => {
