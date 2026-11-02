@@ -8,6 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { motion } from 'framer-motion';
 import LanguageSelector from '@/components/LanguageSelector';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useLanguage } from '@/lib/LanguageContext';
 import Link from 'next/link';
 import { Car } from 'lucide-react';
@@ -44,8 +45,8 @@ export default function LoginPage() {
     };
 
     return (
-        <div className={`flex min-h-screen flex-col items-center justify-center bg-black text-white px-4 relative ${isRTL ? 'font-sans' : ''}`}>
-            {/* Top Bar with Brand Link and Language Switcher */}
+        <div className={`flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-white px-4 relative ${isRTL ? 'font-sans' : ''}`}>
+            {/* Top Bar with Brand Link, Theme Toggle, and Language Switcher */}
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
@@ -54,7 +55,10 @@ export default function LoginPage() {
                     <span className="font-bold text-white text-sm">TrackPro</span>
                 </Link>
 
-                <LanguageSelector />
+                <div className="flex items-center gap-2.5">
+                    <ThemeToggle />
+                    <LanguageSelector />
+                </div>
             </div>
 
             <div className="absolute inset-0 bg-[url('https://images.unsplash.com/photo-1451187580459-43490279c0fa?q=80&w=2072&auto=format&fit=crop')] bg-cover bg-center opacity-20"></div>

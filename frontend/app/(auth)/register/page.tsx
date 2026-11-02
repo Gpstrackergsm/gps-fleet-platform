@@ -7,6 +7,7 @@ import { Input } from '@/components/ui/input';
 import { motion, AnimatePresence } from 'framer-motion';
 import Link from 'next/link';
 import LanguageSelector from '@/components/LanguageSelector';
+import ThemeToggle from '@/components/ThemeToggle';
 import { useLanguage } from '@/lib/LanguageContext';
 import {
     Car,
@@ -312,9 +313,9 @@ export default function RegisterPage() {
     return (
         <div
             dir={isRTL ? 'rtl' : 'ltr'}
-            className={`flex min-h-screen flex-col items-center justify-center bg-black text-white px-4 py-16 relative overflow-hidden ${isRTL ? 'font-sans' : ''}`}
+            className={`flex min-h-screen flex-col items-center justify-center bg-zinc-950 text-white px-4 py-16 relative overflow-hidden ${isRTL ? 'font-sans' : ''}`}
         >
-            {/* Top Bar with Brand Link and Language Switcher */}
+            {/* Top Bar with Brand Link, Theme Toggle, and Language Switcher */}
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
                 <Link href="/" className="flex items-center gap-2 group">
                     <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
@@ -325,7 +326,10 @@ export default function RegisterPage() {
                     </span>
                 </Link>
 
-                <LanguageSelector />
+                <div className="flex items-center gap-2.5">
+                    <ThemeToggle />
+                    <LanguageSelector />
+                </div>
             </div>
 
             {/* Background Glow */}

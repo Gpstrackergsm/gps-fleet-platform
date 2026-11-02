@@ -155,11 +155,12 @@
 }
 
 /* ══ Theme: light mode (toggled with html.light) ══
-   The app is built dark-first with Tailwind gray/accent utilities.
+   The app is built dark-first with Tailwind gray/zinc/accent utilities.
    Light mode remaps those theme variables instead of touching every page. */
 :root{--chart-grid:#1f2937;--chart-text:#9ca3af;--chart-text-strong:#d1d5db;--chart-tip-bg:#0b1220;--chart-tip-text:#e5e7eb;--chart-cursor:rgba(148,163,184,0.08)}
 html.light{color-scheme:light;--chart-grid:#e2e8f0;--chart-text:#64748b;--chart-text-strong:#334155;--chart-tip-bg:#ffffff;--chart-tip-text:#0f172a;--chart-cursor:rgba(15,23,42,0.05);
 --color-gray-950:#f1f5f9;--color-gray-900:#ffffff;--color-gray-800:#e2e8f0;--color-gray-700:#cbd5e1;--color-gray-600:#94a3b8;--color-gray-500:#64748b;--color-gray-400:#475569;--color-gray-300:#334155;--color-gray-200:#1e293b;--color-gray-100:#0f172a;--color-gray-50:#020617;
+--color-zinc-950:#f1f5f9;--color-zinc-900:#ffffff;--color-zinc-800:#e2e8f0;--color-zinc-700:#cbd5e1;--color-zinc-600:#94a3b8;--color-zinc-500:#64748b;--color-zinc-400:#475569;--color-zinc-300:#334155;--color-zinc-200:#1e293b;--color-zinc-100:#0f172a;--color-zinc-50:#020617;
 --color-red-950:#fef2f2;--color-red-900:#fecaca;--color-red-400:#dc2626;--color-red-300:#b91c1c;
 --color-amber-950:#fffbeb;--color-amber-900:#fde68a;--color-amber-400:#d97706;--color-amber-300:#b45309;
 --color-emerald-950:#ecfdf5;--color-emerald-900:#a7f3d0;--color-emerald-400:#059669;--color-emerald-300:#047857;
@@ -171,6 +172,8 @@ html.light{color-scheme:light;--chart-grid:#e2e8f0;--chart-text:#64748b;--chart-
 --color-indigo-950:#eef2ff;--color-indigo-900:#c7d2fe;--color-indigo-400:#4f46e5;--color-indigo-300:#4338ca;
 }
 html.light body{background:#f1f5f9;color:#0f172a}
+html.light .bg-black{background-color:#f8fafc}
+html.light .bg-black\/70{background-color:rgba(255,255,255,0.85)}
 html.light .text-white,html.light .hover\:text-white:hover{color:#0f172a}
 html.light :is([class~="bg-red-500"],[class~="bg-red-600"],[class~="bg-red-700"],[class~="bg-amber-500"],[class~="bg-amber-600"],[class~="bg-amber-700"],[class~="bg-emerald-500"],[class~="bg-emerald-600"],[class~="bg-emerald-700"],[class~="bg-blue-500"],[class~="bg-blue-600"],[class~="bg-blue-700"],[class~="bg-teal-500"],[class~="bg-teal-600"],[class~="bg-teal-700"],[class~="bg-green-500"],[class~="bg-green-600"],[class~="bg-green-700"],[class~="bg-yellow-500"],[class~="bg-yellow-600"],[class~="bg-yellow-700"],[class~="bg-orange-500"],[class~="bg-orange-600"],[class~="bg-orange-700"],[class~="bg-indigo-500"],[class~="bg-indigo-600"],[class~="bg-indigo-700"]).text-white,html.light :is([class~="bg-red-500"],[class~="bg-red-600"],[class~="bg-red-700"],[class~="bg-amber-500"],[class~="bg-amber-600"],[class~="bg-amber-700"],[class~="bg-emerald-500"],[class~="bg-emerald-600"],[class~="bg-emerald-700"],[class~="bg-blue-500"],[class~="bg-blue-600"],[class~="bg-blue-700"],[class~="bg-teal-500"],[class~="bg-teal-600"],[class~="bg-teal-700"],[class~="bg-green-500"],[class~="bg-green-600"],[class~="bg-green-700"],[class~="bg-yellow-500"],[class~="bg-yellow-600"],[class~="bg-yellow-700"],[class~="bg-orange-500"],[class~="bg-orange-600"],[class~="bg-orange-700"],[class~="bg-indigo-500"],[class~="bg-indigo-600"],[class~="bg-indigo-700"]) .text-white{color:#fff}
 html.light .gm-style .gm-style-iw-c{background:rgba(255,255,255,0.97)!important;border-color:#cbd5e1!important;box-shadow:0 12px 30px -4px rgba(15,23,42,0.25)!important}
