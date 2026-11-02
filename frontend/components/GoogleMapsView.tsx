@@ -932,7 +932,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                             </div>
 
                             {/* Telemetry Metrics Strip */}
-                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 text-center pb-2.5 mb-2.5 border-b border-zinc-800/60">
+                            <div className="grid grid-cols-4 sm:grid-cols-5 gap-1.5 text-center">
                                 <div className="bg-zinc-950/60 p-1.5 rounded-lg border border-zinc-800/40">
                                     <span className="text-[8px] md:text-[9px] text-zinc-500 uppercase block font-semibold">Engine</span>
                                     <span className={`text-[11px] font-bold ${selectedVehicle.acc_status ? 'text-emerald-400' : 'text-zinc-500'}`}>
@@ -956,56 +956,6 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                     <span className="text-[10px] font-mono text-zinc-300 truncate block">{selectedVehicle.lat.toFixed(4)}, {selectedVehicle.lng.toFixed(4)}</span>
                                 </div>
                             </div>
-
-                            {/* 2-Way Hardware Remote Control Actions */}
-                            <div className="grid grid-cols-3 gap-1.5">
-                                <button
-                                    onClick={() => handleSendCommand('stop_engine')}
-                                    disabled={commandLoading}
-                                    className="py-1.5 px-2 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-200 text-[10px] md:text-xs font-semibold rounded-xl flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-lg"
-                                    title="Remotely kill fuel pump / engine relay"
-                                >
-                                    <ZapOff size={12} className="text-red-400 shrink-0" />
-                                    <span className="truncate">Cut Engine</span>
-                                </button>
-
-                                <button
-                                    onClick={() => handleSendCommand('resume_engine')}
-                                    disabled={commandLoading}
-                                    className="py-1.5 px-2 bg-emerald-950/80 hover:bg-emerald-900 border border-emerald-800/80 text-emerald-200 text-[10px] md:text-xs font-semibold rounded-xl flex items-center justify-center gap-1 transition-colors disabled:opacity-50 shadow-lg"
-                                    title="Restore fuel pump relay to normal"
-                                >
-                                    <Zap size={12} className="text-emerald-400 shrink-0" />
-                                    <span className="truncate">Resume</span>
-                                </button>
-
-                                <button
-                                    onClick={() => handleSendCommand('set_interval', '30s')}
-                                    disabled={commandLoading}
-                                    className="py-1.5 px-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 text-zinc-300 text-[10px] md:text-xs font-semibold rounded-xl flex items-center justify-center gap-1 transition-colors disabled:opacity-50"
-                                    title="Set reporting frequency to 30s"
-                                >
-                                    <Sliders size={12} className="shrink-0" />
-                                    <span className="truncate">30s Sync</span>
-                                </button>
-                            </div>
-
-                            {/* Remote Command Feedback Toast Banner */}
-                            {commandResponse && (
-                                <div className={`mt-2 p-2 rounded-lg border text-[11px] flex items-center justify-between ${
-                                    commandResponse.success
-                                        ? 'bg-emerald-950/80 border-emerald-800 text-emerald-300'
-                                        : 'bg-red-950/80 border-red-800 text-red-300'
-                                }`}>
-                                    <div className="flex items-center gap-1.5 truncate">
-                                        {commandResponse.success ? <CheckCircle2 size={13} className="shrink-0" /> : <AlertTriangle size={13} className="shrink-0 text-red-400" />}
-                                        <span className="truncate">{commandResponse.message}</span>
-                                    </div>
-                                    <button onClick={() => setCommandResponse(null)} className="text-zinc-400 hover:text-white shrink-0 ml-1">
-                                        <X size={12} />
-                                    </button>
-                                </div>
-                            )}
                         </div>
                     </>
                 )}
