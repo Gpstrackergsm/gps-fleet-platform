@@ -141,17 +141,9 @@
   background: rgba(24, 24, 27, 0.96) !important;
 }
 
+.gm-style .gm-style-iw-chr,
 .gm-style .gm-ui-hover-effect {
-  top: 4px !important;
-  right: 4px !important;
-  width: 18px !important;
-  height: 18px !important;
-  filter: invert(1) grayscale(1) !important;
-  opacity: 0.65 !important;
-}
-
-.gm-style .gm-ui-hover-effect:hover {
-  opacity: 1 !important;
+  display: none !important;
 }
 
 /* ══ Theme: light mode (toggled with html.light) ══

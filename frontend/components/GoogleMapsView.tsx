@@ -552,6 +552,8 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
         setTelemetryOpen(true);
         if (toggleLabel) {
             setShowMapLabels(prev => selectedId === id ? !prev : true);
+        } else {
+            setShowMapLabels(true);
         }
         const v = vehicles[id];
         if (v && map) {
@@ -992,17 +994,30 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                 disableAutoPan: true
                             }}
                         >
-                            <div className="text-white text-xs font-sans min-w-[130px] max-w-[200px]">
-                                <div className="flex items-center justify-between gap-1 pb-1 border-b border-zinc-800">
+                            <div className="text-white text-xs font-sans min-w-[155px] max-w-[215px]">
+                                <div className="flex items-center justify-between gap-2 pb-1.5 border-b border-zinc-800">
                                     <span className="font-bold text-white text-xs truncate">{selectedVehicle.name}</span>
-                                    <span
-                                        className="text-[9px] font-bold px-1.5 py-0.2 rounded shrink-0"
-                                        style={{ color: stateColor(selectedVehicle.state), backgroundColor: `${stateColor(selectedVehicle.state)}20` }}
-                                    >
-                                        {stateLabel(selectedVehicle.state)}
-                                    </span>
+                                    <div className="flex items-center gap-1.5 shrink-0">
+                                        <span
+                                            className="text-[9px] font-bold px-1.5 py-0.5 rounded"
+                                            style={{ color: stateColor(selectedVehicle.state), backgroundColor: `${stateColor(selectedVehicle.state)}20` }}
+                                        >
+                                            {stateLabel(selectedVehicle.state)}
+                                        </span>
+                                        <button
+                                            type="button"
+                                            onClick={(e) => {
+                                                e.stopPropagation();
+                                                setShowMapLabels(false);
+                                            }}
+                                            className="p-0.5 rounded text-zinc-400 hover:text-white hover:bg-zinc-800 transition-colors cursor-pointer"
+                                            title="Fermer"
+                                        >
+                                            <X size={13} />
+                                        </button>
+                                    </div>
                                 </div>
-                                <div className="flex items-center justify-between pt-1 text-[11px]">
+                                <div className="flex items-center justify-between pt-1.5 text-[11px]">
                                     <span className="text-blue-400 font-mono font-bold">{selectedVehicle.speed.toFixed(0)} km/h</span>
                                     <span className={selectedVehicle.acc_status ? 'text-emerald-400 text-[10px] font-semibold' : 'text-zinc-500 text-[10px]'}>
                                         {selectedVehicle.acc_status ? 'ENG ON' : 'ENG OFF'}
