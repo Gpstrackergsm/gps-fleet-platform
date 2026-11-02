@@ -58,11 +58,37 @@ async function sendVerificationEmail(
         </div>
     `;
 
-    // 1. Try SMTP (Gmail / Outlook / Custom SMTP via Nodemailer)
-    if (smtpHost && smtpUser && smtpPass) {
+    // 1. Try SMTP (Direct Nodemailer first, then Vercel SMTP relay if Railway blocks port 465/587)
+    if (smtpUser && smtpPass) {
+        const effectiveHost = smtpHost || 'smtp.gmail.com';
+        // 1a. Try Vercel HTTPS->SMTP relay first (never blocked by Railway firewall)
+        try {
+            const relayUrl = process.env.VERCEL_SMTP_RELAY_URL || 'https://www.gps-eu.com/api/send-otp';
+            const relayResp = await fetch(relayUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    to: email,
+                    subject,
+                    html,
+                    smtpHost: effectiveHost,
+                    smtpPort,
+                    smtpUser,
+                    smtpPass,
+                }),
+            });
+            if (relayResp.ok) {
+                return { delivered: true, provider: 'vercel-smtp' };
+            }
+            console.warn('[Auth] Vercel SMTP relay non-200:', await relayResp.text());
+        } catch (relayErr) {
+            console.warn('[Auth] Vercel SMTP relay error:', relayErr);
+        }
+
+        // 1b. Direct SMTP fallback
         try {
             const transporter = nodemailer.createTransport({
-                host: smtpHost,
+                host: effectiveHost,
                 port: smtpPort,
                 secure: smtpPort === 465,
                 auth: {

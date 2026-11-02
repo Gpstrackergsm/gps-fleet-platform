@@ -419,4 +419,49 @@ router.post('/factory-reset', authenticateToken, requireAdmin, async (req: AuthR
     }
 });
 
+// GET Email / System Settings
+router.get('/email-settings', authenticateToken, requireAdmin, async (_req: AuthRequest, res) => {
+    try {
+        const result = await query('SELECT setting_key, setting_value FROM system_settings');
+        const map: Record<string, string> = {};
+        for (const r of (result.rows as any[])) {
+            map[r.setting_key] = r.setting_value;
+        }
+        res.json(map);
+    } catch (err) {
+        console.error('[Admin] Failed to read email settings:', err);
+        res.status(500).json({ error: 'Failed to read email settings' });
+    }
+});
+
+// SAVE Email / System Settings
+router.post('/email-settings', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    const allowedKeys = [
+        'SMTP_HOST',
+        'SMTP_PORT',
+        'SMTP_USER',
+        'SMTP_PASS',
+        'RESEND_API_KEY',
+        'BREVO_API_KEY',
+        'EMAIL_FROM',
+        'EMAIL_FROM_ADDRESS',
+    ];
+    try {
+        for (const key of allowedKeys) {
+            if (req.body[key] !== undefined) {
+                await query(
+                    `INSERT INTO system_settings (setting_key, setting_value)
+                     VALUES (?, ?)
+                     ON DUPLICATE KEY UPDATE setting_value = VALUES(setting_value)`,
+                    [key, String(req.body[key]).trim()]
+                );
+            }
+        }
+        res.json({ message: 'Email settings saved successfully' });
+    } catch (err) {
+        console.error('[Admin] Failed to save email settings:', err);
+        res.status(500).json({ error: 'Failed to save email settings' });
+    }
+});
+
 export default router;
