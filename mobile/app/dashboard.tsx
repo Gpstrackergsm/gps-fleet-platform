@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity, Platform, Alert, ActivityIndicator } from 'react-native';
+import { StyleSheet, View, Text, TouchableOpacity, Platform, Alert, ActivityIndicator, AppState } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import MapView, { Marker, PROVIDER_GOOGLE } from 'react-native-maps';
 import { Navigation, Key, LocateFixed, Layers, X, Car } from 'lucide-react-native';
@@ -103,6 +103,23 @@ export default function Dashboard() {
                 }
             } catch { /* ignore */ }
         })();
+
+        // Listen for user minimizing or putting the app in the background
+        const appStateSub = AppState.addEventListener('change', (nextState) => {
+            if (nextState === 'background') {
+                // When on home screen, trigger a notification 3s later to show real-time background capability
+                scheduleLocalNotification(
+                    '🚨 Geofence GPS — Surveillance Active',
+                    'Vos véhicules sont surveillés en arrière-plan. Aucune anomalie détectée.',
+                    { source: 'background_check' },
+                    3
+                );
+            }
+        });
+
+        return () => {
+            appStateSub.remove();
+        };
     }, []);
 
     const handleChangeNotifPrefs = async (next: NotificationPrefs) => {

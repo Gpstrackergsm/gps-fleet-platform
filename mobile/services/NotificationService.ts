@@ -91,13 +91,17 @@ export async function registerForPushNotificationsAsync(): Promise<string | null
 }
 
 /**
- * Trigger an immediate native local system notification.
+ * Trigger an immediate or delayed native local system notification.
  * Works even when app is backgrounded or inactive.
  */
-export async function scheduleLocalNotification(title: string, body: string, data?: Record<string, any>) {
+export async function scheduleLocalNotification(title: string, body: string, data?: Record<string, any>, delaySeconds?: number) {
   if (Platform.OS === 'web') return;
 
   try {
+    const triggerInput = delaySeconds && delaySeconds > 0
+      ? { type: Notifications.SchedulableTriggerInputTypes.TIME_INTERVAL, seconds: delaySeconds, repeats: false }
+      : null;
+
     await Notifications.scheduleNotificationAsync({
       content: {
         title,
@@ -106,8 +110,9 @@ export async function scheduleLocalNotification(title: string, body: string, dat
         sound: 'default',
         ...(Platform.OS === 'android' ? { channelId: 'geofence-alerts' } : {}),
       } as any,
-      trigger: null, // trigger immediately
+      trigger: triggerInput as any,
     });
+    console.log('[NotificationService] Scheduled notification successfully:', title);
   } catch (err) {
     console.error('[NotificationService] Failed to schedule notification:', err);
   }
