@@ -69,7 +69,7 @@ export default function LoginScreen() {
                 style={styles.keyboardView}
             >
                 <View style={styles.headerContainer}>
-                    <Text style={styles.title}>GPS Tracker</Text>
+                    <Text style={styles.title}>Geofence GPS</Text>
                     <Text style={styles.subtitle}>Connectez-vous pour continuer</Text>
                 </View>
 

@@ -280,6 +280,12 @@ export default function SettingsScreen({
                 <LogOut size={20} color="#EF4444" style={{ marginRight: 10 }} />
                 <Text style={styles.logoutText}>Se déconnecter</Text>
             </TouchableOpacity>
+
+            {/* App Info Footer */}
+            <View style={{ alignItems: 'center', marginTop: 24, marginBottom: 12 }}>
+                <Text style={{ fontSize: 13, fontWeight: '700', color: '#64748B' }}>Geofence GPS v1.0.0</Text>
+                <Text style={{ fontSize: 11, color: '#94A3B8', marginTop: 2 }}>Service Client : 0661176946</Text>
+            </View>
         </ScrollView>
     );
 }

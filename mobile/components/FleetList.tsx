@@ -13,6 +13,7 @@ export interface Vehicle {
     alarm?: string;
     accStatus?: boolean;
     lastUpdate: Date | string;
+    last_update?: string;
     status: string;
     current_state?: 'moving' | 'idling' | 'parked' | 'offline';
     state_start_time?: string | Date;

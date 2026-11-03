@@ -6,6 +6,7 @@ import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import 'react-native-reanimated';
 import { useColorScheme } from 'react-native';
+import { registerForPushNotificationsAsync, registerBackgroundAlertsTask } from '../services/NotificationService';
 
 // Prevent the splash screen from auto-hiding before asset loading is complete.
 SplashScreen.preventAutoHideAsync();
@@ -14,6 +15,9 @@ export default function RootLayout() {
   const colorScheme = useColorScheme();
   useEffect(() => {
     SplashScreen.hideAsync();
+    // Initialize background push notifications and tasks
+    registerForPushNotificationsAsync();
+    registerBackgroundAlertsTask();
   }, []);
 
   return (

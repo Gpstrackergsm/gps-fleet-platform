@@ -14,6 +14,7 @@ import AlertsList from '../components/AlertsList';
 import AlertBanner, { BannerAlert } from '../components/AlertBanner';
 import SettingsScreen, { NotificationPrefs } from '../components/SettingsScreen';
 import FuelEcoView from '../components/FuelEcoView';
+import { scheduleLocalNotification } from '../services/NotificationService';
 
 // Clean Google Satellite Map: only street/road names visible, all POI icons hidden
 const CUSTOM_MAP_STYLE = [
@@ -132,6 +133,13 @@ export default function Dashboard() {
         }
         setActiveBanner(banner);
         setUnreadAlertCount(prev => prev + 1);
+
+        // Trigger native notification (appears in system notification shade)
+        scheduleLocalNotification(
+            `Alerte Geofence · ${banner.vehicleName}`,
+            banner.message,
+            { alertId: banner.id, type: banner.type }
+        );
     };
 
 
@@ -293,8 +301,8 @@ export default function Dashboard() {
 
                 // Engine (ACC) ON / OFF alert detection
                 if (existing && existing.accStatus !== undefined && data.accStatus !== undefined) {
-                    const prevAcc = existing.accStatus === 1 || existing.accStatus === true;
-                    const currAcc = data.accStatus === 1 || data.accStatus === true;
+                    const prevAcc = Boolean(existing.accStatus);
+                    const currAcc = Boolean(data.accStatus === 1 || data.accStatus === true);
 
                     if (prevAcc !== currAcc && notifPrefsRef.current.engine) {
                         const now = Date.now();
@@ -363,7 +371,7 @@ export default function Dashboard() {
             const now = Date.now();
             setVehicles(current => {
                 Object.values(current).forEach(v => {
-                    const lastSeen = v.lastUpdate ? v.lastUpdate.getTime() : 0;
+                    const lastSeen = v.lastUpdate ? new Date(v.lastUpdate).getTime() : 0;
                     const isOffline = now - lastSeen > OFFLINE_THRESHOLD_MS;
                     const lastAlerted = offlineAlertSentRef.current[v.id] || 0;
                     // Alert once per 10 minutes per vehicle when offline
