@@ -12,7 +12,6 @@ export const BACKGROUND_ALERTS_TASK = 'GEOFENCE_BACKGROUND_ALERTS_TASK';
 // Configure how notifications are displayed when the app is foregrounded
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
-    shouldShowAlert: true,
     shouldShowBanner: true,
     shouldShowList: true,
     shouldPlaySound: true,
