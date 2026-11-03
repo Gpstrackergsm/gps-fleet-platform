@@ -103,24 +103,9 @@ export default function Dashboard() {
                 }
             } catch { /* ignore */ }
         })();
-
-        // Listen for user minimizing or putting the app in the background
-        const appStateSub = AppState.addEventListener('change', (nextState) => {
-            if (nextState === 'background') {
-                // When on home screen, trigger a notification 3s later to show real-time background capability
-                scheduleLocalNotification(
-                    '🚨 Geofence GPS — Surveillance Active',
-                    'Vos véhicules sont surveillés en arrière-plan. Aucune anomalie détectée.',
-                    { source: 'background_check' },
-                    3
-                );
-            }
-        });
-
-        return () => {
-            appStateSub.remove();
-        };
     }, []);
+
+    const seenAlertIdsRef = useRef(new Set<string>());
 
     const handleChangeNotifPrefs = async (next: NotificationPrefs) => {
         setNotifPrefs(next);
@@ -133,9 +118,6 @@ export default function Dashboard() {
     const handleSnoozeChange = async (until: number | null) => {
         setSnoozeUntil(until);
         snoozeUntilRef.current = until;
-        if (until && until > Date.now()) {
-            setActiveBanner(null);
-        }
         try {
             if (until) {
                 await SecureStore.setItemAsync('alerts_snooze_until', String(until));
@@ -145,18 +127,21 @@ export default function Dashboard() {
         } catch { /* ignore */ }
     };
 
-    const showBanner = (banner: BannerAlert) => {
+    const triggerAlert = (alertId: string, vehicleName: string, message: string, type: 'engine' | 'speed' | 'offline') => {
+        // Prevent duplicate alerts for the same event
+        if (seenAlertIdsRef.current.has(alertId)) return;
+        seenAlertIdsRef.current.add(alertId);
+
         if (snoozeUntilRef.current && Date.now() < snoozeUntilRef.current) {
             return; // notifications are snoozed
         }
-        setActiveBanner(banner);
         setUnreadAlertCount(prev => prev + 1);
 
-        // Trigger native notification (appears in system notification shade)
+        // Native iOS system notification only — NO in-app orange banner
         scheduleLocalNotification(
-            `Alerte Geofence · ${banner.vehicleName}`,
-            banner.message,
-            { alertId: banner.id, type: banner.type }
+            `Alerte Geofence · ${vehicleName}`,
+            message,
+            { alertId, type }
         );
     };
 
@@ -317,42 +302,6 @@ export default function Dashboard() {
                     gpsStatus: data.gpsStatus
                 };
 
-                // Engine (ACC) ON / OFF alert detection
-                if (existing && existing.accStatus !== undefined && data.accStatus !== undefined) {
-                    const prevAcc = Boolean(existing.accStatus);
-                    const currAcc = Boolean(data.accStatus === 1 || data.accStatus === true);
-
-                    if (prevAcc !== currAcc && notifPrefsRef.current.engine) {
-                        const now = Date.now();
-                        showBanner({
-                            id: `engine-${deviceId}-${now}`,
-                            type: 'engine',
-                            subType: currAcc ? 'on' : 'off',
-                            vehicleName: updatedVehicle.name,
-                            message: currAcc
-                                ? 'Contact mis : Moteur allumé'
-                                : 'Contact coupé : Moteur arrêté',
-                            timestamp: now,
-                        });
-                    }
-                }
-
-                // Speed alert — max one notification per vehicle every 2 minutes
-                if (speed >= SPEED_THRESHOLD && notifPrefsRef.current.speed) {
-                    const lastSent = speedAlertSentRef.current[deviceId] || 0;
-                    const now = Date.now();
-                    if (now - lastSent > 2 * 60 * 1000) {
-                        speedAlertSentRef.current[deviceId] = now;
-                        showBanner({
-                            id: `speed-${deviceId}-${now}`,
-                            type: 'speed',
-                            vehicleName: updatedVehicle.name,
-                            message: `Vitesse excessive : ${Math.round(speed)} km/h — limite ${SPEED_THRESHOLD} km/h`,
-                            timestamp: now,
-                        });
-                    }
-                }
-
                 return { ...prev, [deviceId]: updatedVehicle };
             });
         });
@@ -362,16 +311,17 @@ export default function Dashboard() {
             const alertType = String(alertData.type || '').toLowerCase();
             if (alertType.includes('speed') && !notifPrefsRef.current.speed) return;
             if ((alertType.includes('engine') || alertType.includes('acc')) && !notifPrefsRef.current.engine) return;
+
             setVehicles(current => {
                 const vName = current[alertData.deviceId]?.name || alertData.vehicle_name || `Véhicule ${String(alertData.deviceId || '').slice(-4)}`;
-                showBanner({
-                    id: `srv-alert-${alertData.id || Date.now()}`,
-                    type: alertType.includes('engine') ? 'engine' : 'speed',
-                    subType: alertType.includes('off') ? 'off' : 'on',
-                    vehicleName: vName,
-                    message: alertData.message || 'Nouvelle alerte détectée',
-                    timestamp: Date.now(),
-                });
+                const uniqueAlertId = String(alertData.id || `${alertData.deviceId}-${alertData.type}-${Math.floor(Date.now() / 60000)}`);
+
+                triggerAlert(
+                    uniqueAlertId,
+                    vName,
+                    alertData.message || 'Nouvelle alerte détectée',
+                    alertType.includes('engine') ? 'engine' : 'speed'
+                );
                 return current;
             });
         });
@@ -396,13 +346,12 @@ export default function Dashboard() {
                     if (isOffline && now - lastAlerted > 10 * 60 * 1000) {
                         offlineAlertSentRef.current[v.id] = now;
                         const mins = Math.floor((now - lastSeen) / 60000);
-                        showBanner({
-                            id: `offline-${v.id}-${now}`,
-                            type: 'offline',
-                            vehicleName: v.name,
-                            message: `Hors ligne depuis ${mins} min — aucune donnée GPS reçue`,
-                            timestamp: now,
-                        });
+                        triggerAlert(
+                            `offline-${v.id}-${Math.floor(now / (10 * 60 * 1000))}`,
+                            v.name,
+                            `Hors ligne depuis ${mins} min — aucune donnée GPS reçue`,
+                            'offline'
+                        );
                     }
                 });
                 return current; // no state mutation needed
@@ -741,12 +690,6 @@ export default function Dashboard() {
                     />
                 )}
             </View>
-
-            {/* Floating Alert Banner */}
-            <AlertBanner
-                alert={activeBanner}
-                onDismiss={() => setActiveBanner(null)}
-            />
 
             {/* Bottom Navigation Bar */}
             <BottomNav

@@ -201,34 +201,6 @@ export default function SettingsScreen({
                         trackColor={{ false: '#CBD5E1', true: '#D97706' }}
                     />
                 </View>
-                <View style={styles.divider} />
-                <TouchableOpacity
-                    style={[styles.settingRow, { backgroundColor: '#F0FDF4', paddingVertical: 14 }]}
-                    activeOpacity={0.7}
-                    onPress={async () => {
-                        const { scheduleLocalNotification } = require('../services/NotificationService');
-                        await scheduleLocalNotification(
-                            '🚨 Alerte Geofence : Véhicule V4',
-                            'Sortie de zone autorisée détectée (Vitesse : 78 km/h)',
-                            { test: true },
-                            4
-                        );
-                        Alert.alert(
-                            '🔔 Test d\'arrière-plan programmé !',
-                            'Quittez immédiatement l\'application et revenez sur votre écran d\'accueil. Une notification avec son et bannière apparaîtra dans 4 secondes !'
-                        );
-                    }}
-                >
-                    <View style={styles.rowLeft}>
-                        <View style={[styles.iconBox, { backgroundColor: '#DCFCE7' }]}>
-                            <CheckCircle2 size={18} color="#16A34A" />
-                        </View>
-                        <View style={{ flex: 1 }}>
-                            <Text style={[styles.settingLabel, { color: '#16A34A' }]}>Tester la notification d'arrière-plan</Text>
-                            <Text style={styles.settingSub}>Déclenche une alerte 4s après être retourné à l'accueil</Text>
-                        </View>
-                    </View>
-                </TouchableOpacity>
             </View>
 
             {/* Section: Sécurité & Mot de passe */}
