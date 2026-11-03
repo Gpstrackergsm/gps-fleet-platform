@@ -669,6 +669,7 @@ export default function Dashboard() {
                 {/* TAB 5: ALERTES */}
                 {activeTab === 'alerts' && (
                     <AlertsList
+                        vehicles={vehicles}
                         snoozeUntil={snoozeUntil}
                         onSnoozeChange={handleSnoozeChange}
                         onSelectVehicle={(deviceId) => {

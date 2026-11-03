@@ -65,6 +65,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                 await emitAndSaveAlert({
                     tenantId,
                     deviceId: telemetry.deviceId,
+                    vehicleName,
                     ruleId: null,
                     type: currAcc ? 'engine_on' : 'engine_off',
                     severity: 'low',
@@ -118,6 +119,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                     await emitAndSaveAlert({
                         tenantId,
                         deviceId: telemetry.deviceId,
+                        vehicleName,
                         ruleId: null,
                         type: 'geofence_entry',
                         severity: 'medium',
@@ -132,6 +134,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                     await emitAndSaveAlert({
                         tenantId,
                         deviceId: telemetry.deviceId,
+                        vehicleName,
                         ruleId: null,
                         type: 'geofence_exit',
                         severity: 'high',
@@ -149,6 +152,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                 await emitAndSaveAlert({
                     tenantId,
                     deviceId: telemetry.deviceId,
+                    vehicleName,
                     ruleId: null,
                     type: 'geofence_overspeed',
                     severity: 'high',
@@ -175,6 +179,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
                     await emitAndSaveAlert({
                         tenantId,
                         deviceId: telemetry.deviceId,
+                        vehicleName,
                         ruleId: rule.id,
                         type: 'overspeed',
                         severity: telemetry.speed > rule.threshold_value + 30 ? 'critical' : 'high',
@@ -191,6 +196,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
             await emitAndSaveAlert({
                 tenantId,
                 deviceId: telemetry.deviceId,
+                vehicleName,
                 ruleId: null,
                 type: 'overspeed',
                 severity: telemetry.speed >= 120 ? 'critical' : 'high',
@@ -208,6 +214,7 @@ export async function evaluateTelemetryAlerts(telemetry: TelemetryPoint, ioInsta
 interface AlertPayload {
     tenantId: number;
     deviceId: string;
+    vehicleName?: string;
     ruleId: number | null;
     type: string;
     severity: 'low' | 'medium' | 'high' | 'critical';
@@ -251,6 +258,7 @@ async function emitAndSaveAlert(payload: AlertPayload, ioInstance: any): Promise
             id: (insertRes as any).insertId,
             tenantId: payload.tenantId,
             deviceId: payload.deviceId,
+            vehicle_name: payload.vehicleName,
             type: payload.type,
             severity: payload.severity,
             message: payload.message,
@@ -263,7 +271,7 @@ async function emitAndSaveAlert(payload: AlertPayload, ioInstance: any): Promise
 
         if (ioInstance) {
             ioInstance.emit('alert', alertData);
-            console.log(`   [ALERT] Emitted ${payload.severity.toUpperCase()} alert for ${payload.deviceId}: ${payload.message}`);
+            console.log(`   [ALERT] Emitted ${payload.severity.toUpperCase()} alert for ${payload.deviceId} (${payload.vehicleName || 'vehicle'}): ${payload.message}`);
         }
     } catch (err) {
         console.error('[AlertEngine] Failed to save alert:', err);

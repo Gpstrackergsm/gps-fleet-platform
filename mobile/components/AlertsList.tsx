@@ -18,6 +18,7 @@ interface AlertItem {
 }
 
 interface AlertsListProps {
+    vehicles?: Record<string, any>;
     onSelectVehicle?: (deviceId: string) => void;
     snoozeUntil?: number | null;
     onSnoozeChange?: (until: number | null) => void;
@@ -31,6 +32,7 @@ const SNOOZE_OPTIONS: { label: string; ms: number }[] = [
 ];
 
 export default function AlertsList({
+    vehicles,
     onSelectVehicle,
     snoozeUntil = null,
     onSnoozeChange,
@@ -90,14 +92,42 @@ export default function AlertsList({
         fetchAlerts();
     }, [fetchAlerts]);
 
+    const resolveVehicleName = (item: AlertItem): string => {
+        // 1. Check vehicles map from props
+        if (vehicles && item.device_id && vehicles[item.device_id]?.name) {
+            const vName = String(vehicles[item.device_id].name).trim();
+            if (vName && !/^\d{10,20}$/.test(vName)) {
+                return vName;
+            }
+        }
+        // 2. Check item.vehicle_name if not an IMEI
+        if (item.vehicle_name && !/^\d{10,20}$/.test(String(item.vehicle_name).trim())) {
+            return String(item.vehicle_name).trim();
+        }
+        // 3. Extract vehicle name from message if present e.g. "(V7)" or "\"V7\""
+        if (item.message) {
+            const parenMatch = item.message.match(/\(([^)]+)\)/);
+            if (parenMatch && parenMatch[1] && !/^\d{10,20}$/.test(parenMatch[1].trim())) {
+                return parenMatch[1].trim();
+            }
+            const quoteMatch = item.message.match(/"([^"]+)"/);
+            if (quoteMatch && quoteMatch[1] && !/^\d{10,20}$/.test(quoteMatch[1].trim())) {
+                return quoteMatch[1].trim();
+            }
+        }
+        return 'Véhicule';
+    };
+
     useEffect(() => {
         if (!socket) return;
         const onAlert = (data: any) => {
             if (!data) return;
+            const deviceId = data.deviceId || data.device_id || '';
+            const resolvedName = data.vehicle_name || (vehicles && vehicles[deviceId]?.name);
             const item: AlertItem = {
                 id: data.id || `live-${Date.now()}`,
-                device_id: data.deviceId || data.device_id || '',
-                vehicle_name: data.vehicle_name,
+                device_id: deviceId,
+                vehicle_name: resolvedName,
                 type: data.type || 'alert',
                 severity: data.severity || 'medium',
                 message: data.message,
@@ -110,7 +140,7 @@ export default function AlertsList({
         return () => {
             socket.off('alert', onAlert);
         };
-    }, [socket]);
+    }, [socket, vehicles]);
 
     const onRefresh = () => {
         setRefreshing(true);
@@ -224,7 +254,7 @@ export default function AlertsList({
                 <View style={styles.alertInfo}>
                     <View style={styles.alertHeaderRow}>
                         <Text style={styles.vehicleName} numberOfLines={1}>
-                            {item.vehicle_name || item.device_id}
+                            {resolveVehicleName(item)}
                         </Text>
                         <View style={[styles.severityBadge, { backgroundColor: badgeColors.bg }]}>
                             <Text style={[styles.severityText, { color: badgeColors.text }]}>
