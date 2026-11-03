@@ -484,76 +484,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                {/* Live Vehicle Card Replica Preview */}
-                <div className="lg:col-span-7 bg-zinc-950 border border-zinc-800 rounded-2xl p-5 space-y-4">
-                  <div className="text-xs font-bold text-zinc-400 uppercase tracking-wider flex items-center justify-between">
-                    <span>Aperçu en direct des Cartes Véhicules</span>
-                    <span className="text-emerald-400 font-mono text-[11px]">● 3 véhicules actifs</span>
-                  </div>
-
-                  {/* Simulated Vehicle Card 1 */}
-                  <div className="p-4 rounded-xl bg-blue-600/10 border border-blue-500/40 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse" />
-                        <span className="font-bold text-white text-sm">Dacia Logan · Flotte Casa</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/15 text-emerald-400">
-                          MOVING
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
-                          118.4 km auj.
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-zinc-400">
-                      <span className="flex items-center gap-1.5 text-zinc-300">
-                        <MapPin size={12} className="text-blue-400" /> Bd Mohammed V, Casablanca
-                      </span>
-                      <span className="font-mono font-bold text-emerald-400 text-sm">74 km/h</span>
-                    </div>
-                    <div className="flex flex-wrap items-center justify-between gap-2 pt-2 border-t border-zinc-800/80 text-[11px]">
-                      <div className="flex items-center gap-2">
-                        <span className="px-2 py-0.5 rounded bg-orange-500/15 text-orange-400 font-semibold">
-                          ⛽ ≈ 9.5 L · 128 MAD
-                        </span>
-                        <span className="px-2 py-0.5 rounded bg-purple-500/15 text-purple-400 font-semibold">
-                          🚀 Max 96 km/h
-                        </span>
-                      </div>
-                      <span className="px-2.5 py-1 rounded bg-blue-500/20 text-blue-400 font-bold">
-                        🕒 Historique
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Simulated Vehicle Card 2 (Parked) */}
-                  <div className="p-4 rounded-xl bg-zinc-900/90 border border-zinc-800 space-y-2.5">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-2">
-                        <span className="w-2.5 h-2.5 rounded-full bg-blue-400" />
-                        <span className="font-bold text-white text-sm">Renault Master · Livraison Nord</span>
-                      </div>
-                      <div className="flex items-center gap-1.5">
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
-                          PARKED
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-amber-500/15 text-amber-400">
-                          Arrêté 42m
-                        </span>
-                        <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-blue-500/15 text-blue-400">
-                          215.0 km auj.
-                        </span>
-                      </div>
-                    </div>
-                    <div className="flex items-center justify-between text-xs text-zinc-400">
-                      <span className="flex items-center gap-1.5 text-zinc-300">
-                        <MapPin size={12} className="text-amber-400" /> Zone Industrielle Gzenaya, Tanger
-                      </span>
-                      <span className="font-mono text-zinc-500">0 km/h</span>
-                    </div>
-                  </div>
+                {/* Live Map Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/live-map.jpg"
+                    alt="TrackPro — Carte Live GPS avec liste véhicules, adresses, vitesse km/h et coût MAD"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
@@ -589,80 +526,13 @@ export default function Home() {
                   </ul>
                 </div>
 
-                {/* Visual Mockup of Multi-color Route + Parking List */}
-                <div className="lg:col-span-7 bg-zinc-950 border border-zinc-800 rounded-2xl p-5 space-y-4">
-                  {/* Simulated Route Canvas */}
-                  <div className="relative h-52 rounded-xl bg-zinc-900 border border-zinc-800 overflow-hidden p-4 flex flex-col justify-between">
-                    <svg className="absolute inset-0 w-full h-full" viewBox="0 0 600 200" fill="none">
-                      {/* Grid lines */}
-                      <path d="M0 50 H600 M0 100 H600 M0 150 H600 M150 0 V200 M300 0 V200 M450 0 V200" stroke="#27272a" strokeWidth="1" />
-                      {/* Aller (Blue) */}
-                      <path d="M 50 150 Q 200 40, 320 95 T 540 55" stroke="#2563eb" strokeWidth="5" strokeLinecap="round" />
-                      {/* Retour (Orange) */}
-                      <path d="M 540 70 Q 390 155, 280 110 T 55 165" stroke="#f97316" strokeWidth="4" strokeDasharray="8 4" strokeLinecap="round" />
-                    </svg>
-
-                    <div className="relative z-10 flex justify-between items-start">
-                      <span className="px-2.5 py-1 rounded-lg bg-zinc-950/90 border border-zinc-800 text-[11px] text-emerald-400 font-bold">
-                        🟢 Départ 08:15
-                      </span>
-                      {/* Parking Badge P1 */}
-                      <div className="px-3 py-1 rounded-full bg-zinc-950 border-2 border-amber-500 text-white text-xs font-extrabold shadow-xl flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.2 rounded bg-amber-500 text-zinc-950 text-[10px] font-black">P1</span>
-                        <span>25m</span>
-                      </div>
-                      {/* Parking Badge P2 */}
-                      <div className="px-3 py-1 rounded-full bg-zinc-950 border-2 border-amber-500 text-white text-xs font-extrabold shadow-xl flex items-center gap-1.5">
-                        <span className="px-1.5 py-0.2 rounded bg-amber-500 text-zinc-950 text-[10px] font-black">P2</span>
-                        <span>1h 15m</span>
-                      </div>
-                      <span className="px-2.5 py-1 rounded-lg bg-zinc-950/90 border border-zinc-800 text-[11px] text-red-400 font-bold">
-                        🔴 Arrivée 17:40
-                      </span>
-                    </div>
-
-                    <div className="relative z-10 flex items-center gap-4 bg-zinc-950/90 border border-zinc-800 rounded-lg px-3 py-1.5 w-fit text-[11px]">
-                      <span className="flex items-center gap-1.5 text-blue-400 font-semibold">
-                        <span className="w-3.5 h-1 rounded bg-blue-500" /> Aller
-                      </span>
-                      <span className="flex items-center gap-1.5 text-orange-400 font-semibold">
-                        <span className="w-3.5 h-1 rounded bg-orange-500" /> Retour (même route)
-                      </span>
-                    </div>
-                  </div>
-
-                  {/* Simulated Parking List */}
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
-                    <div className="p-3 rounded-xl bg-amber-500/10 border border-amber-500/40 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-7 h-7 rounded-lg bg-amber-500 text-zinc-950 font-black text-xs flex items-center justify-center">
-                          P1
-                        </span>
-                        <div>
-                          <div className="text-xs font-bold text-white">10:15 → 10:40</div>
-                          <div className="text-[10px] text-zinc-400">Av. des FAR, Casablanca</div>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs">
-                        25m
-                      </span>
-                    </div>
-
-                    <div className="p-3 rounded-xl bg-zinc-900 border border-zinc-800 flex items-center justify-between">
-                      <div className="flex items-center gap-2.5">
-                        <span className="w-7 h-7 rounded-lg bg-amber-500 text-zinc-950 font-black text-xs flex items-center justify-center">
-                          P2
-                        </span>
-                        <div>
-                          <div className="text-xs font-bold text-white">13:10 → 14:25</div>
-                          <div className="text-[10px] text-zinc-400">Agdal, Rabat</div>
-                        </div>
-                      </div>
-                      <span className="px-2.5 py-0.5 rounded-full bg-amber-500/20 text-amber-300 font-bold text-xs">
-                        1h 15m
-                      </span>
-                    </div>
-                  </div>
+                {/* History & Parkings Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/history-parkings.jpg"
+                    alt="TrackPro — Historique de trajet avec corridor aller/retour multicolore et badges parkings P1, P2"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
@@ -696,29 +566,13 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 bg-zinc-950 border border-zinc-800 rounded-2xl p-5">
-                  <div className="flex items-center justify-between mb-3">
-                    <span className="text-xs font-bold text-white">
-                      Score Éco-Conduite &amp; Coût Carburant Hebdomadaire (MAD)
-                    </span>
-                    <span className="text-[11px] text-emerald-400 font-bold">Note Moyenne Flotte : A (89/100)</span>
-                  </div>
-                  <div className="h-60 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={FLEET_SCORES_DATA}>
-                        <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                        <XAxis dataKey="vehicle" stroke="#a1a1aa" fontSize={11} />
-                        <YAxis yAxisId="left" stroke="#10b981" fontSize={11} unit=" pts" />
-                        <YAxis yAxisId="right" orientation="right" stroke="#f59e0b" fontSize={11} unit=" MAD" />
-                        <Tooltip
-                          contentStyle={{ backgroundColor: "#09090b", borderColor: "#27272a", borderRadius: 12, fontSize: 12 }}
-                        />
-                        <Legend wrapperStyle={{ fontSize: 12 }} />
-                        <Bar yAxisId="left" dataKey="score" name="Score Éco (/100)" fill="#10b981" radius={[6, 6, 0, 0]} />
-                        <Bar yAxisId="right" dataKey="costMad" name="Coût Carburant (MAD)" fill="#f59e0b" radius={[6, 6, 0, 0]} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </div>
+                {/* Fuel & Eco-Driving Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/fuel-eco.jpg"
+                    alt="TrackPro — Analyse consommation carburant en MAD, scores éco-conduite A-E et détection ralenti"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
@@ -752,54 +606,13 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 bg-zinc-950 border border-zinc-800 rounded-2xl p-5 space-y-3">
-                  <div className="flex items-center justify-between border-b border-zinc-800 pb-3">
-                    <span className="text-xs font-bold text-white">Aperçu du Rapport Trajets &amp; Parkings</span>
-                    <div className="flex gap-2">
-                      <span className="px-2.5 py-1 rounded-lg bg-emerald-600 text-white text-[11px] font-bold flex items-center gap-1">
-                        <Download size={12} /> Excel (CSV)
-                      </span>
-                      <span className="px-2.5 py-1 rounded-lg bg-zinc-800 text-zinc-200 text-[11px] font-bold">
-                        Imprimer PDF
-                      </span>
-                    </div>
-                  </div>
-                  <div className="overflow-x-auto">
-                    <table className="w-full text-xs text-left">
-                      <thead className="text-zinc-500 uppercase bg-zinc-900/80">
-                        <tr>
-                          <th className="p-2.5">Type</th>
-                          <th className="p-2.5">Créneau</th>
-                          <th className="p-2.5">Durée</th>
-                          <th className="p-2.5 text-right">Distance / Coût</th>
-                        </tr>
-                      </thead>
-                      <tbody className="divide-y divide-zinc-800/70">
-                        <tr>
-                          <td className="p-2.5 font-bold text-blue-400">TRAJET #1</td>
-                          <td className="p-2.5 text-zinc-300">08:15 → 10:15</td>
-                          <td className="p-2.5 text-emerald-400 font-semibold">2h 00m</td>
-                          <td className="p-2.5 text-right font-mono text-white">94.2 km · 102 MAD</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5">
-                            <span className="px-2 py-0.5 rounded bg-amber-500 text-zinc-950 font-extrabold text-[10px]">
-                              PARKING P1
-                            </span>
-                          </td>
-                          <td className="p-2.5 text-zinc-300">10:15 → 10:40</td>
-                          <td className="p-2.5 text-amber-400 font-bold">25 min</td>
-                          <td className="p-2.5 text-right font-mono text-zinc-400">Stationné</td>
-                        </tr>
-                        <tr>
-                          <td className="p-2.5 font-bold text-blue-400">TRAJET #2</td>
-                          <td className="p-2.5 text-zinc-300">10:40 → 13:10</td>
-                          <td className="p-2.5 text-emerald-400 font-semibold">2h 30m</td>
-                          <td className="p-2.5 text-right font-mono text-white">118.5 km · 128 MAD</td>
-                        </tr>
-                      </tbody>
-                    </table>
-                  </div>
+                {/* Reports Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/reports.jpg"
+                    alt="TrackPro — Rapports d'activité détaillés, trajets, parkings et export CSV/PDF"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
@@ -829,28 +642,13 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 bg-zinc-950 border border-zinc-800 rounded-2xl p-5 space-y-3">
-                  <div className="p-3.5 rounded-xl bg-red-500/10 border border-red-500/30 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <BellRing size={18} className="text-red-400 shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold text-white">Excès de Vitesse Critique · Dacia Duster</div>
-                        <div className="text-[11px] text-zinc-400">Vitesse enregistrée : 128 km/h (Seuil : 110 km/h)</div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded bg-red-500/20 text-red-400 text-[10px] font-bold">CRITICAL</span>
-                  </div>
-
-                  <div className="p-3.5 rounded-xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-between">
-                    <div className="flex items-center gap-3">
-                      <Compass size={18} className="text-amber-400 shrink-0" />
-                      <div>
-                        <div className="text-xs font-bold text-white">Sortie de Zone Geofence · Dépôt Casablanca</div>
-                        <div className="text-[11px] text-zinc-400">Renault Master a quitté la zone à 21:45</div>
-                      </div>
-                    </div>
-                    <span className="px-2 py-0.5 rounded bg-amber-500/20 text-amber-400 text-[10px] font-bold">HIGH</span>
-                  </div>
+                {/* Geofence & Alerts Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/geofence-alerts.jpg"
+                    alt="TrackPro — Zones Geofences et journal des alertes temps réel"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
@@ -858,7 +656,7 @@ export default function Home() {
             {/* MODULE 6: REMOTE ENGINE CUT-OFF */}
             {activeTab === "security" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
-                <div className="lg:col-span-6 space-y-5">
+                <div className="lg:col-span-5 space-y-5">
                   <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold">
                     <Shield size={14} /> Immobilisation à Distance
                   </div>
@@ -887,24 +685,13 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-6 bg-zinc-950 border border-zinc-800 rounded-2xl p-6 text-center space-y-4">
-                  <div
-                    className={`w-16 h-16 rounded-2xl mx-auto flex items-center justify-center border ${
-                      engineCutDemo
-                        ? "bg-red-500/15 border-red-500/40 text-red-400"
-                        : "bg-emerald-500/15 border-emerald-500/40 text-emerald-400"
-                    }`}
-                  >
-                    <Power size={30} />
-                  </div>
-                  <div className="text-lg font-extrabold text-white">
-                    {engineCutDemo ? "🔒 MOTEUR IMMOBILISÉ (RELAIS COUPÉ)" : "🟢 MOTEUR AUTORISÉ (RELAIS ACTIF)"}
-                  </div>
-                  <p className="text-xs text-zinc-400 max-w-md mx-auto">
-                    {engineCutDemo
-                      ? "Commande envoyée au boîtier GPS : l'alimentation carburant est coupée dès que la vitesse passe sous 20 km/h."
-                      : "Le circuit d'allumage est actif. Le véhicule peut démarrer normalement."}
-                  </p>
+                {/* Remote Engine Cutoff Screenshot */}
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                  <img
+                    src="/landing/engine-cutoff.jpg"
+                    alt="TrackPro — Contrôle sécurisé antidémarrage et coupure moteur à distance"
+                    className="w-full h-auto object-cover"
+                  />
                 </div>
               </div>
             )}
