@@ -134,7 +134,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         feature2Desc: "Monitor speed, battery, heading, with remote 2-way engine immobilizer.",
         feature3Title: "Enterprise Security",
         feature3Desc: "Encrypted route archival, geofence shields, and multi-tenant access control.",
-        copyright: "© 2026 TrackPro GPS. All rights reserved.",
+        copyright: "© 2026 Geofence GPS. All rights reserved.",
 
         activeFleet: "Active Fleet",
         totalFleet: "Total Fleet",
@@ -224,7 +224,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         feature2Desc: "Surveillance de la vitesse, batterie, allumage et coupure moteur à distance.",
         feature3Title: "Sécurité Entreprise",
         feature3Desc: "Archivage sécurisé des trajets, alertes intelligentes et contrôle d'accès.",
-        copyright: "© 2026 TrackPro GPS. Tous droits réservés.",
+        copyright: "© 2026 Geofence GPS. Tous droits réservés.",
 
         activeFleet: "Flotte active",
         totalFleet: "Total Flotte",
@@ -314,7 +314,7 @@ export const translations: Record<Language, TranslationDictionary> = {
         feature2Desc: "مراقبة السرعة، حالة تشغيل المحرك، مع ميزة إيقاف المحرك عن بُعد في الطوارئ.",
         feature3Title: "حماية وأمان عالي",
         feature3Desc: "حفظ وتشفير سجلات الرحلات، تنبيهات السياج الجغرافي، وإدارة مستخدمين متعددة.",
-        copyright: "© 2026 TrackPro GPS. جميع الحقوق محفوظة.",
+        copyright: "© 2026 Geofence GPS. جميع الحقوق محفوظة.",
 
         activeFleet: "المركبات النشطة",
         totalFleet: "إجمالي الأسطول",

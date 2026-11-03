@@ -49,10 +49,8 @@ export default function LoginPage() {
             {/* Top Bar with Brand Link, Theme Toggle, and Language Switcher */}
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
                 <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center">
-                        <Car size={16} className="text-white" />
-                    </div>
-                    <span className="font-bold text-white text-sm">TrackPro</span>
+                    <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-8 h-8 rounded-lg" />
+                    <span className="font-bold text-white text-sm">Geofence</span>
                 </Link>
 
                 <div className="flex items-center gap-2.5">

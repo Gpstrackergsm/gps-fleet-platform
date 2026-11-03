@@ -15,10 +15,15 @@ const geistMono = Geist_Mono({
 import { LanguageProvider } from "@/lib/LanguageContext";
 
 export const metadata: Metadata = {
-  title: "TrackPro GPS - Advanced Fleet Tracking Platform",
-  description: "Real-time telemetry, historical playback, and enterprise fleet management.",
+  title: "Geofence GPS - Advanced Fleet Tracking & Telemetry Platform",
+  description: "Plateforme professionnelle de géolocalisation GPS, suivi de flotte en temps réel et gestion du carburant. Contact: 0661176946.",
   icons: {
-    icon: "/favicon.ico",
+    icon: [
+      { url: "/geofence-logo.svg", type: "image/svg+xml" },
+      { url: "/favicon.ico" },
+    ],
+    shortcut: "/geofence-logo.svg",
+    apple: "/geofence-logo.svg",
   },
 };
 

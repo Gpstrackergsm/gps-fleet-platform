@@ -12,7 +12,7 @@ export async function POST(request: Request) {
             smtpPort = Number(process.env.SMTP_PORT || 465),
             smtpUser = process.env.SMTP_USER,
             smtpPass = process.env.SMTP_PASS,
-            fromName = 'TrackPro GPS',
+            fromName = 'Geofence GPS',
         } = body;
 
         if (!to || !subject || !html || !smtpUser || !smtpPass) {

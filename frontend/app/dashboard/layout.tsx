@@ -92,11 +92,9 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             >
                 {/* Logo */}
                 <div className={`flex items-center h-12 border-b border-gray-800 px-4 gap-3 overflow-hidden`}>
-                    <div className="shrink-0 w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                        <MapPin size={14} className="text-white" />
-                    </div>
+                    <img src="/geofence-logo.svg" alt="Geofence GPS" className="shrink-0 w-7 h-7 rounded-lg" />
                     <span className={`font-bold text-white text-sm whitespace-nowrap transition-opacity duration-200 ${expanded ? 'opacity-100' : 'opacity-0'}`}>
-                        TrackPro
+                        Geofence
                     </span>
                 </div>
 
@@ -149,10 +147,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
                         {/* Drawer Header */}
                         <div className="flex items-center justify-between h-14 border-b border-gray-800 px-4">
                             <div className="flex items-center gap-2.5">
-                                <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center">
-                                    <MapPin size={14} className="text-white" />
-                                </div>
-                                <span className="font-bold text-white text-base">TrackPro</span>
+                                <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-7 h-7 rounded-lg" />
+                                <span className="font-bold text-white text-base">Geofence</span>
                             </div>
                             <button
                                 onClick={() => setMobileNavOpen(false)}

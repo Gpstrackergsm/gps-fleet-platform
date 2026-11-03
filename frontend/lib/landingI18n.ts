@@ -16,6 +16,10 @@ export interface LandingDict {
   heroTourBtn: string;
   liveSocketConnected: string;
 
+  // Contact Bar
+  callUsText: string;
+  phoneNumber: string;
+
   // Hero Live Card 1
   heroLiveStatus: string;
   heroLiveAddress: string;
@@ -153,6 +157,9 @@ const fr: LandingDict = {
   heroTourBtn: "Découvrir toute la plateforme",
   liveSocketConnected: "● LIVE SOCKET CONNECTÉ",
 
+  callUsText: "Service Client & Vente :",
+  phoneNumber: "0661176946",
+
   heroLiveStatus: "Dacia Duster · En mouvement",
   heroLiveAddress: "Autoroute A1, Casablanca → Rabat",
   heroLiveTodayKm: "142.8 km auj.",
@@ -191,7 +198,7 @@ const fr: LandingDict = {
 
   m2Badge: "Replay & Détection des Parkings",
   m2Title: "Tracé Aller / Retour Multicolore & Tous les Parkings avec Durée",
-  m2Desc: "Lorsqu'un véhicule emprunte la même route à l'aller et au retour, TrackPro sépare automatiquement les couleurs et affiche chaque stationnement :",
+  m2Desc: "Lorsqu'un véhicule emprunte la même route à l'aller et au retour, Geofence sépare automatiquement les couleurs et affiche chaque stationnement :",
   m2Point1: "Aller en Bleu avec flèches directionnelles sur la route.",
   m2Point2: "Retour en Orange (et 3e passage en Violet) pour distinguer chaque passage.",
   m2Point3: "Badges Parkings (P1 · 25m, P2 · 1h 10m) posés sur la carte et listés avec heure d'arrivée, départ et adresse exacte.",
@@ -231,11 +238,11 @@ const fr: LandingDict = {
   roiBudgetLabel: "Budget carburant mensuel / véhicule :",
   roiMonthlySavedLabel: "Économie Mensuelle Est.",
   roiYearlySavedLabel: "Économie Annuelle Est.",
-  roiChartTitle: "Courbe de Dépense Carburant (Avant vs Avec TrackPro)",
+  roiChartTitle: "Courbe de Dépense Carburant (Avant vs Avec Geofence)",
   roiChartSubtitle: (c: number) => `Suivi hebdomadaire en MAD sur une flotte de ${c} véhicules`,
   roiChartBadge: "-24% de coût carburant",
   roiChartNoGps: "Sans Suivi GPS (MAD)",
-  roiChartWithTrackPro: "Avec TrackPro (MAD)",
+  roiChartWithTrackPro: "Avec Geofence (MAD)",
   chartDays: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
 
   featHeader: "Une Suite Complète pour Tous Vos Véhicules",
@@ -300,6 +307,9 @@ const en: LandingDict = {
   heroTourBtn: "Explore Full Platform",
   liveSocketConnected: "● LIVE SOCKET CONNECTED",
 
+  callUsText: "Sales & Support:",
+  phoneNumber: "0661176946",
+
   heroLiveStatus: "Dacia Duster · Moving",
   heroLiveAddress: "Highway A1, Casablanca → Rabat",
   heroLiveTodayKm: "142.8 km today",
@@ -338,7 +348,7 @@ const en: LandingDict = {
 
   m2Badge: "Route Replay & Parking Detection",
   m2Title: "Multi-Color Outbound/Return Tracks & Exact Parking Duration",
-  m2Desc: "When a vehicle uses the same road on the way back, TrackPro splits colors automatically and flags every stop:",
+  m2Desc: "When a vehicle uses the same road on the way back, Geofence splits colors automatically and flags every stop:",
   m2Point1: "Outbound in Blue with direction arrows on roads.",
   m2Point2: "Return in Orange (and 3rd pass in Purple) to separate round trips.",
   m2Point3: "Parking Badges (P1 · 25m, P2 · 1h 10m) pinned on map with arrival, departure, and street address.",
@@ -378,11 +388,11 @@ const en: LandingDict = {
   roiBudgetLabel: "Monthly fuel budget / vehicle:",
   roiMonthlySavedLabel: "Est. Monthly Savings",
   roiYearlySavedLabel: "Est. Annual Savings",
-  roiChartTitle: "Fuel Spend Trend (Without vs With TrackPro)",
+  roiChartTitle: "Fuel Spend Trend (Without vs With Geofence)",
   roiChartSubtitle: (c: number) => `Weekly spend in MAD for a fleet of ${c} vehicles`,
   roiChartBadge: "-24% fuel cost reduction",
   roiChartNoGps: "Without GPS Tracking (MAD)",
-  roiChartWithTrackPro: "With TrackPro (MAD)",
+  roiChartWithTrackPro: "With Geofence (MAD)",
   chartDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 
   featHeader: "An All-in-One Suite for Your Entire Fleet",
@@ -447,6 +457,9 @@ const ar: LandingDict = {
   heroTourBtn: "اكتشف جميع ميزات المنصة",
   liveSocketConnected: "● الاتصال المباشر نشط",
 
+  callUsText: "خدمة الزبناء والمبيعات:",
+  phoneNumber: "0661176946",
+
   heroLiveStatus: "داسيا داستر · في حركة",
   heroLiveAddress: "الطريق السيار A1، الدار البيضاء ← الرباط",
   heroLiveTodayKm: "142.8 كم اليوم",
@@ -485,7 +498,7 @@ const ar: LandingDict = {
 
   m2Badge: "إعادة عرض المسار وكشف التوقفات",
   m2Title: "مسار ذهاب وإياب بألوان متعددة وتحديد مدة كل توقف",
-  m2Desc: "عندما تسلك المركبة نفس الطريق ذهاباً وإياباً، يفصل TrackPro الألوان تلقائياً ويحدد كل توقف:",
+  m2Desc: "عندما تسلك المركبة نفس الطريق ذهاباً وإياباً، يفصل Geofence الألوان تلقائياً ويحدد كل توقف:",
   m2Point1: "مسار الذهاب باللون الأزرق مع أسهم اتجاه السير.",
   m2Point2: "مسار الإياب باللون البرتقالي (والمرور الثالث بالبنفسجي) لتمييز كل رحلة بدقة.",
   m2Point3: "شارات التوقف (P1 · 25m, P2 · 1h 10m) موضوعة على الخريطة ومسجلة مع وقت الوصول والانطلاق والعنوان.",
@@ -525,11 +538,11 @@ const ar: LandingDict = {
   roiBudgetLabel: "ميزانية الوقود الشهرية لكل مركبة:",
   roiMonthlySavedLabel: "التوفير الشهري المتوقع",
   roiYearlySavedLabel: "التوفير السنوي المتوقع",
-  roiChartTitle: "منحنى تكاليف الوقود (قبل وبعد TrackPro)",
+  roiChartTitle: "منحنى تكاليف الوقود (قبل وبعد Geofence)",
   roiChartSubtitle: (c: number) => `المتابعة الأسبوعية بالدرهم لأسطول مكون من ${c} مركبة`,
   roiChartBadge: "-24% خفض تكاليف الوقود",
   roiChartNoGps: "بدون نظام تتبع GPS (MAD)",
-  roiChartWithTrackPro: "مع TrackPro (MAD)",
+  roiChartWithTrackPro: "مع Geofence (MAD)",
   chartDays: ["الإثنين", "الثلاثاء", "الأربعاء", "الخميس", "الجمعة", "السبت", "الأحد"],
 
   featHeader: "مجموعة أدوات متكاملة لجميع مركباتك",

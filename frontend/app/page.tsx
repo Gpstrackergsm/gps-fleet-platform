@@ -22,6 +22,7 @@ import {
   TrendingDown,
   Cpu,
   Play,
+  Phone,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -54,13 +55,13 @@ export default function Home() {
   // Dynamic Fuel Trend data with localized day names
   const fuelTrendData = useMemo(() => {
     const rawValues = [
-      { avant: 1450, avecTrackPro: 980, km: 620 },
-      { avant: 1620, avecTrackPro: 1090, km: 710 },
-      { avant: 1380, avecTrackPro: 920, km: 590 },
-      { avant: 1790, avecTrackPro: 1150, km: 780 },
-      { avant: 1910, avecTrackPro: 1210, km: 830 },
-      { avant: 1120, avecTrackPro: 740, km: 490 },
-      { avant: 680, avecTrackPro: 430, km: 310 },
+      { avant: 1450, avecGeofence: 980, km: 620 },
+      { avant: 1620, avecGeofence: 1090, km: 710 },
+      { avant: 1380, avecGeofence: 920, km: 590 },
+      { avant: 1790, avecGeofence: 1150, km: 780 },
+      { avant: 1910, avecGeofence: 1210, km: 830 },
+      { avant: 1120, avecGeofence: 740, km: 490 },
+      { avant: 680, avecGeofence: 430, km: 310 },
     ];
     return rawValues.map((v, i) => ({
       day: T.chartDays[i] || `D${i + 1}`,
@@ -91,12 +92,14 @@ export default function Home() {
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-blue-600 via-indigo-500 to-cyan-400 flex items-center justify-center shadow-lg shadow-blue-500/25 group-hover:scale-105 transition-transform">
-              <Car size={18} className="text-white" />
-            </div>
+            <img
+              src="/geofence-logo.svg"
+              alt="Geofence GPS"
+              className="w-9 h-9 rounded-xl group-hover:scale-105 transition-transform"
+            />
             <div>
               <span className="font-extrabold text-white text-base tracking-tight block leading-none">
-                TrackPro<span className="text-blue-500">.</span>
+                Geofence<span className="text-cyan-400">.</span>
               </span>
               <span className="text-[10px] text-zinc-400 font-mono tracking-wider">GPS-EU PLATFORM</span>
             </div>
@@ -120,6 +123,16 @@ export default function Home() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
+            {/* Direct Phone Call Button */}
+            <a
+              href={`tel:${T.phoneNumber}`}
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all shadow-sm"
+              title="Appelez-nous directement"
+            >
+              <Phone size={13} className="text-cyan-400" />
+              <span className="font-mono tracking-wide">{T.phoneNumber}</span>
+            </a>
+
             <ThemeToggle />
             <LanguageSelector />
 
@@ -239,7 +252,7 @@ export default function Home() {
               <div className="relative">
                 <img
                   src="/landing/hero-command-center.jpg"
-                  alt="TrackPro GPS Command Center"
+                  alt="Geofence GPS Command Center"
                   className="w-full h-auto object-cover max-h-[620px]"
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-65" />
@@ -719,7 +732,7 @@ export default function Home() {
                     />
                     <Area
                       type="monotone"
-                      dataKey="avecTrackPro"
+                      dataKey="avecGeofence"
                       name={T.roiChartWithTrackPro}
                       stroke="#10b981"
                       strokeWidth={2.5}
@@ -842,15 +855,28 @@ export default function Home() {
          ══════════════════════════════════════════════════════════════════════════ */}
       <footer className="border-t border-zinc-900 bg-black py-10 px-4 sm:px-6 text-xs text-zinc-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-blue-600 flex items-center justify-center text-white">
-              <Car size={14} />
-            </div>
-            <span className="font-bold text-white">TrackPro GPS-EU</span>
+          <div className="flex items-center gap-3">
+            <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-7 h-7 rounded-lg" />
+            <span className="font-bold text-white">Geofence GPS</span>
             <span>· © {new Date().getFullYear()} {T.footerRights}</span>
+            <span className="hidden sm:inline text-zinc-600">|</span>
+            <a
+              href={`tel:${T.phoneNumber}`}
+              className="hidden sm:inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-semibold"
+            >
+              <Phone size={12} />
+              <span>{T.callUsText} {T.phoneNumber}</span>
+            </a>
           </div>
 
           <div className="flex items-center gap-4">
+            <a
+              href={`tel:${T.phoneNumber}`}
+              className="sm:hidden inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 font-semibold"
+            >
+              <Phone size={12} />
+              <span>{T.phoneNumber}</span>
+            </a>
             <Link href="/login" className="hover:text-white transition-colors">
               {T.footerLogin}
             </Link>

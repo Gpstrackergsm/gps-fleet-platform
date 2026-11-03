@@ -318,11 +318,9 @@ export default function RegisterPage() {
             {/* Top Bar with Brand Link, Theme Toggle, and Language Switcher */}
             <div className="absolute top-4 left-4 right-4 flex items-center justify-between z-20">
                 <Link href="/" className="flex items-center gap-2 group">
-                    <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center shadow-lg shadow-blue-600/30">
-                        <Car size={16} className="text-white" />
-                    </div>
+                    <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-8 h-8 rounded-lg shadow-lg shadow-cyan-600/30" />
                     <span className="font-bold text-white text-sm">
-                        TrackPro<span className="text-blue-500">.</span>
+                        Geofence<span className="text-cyan-400">.</span>
                     </span>
                 </Link>
 
