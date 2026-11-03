@@ -20,10 +20,14 @@ export const metadata: Metadata = {
   icons: {
     icon: [
       { url: "/geofence-logo.svg", type: "image/svg+xml" },
-      { url: "/favicon.ico" },
+      { url: "/favicon.ico?v=2" },
+      { url: "/icon-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icon-512.png", sizes: "512x512", type: "image/png" },
     ],
     shortcut: "/geofence-logo.svg",
-    apple: "/geofence-logo.svg",
+    apple: [
+      { url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" },
+    ],
   },
 };
 
@@ -35,6 +39,9 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <head>
+        <link rel="icon" type="image/svg+xml" href="/geofence-logo.svg" />
+        <link rel="icon" type="image/x-icon" href="/favicon.ico?v=2" />
+        <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
         <script
           dangerouslySetInnerHTML={{
             __html:
