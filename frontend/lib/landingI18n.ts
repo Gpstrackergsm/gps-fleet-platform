@@ -129,6 +129,12 @@ export interface LandingDict {
   hwBtnPrimary: string;
   hwBtnSecondary: string;
 
+  // FAQ Section (SEO & Rich Snippets)
+  faqBadge: string;
+  faqTitle: string;
+  faqSubtitle: string;
+  faqItems: { q: string; a: string }[];
+
   // Footer
   footerRights: string;
   footerLogin: string;
@@ -280,6 +286,32 @@ const fr: LandingDict = {
   hwBtnPrimary: "Connecter mes véhicules",
   hwBtnSecondary: "Espace Client",
 
+  faqBadge: "Foire Aux Questions · FAQ",
+  faqTitle: "Questions Fréquentes sur la Géolocalisation Geofence GPS",
+  faqSubtitle: "Tout ce que vous devez savoir pour équiper, suivre et sécuriser votre flotte en direct :",
+  faqItems: [
+    {
+      q: "Comment fonctionne la géolocalisation en temps réel de Geofence GPS ?",
+      a: "Un boîtier traceur GPS (Teltonika, Coban, Concox ou OBD) est installé dans chaque véhicule. Il transmet en continu sa position, sa vitesse, l'état du contact moteur et ses alertes. Notre interface web et mobile affiche instantanément vos véhicules sur Google Maps avec l'adresse exacte et l'état en direct.",
+    },
+    {
+      q: "Comment fonctionne la coupure du moteur à distance en cas de vol ?",
+      a: "Depuis votre tableau de bord ou votre smartphone, vous pouvez activer la coupure moteur en un seul clic. Pour garantir une sécurité absolue et éviter tout accident sur route, l'ordre d'immobilisation s'exécute dès que la vitesse du véhicule descend sous 20 km/h.",
+    },
+    {
+      q: "Comment Geofence permet-il de réduire les coûts de carburant ?",
+      a: "Geofence calcule le coût précis du carburant gaspillé lors des arrêts prolongés moteur allumé (ralenti / idling) ainsi que les excès de vitesse. Nos clients constatent en moyenne 20% à 25% d'économies mensuelles sur leur facture carburant.",
+    },
+    {
+      q: "Quels types de traceurs GPS sont compatibles avec la plateforme ?",
+      a: "La plateforme est universelle et supporte les protocoles Teltonika (FMB920, FMC130...), Coban (TK103, TK303, TK403), Concox / Jimi IoT (GT06N, VL03), traceurs OBD-II sans fil, ainsi que notre application mobile pour smartphones.",
+    },
+    {
+      q: "Geofence GPS fonctionne-t-il au Maroc et à l'international ?",
+      a: "Oui, notre solution fonctionne sur l'ensemble du territoire marocain (avec cartes SIM nationales multi-opérateurs) ainsi qu'en Europe et en Afrique grâce à la connectivité roaming internationale.",
+    },
+  ],
+
   footerRights: "Tous droits réservés.",
   footerLogin: "Connexion",
   footerRegister: "Inscription",
@@ -430,6 +462,32 @@ const en: LandingDict = {
   hwBtnPrimary: "Connect My Vehicles",
   hwBtnSecondary: "Client Portal",
 
+  faqBadge: "Frequently Asked Questions · FAQ",
+  faqTitle: "Frequently Asked Questions About Geofence GPS Fleet Tracking",
+  faqSubtitle: "Everything you need to know about outfitting, monitoring, and securing your fleet:",
+  faqItems: [
+    {
+      q: "How does real-time GPS fleet tracking work on Geofence?",
+      a: "A GPS tracker (Teltonika, Coban, Concox, or OBD-II) is installed in each vehicle. It transmits second-by-second position, speed, ignition status, and alarms over cellular networks to our platform. You monitor your entire fleet live on Google Maps with street addresses and real-time status.",
+    },
+    {
+      q: "How does remote engine cut-off work in case of theft?",
+      a: "From your dashboard or mobile app, you can trigger remote engine immobilisation with a single tap. For maximum road safety, the command executes once vehicle speed drops below 20 km/h, safely preventing restarts.",
+    },
+    {
+      q: "How does Geofence help reduce fleet fuel costs?",
+      a: "Geofence tracks excessive idling with the engine on, harsh accelerations, and unauthorized trips. We calculate wasted fuel in real currency (MAD), helping fleets reduce overall fuel expenses by 20% to 25% on average.",
+    },
+    {
+      q: "Which GPS hardware devices are supported?",
+      a: "Geofence supports industry-leading GPS devices from Teltonika, Coban, Concox, plug-and-play OBD-II devices, and our dedicated mobile application for smartphones.",
+    },
+    {
+      q: "Does Geofence work across Europe, Morocco, and Africa?",
+      a: "Yes. Our platform operates seamlessly across Morocco, Europe, and Africa with global multi-network roaming SIM support and cloud-scale telemetry servers.",
+    },
+  ],
+
   footerRights: "All rights reserved.",
   footerLogin: "Sign In",
   footerRegister: "Sign Up",
@@ -579,6 +637,32 @@ const ar: LandingDict = {
   hwSubtitle: "تدعم خوادمنا بروتوكولات أشهر أجهزة التتبع المستخدمة في المغرب وأوروبا بشكل أصلي وسلس:",
   hwBtnPrimary: "ربط مركباتي بالمنصة",
   hwBtnSecondary: "فضاء الزبناء",
+
+  faqBadge: "الأسئلة الشائعة · FAQ",
+  faqTitle: "الأسئلة الأكثر تداولاً حول منصة تتبع السيارات Geofence GPS",
+  faqSubtitle: "كل ما تحتاج معرفته حول تجهيز وإدارة أسطول سياراتك وشاحناتك بكل أمان واحترافية:",
+  faqItems: [
+    {
+      q: "كيف يعمل نظام تتبع المركبات في الوقت الفعلي عبر Geofence؟",
+      a: "يتم تثبيت جهاز تتبع GPS (مثل Teltonika أو Coban أو Concox أو منفذ OBD) داخل المركبة. يرسل الجهاز الإحداثيات والسرعة وحالة المحرك مباشرة إلى خوادمنا، مما يتيح لك رؤية أسطولك مباشرة على خرائط Google مع العنوان الدقيق وحالة كل مركبة.",
+    },
+    {
+      q: "كيف يعمل إيقاف المحرك عن بُعد في حالة السرقة أو الطوارئ؟",
+      a: "بإمكانك إرسال أمر إيقاف المحرك بنقرة واحدة من هاتفك الذكي أو لوحة التحكم. ولضمان السلامة المرورية وتجنب الحوادث، يتم إيقاف المحرك تلقائياً وبأمان بمجرد انخفاض سرعة السيارة إلى أقل من 20 كم/ساعة.",
+    },
+    {
+      q: "كيف تساعد منصة Geofence في توفير استهلاك الوقود؟",
+      a: "تقوم المنصة بحساب كمية الوقود المهدرة أثناء تشغيل المحرك في وضع التوقف (الاستهلاك أثناء الوقوف) بالإضافة إلى تنبيهات السرعة الزائدة، مما يمنحك تقارير بالدرهم المغربي ويساعدك في خفض فاتورة المحروقات بنسبة تصل إلى 25%.",
+    },
+    {
+      q: "ما هي أجهزة التتبع المتوافقة مع منصة Geofence؟",
+      a: "المنصة متوافقة مع أشهر وأفضل الماركات العالمية مثل Teltonika (FMB920, FMC130)، Coban (TK103, TK303)، Concox / Jimi IoT، وأجهزة OBD السريعة التركيب، بالإضافة إلى تطبيق الهاتف المحمول.",
+    },
+    {
+      q: "هل تعمل المنصة داخل المغرب وخارجه في أوروبا وإفريقيا؟",
+      a: "نعم، تغطي المنصة جميع مدن وطرق المملكة المغربية، وتعمل أيضاً في أوروبا وإفريقيا عبر شرائح الاتصال الدولية متعددة المشغلين مع تجوال سلس بدون انقطاع.",
+    },
+  ],
 
   footerRights: "جميع الحقوق محفوظة.",
   footerLogin: "تسجيل الدخول",

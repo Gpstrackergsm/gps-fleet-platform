@@ -25,13 +25,30 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
     const [language, setLanguageState] = useState<Language>('en');
 
     useEffect(() => {
+        // 1. Check URL query param first (critical for Googlebot & multi-language SEO links)
+        if (typeof window !== 'undefined') {
+            try {
+                const params = new URLSearchParams(window.location.search);
+                const queryLang = params.get('lang') as Language;
+                if (queryLang && (queryLang === 'en' || queryLang === 'fr' || queryLang === 'ar')) {
+                    setLanguageState(queryLang);
+                    localStorage.setItem('trackpro_lang', queryLang);
+                    applyLanguageSettings(queryLang);
+                    return;
+                }
+            } catch (e) {
+                // Ignore URL parsing errors
+            }
+        }
+
+        // 2. Check localStorage
         const saved = localStorage.getItem('trackpro_lang') as Language;
         if (saved && (saved === 'en' || saved === 'fr' || saved === 'ar')) {
             setLanguageState(saved);
             applyLanguageSettings(saved);
         } else {
-            // Check browser preferred language
-            const browserLang = navigator.language.slice(0, 2);
+            // 3. Fallback to browser language
+            const browserLang = typeof navigator !== 'undefined' ? navigator.language.slice(0, 2) : 'en';
             if (browserLang === 'fr' || browserLang === 'ar') {
                 setLanguageState(browserLang as Language);
                 applyLanguageSettings(browserLang as Language);
@@ -51,7 +68,14 @@ export function LanguageProvider({ children }: { children: React.ReactNode }) {
 
     const setLanguage = (lang: Language) => {
         setLanguageState(lang);
-        localStorage.setItem('trackpro_lang', lang);
+        if (typeof window !== 'undefined') {
+            localStorage.setItem('trackpro_lang', lang);
+            try {
+                const url = new URL(window.location.href);
+                url.searchParams.set('lang', lang);
+                window.history.replaceState({}, '', url.toString());
+            } catch (e) {}
+        }
         applyLanguageSettings(lang);
     };
 

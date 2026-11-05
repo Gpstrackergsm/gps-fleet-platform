@@ -23,6 +23,8 @@ import {
   Cpu,
   Play,
   Phone,
+  ChevronDown,
+  HelpCircle,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -51,6 +53,7 @@ export default function Home() {
   const [fleetSize, setFleetSize] = useState<number>(15);
   const [monthlyFuelPerVehicle, setMonthlyFuelPerVehicle] = useState<number>(3500);
   const [engineCutDemo, setEngineCutDemo] = useState<boolean>(false);
+  const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
   // Dynamic Fuel Trend data with localized day names
   const fuelTrendData = useMemo(() => {
@@ -118,6 +121,9 @@ export default function Home() {
             </a>
             <a href="#hardware" className="hover:text-white transition-colors">
               {T.navHardware}
+            </a>
+            <a href="#faq" className="hover:text-white transition-colors">
+              FAQ
             </a>
           </nav>
 
@@ -847,6 +853,61 @@ export default function Home() {
               />
             </div>
           </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════════
+          6.5 FAQ SECTION (Rich Snippets & Google SEO)
+         ══════════════════════════════════════════════════════════════════════════ */}
+      <section id="faq" className="py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-zinc-900/60">
+        <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+            <HelpCircle size={14} />
+            <span>{T.faqBadge}</span>
+          </div>
+          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            {T.faqTitle}
+          </h2>
+          <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">
+            {T.faqSubtitle}
+          </p>
+        </div>
+
+        <div className="space-y-3.5">
+          {T.faqItems.map((item, idx) => {
+            const isOpen = openFaqIndex === idx;
+            return (
+              <div
+                key={idx}
+                className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
+                  isOpen
+                    ? "bg-zinc-900/90 border-blue-500/40 shadow-lg shadow-blue-500/5"
+                    : "bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700"
+                }`}
+              >
+                <button
+                  type="button"
+                  onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
+                  className="w-full py-4 px-5 sm:px-6 flex items-center justify-between gap-4 text-start transition-colors"
+                >
+                  <span className="text-sm sm:text-base font-semibold text-white">
+                    {item.q}
+                  </span>
+                  <ChevronDown
+                    size={18}
+                    className={`text-blue-400 shrink-0 transition-transform duration-200 ${
+                      isOpen ? "rotate-180" : ""
+                    }`}
+                  />
+                </button>
+                {isOpen && (
+                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-zinc-300 leading-relaxed border-t border-zinc-800/50">
+                    {item.a}
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
       </section>
 
