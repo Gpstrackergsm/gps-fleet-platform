@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60" fill="none">
+  <defs>
+    <linearGradient id="suvGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#10B981"/>
+      <stop offset="100%" stop-color="#047857"/>
+    </linearGradient>
+  </defs>
+  <!-- SUV Body -->
+  <path d="M12 34 L18 20 C20 15, 26 13, 35 13 L82 13 C90 13, 98 17, 103 24 L110 32 C114 34, 116 38, 114 43 C113 46, 109 48, 103 48 L96 48 C95 42, 90 38, 84 38 C78 38, 73 42, 72 48 L48 48 C47 42, 42 38, 36 38 C30 38, 25 42, 24 48 L10 48 C7 48, 5 45, 6 41 C7 37, 9 34, 12 34 Z" fill="url(#suvGrad)"/>
+  <!-- Windows -->
+  <path d="M25 19 L48 19 L48 31 L18 31 C20 25, 22 21, 25 19 Z" fill="#A7F3D0" opacity="0.85"/>
+  <path d="M53 19 L80 19 C85 19, 90 22, 93 31 L53 31 Z" fill="#A7F3D0" opacity="0.85"/>
+  <!-- Roof Rack -->
+  <rect x="32" y="10" width="48" height="2" rx="1" fill="#D1D5DB"/>
+  <rect x="36" y="12" width="4" height="2" fill="#9CA3AF"/>
+  <rect x="72" y="12" width="4" height="2" fill="#9CA3AF"/>
+  <!-- Headlights & Taillights -->
+  <path d="M109 30 L114 33 L109 36 Z" fill="#FEF08A"/>
+  <path d="M7 35 L5 39 L8 39 Z" fill="#EF4444"/>
+  <!-- Wheels -->
+  <circle cx="36" cy="48" r="10" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="36" cy="48" r="4.5" fill="#6B7280"/>
+  <circle cx="84" cy="48" r="10" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="84" cy="48" r="4.5" fill="#6B7280"/>
+</svg>

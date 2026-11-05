@@ -32,6 +32,9 @@ interface Vehicle {
     plate_number?: string;
     model?: string;
     company_name?: string;
+    driver_name?: string;
+    image_url?: string;
+    vehicle_type?: string;
     lat: number;
     lng: number;
     speed: number;
@@ -442,7 +445,10 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                         gsm_signal: d.gsm_signal,
                         fuel_percent: d.fuel_percent,
                         isTcpConnected: d.isTcpConnected,
-                        sim_phone: d.sim_phone
+                        sim_phone: d.sim_phone,
+                        driver_name: d.driver_name,
+                        image_url: d.image_url,
+                        vehicle_type: d.vehicle_type,
                     };
                 }
             });
@@ -707,13 +713,30 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                 </div>
                             )}
 
-                            <div className="flex items-center justify-between mb-1">
-                                <div className="flex items-center gap-2">
-                                    <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stateColor(v.state) }} />
-                                    <span className="font-semibold text-white text-xs md:text-sm truncate max-w-[140px] md:max-w-[160px]">{v.name}</span>
+                            <div className="flex items-center justify-between mb-1.5">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    <div className="w-8 h-8 rounded-lg bg-zinc-900 border border-zinc-800 p-0.5 shrink-0 flex items-center justify-center overflow-hidden">
+                                        <img
+                                            src={v.image_url || '/vehicles/car.svg'}
+                                            alt={v.name}
+                                            className="w-full h-full object-contain"
+                                            onError={(e) => { (e.target as HTMLImageElement).src = '/vehicles/car.svg'; }}
+                                        />
+                                    </div>
+                                    <div className="min-w-0">
+                                        <div className="flex items-center gap-1.5">
+                                            <div className="w-2 h-2 rounded-full shrink-0" style={{ backgroundColor: stateColor(v.state) }} />
+                                            <span className="font-semibold text-white text-xs md:text-sm truncate max-w-[130px] md:max-w-[150px]">{v.name}</span>
+                                        </div>
+                                        {v.driver_name && (
+                                            <span className="text-[10px] text-blue-400 font-medium truncate block max-w-[150px]">
+                                                Chauffeur : {v.driver_name}
+                                            </span>
+                                        )}
+                                    </div>
                                 </div>
                                 <span
-                                    className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.2 rounded"
+                                    className="text-[9px] md:text-[10px] font-bold px-1.5 py-0.2 rounded shrink-0"
                                     style={{ color: stateColor(v.state), backgroundColor: `${stateColor(v.state)}15` }}
                                 >
                                     {stateLabel(v.state)}

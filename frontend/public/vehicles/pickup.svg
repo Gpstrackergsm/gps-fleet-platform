@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60" fill="none">
+  <defs>
+    <linearGradient id="pickupGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#0891B2"/>
+    </linearGradient>
+  </defs>
+  <!-- Open Bed -->
+  <rect x="10" y="24" width="44" height="22" rx="2" fill="url(#pickupGrad)"/>
+  <!-- Cab -->
+  <path d="M52 46 L52 18 C52 15, 56 14, 62 14 L82 14 C87 14, 93 18, 97 24 L107 33 C111 36, 113 40, 111 44 C110 47, 106 48, 100 48 L94 48 C93 42, 88 38, 82 38 C76 38, 71 42, 70 48 L46 48 C45 42, 40 38, 34 38 C28 38, 23 42, 22 48 L12 48 C9 48, 8 46, 8 44 L8 28 L52 28 Z" fill="url(#pickupGrad)"/>
+  <!-- Windows -->
+  <path d="M58 19 L80 19 C84 19, 88 22, 91 29 L58 29 Z" fill="#A5F3FC" opacity="0.85"/>
+  <!-- Wheels -->
+  <circle cx="34" cy="48" r="10" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="34" cy="48" r="4.5" fill="#6B7280"/>
+  <circle cx="82" cy="48" r="10" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="82" cy="48" r="4.5" fill="#6B7280"/>
+</svg>

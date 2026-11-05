@@ -242,6 +242,7 @@ const initTables = async () => {
         try { await query("ALTER TABLE devices ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN image_url TEXT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }

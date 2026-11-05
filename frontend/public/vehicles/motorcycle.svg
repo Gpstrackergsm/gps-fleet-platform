@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60" fill="none">
+  <defs>
+    <linearGradient id="motoGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+  </defs>
+  <!-- Frame & Body -->
+  <path d="M34 46 L48 30 L66 30 L80 46" stroke="#4B5563" stroke-width="4" stroke-linecap="round"/>
+  <path d="M48 30 L58 18 L72 18 L82 34" stroke="#4B5563" stroke-width="3" stroke-linecap="round"/>
+  <!-- Tank & Seat -->
+  <path d="M44 26 C46 22, 54 20, 64 22 L76 25 C78 26, 78 28, 74 30 L46 30 C43 30, 42 28, 44 26 Z" fill="url(#motoGrad)"/>
+  <!-- Handlebars & Windshield -->
+  <line x1="72" y1="18" x2="78" y2="10" stroke="#9CA3AF" stroke-width="3" stroke-linecap="round"/>
+  <path d="M78 12 L84 10 L82 18 Z" fill="#C4B5FD" opacity="0.8"/>
+  <circle cx="85" cy="18" r="2.5" fill="#FEF08A"/>
+  <!-- Wheels -->
+  <circle cx="28" cy="44" r="12" fill="#1F2937" stroke="#9CA3AF" stroke-width="2.5"/>
+  <circle cx="28" cy="44" r="5" fill="#6B7280"/>
+  <circle cx="88" cy="44" r="12" fill="#1F2937" stroke="#9CA3AF" stroke-width="2.5"/>
+  <circle cx="88" cy="44" r="5" fill="#6B7280"/>
+</svg>

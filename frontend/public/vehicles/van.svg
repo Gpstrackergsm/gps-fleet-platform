@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60" fill="none">
+  <defs>
+    <linearGradient id="vanGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#F59E0B"/>
+      <stop offset="100%" stop-color="#D97706"/>
+    </linearGradient>
+  </defs>
+  <!-- Van Body -->
+  <path d="M10 46 L10 18 C10 15, 13 13, 17 13 L82 13 C86 13, 91 16, 95 21 L108 34 C112 37, 114 41, 112 45 C111 48, 107 48, 102 48 L96 48 C95 42, 90 38, 84 38 C78 38, 73 42, 72 48 L48 48 C47 42, 42 38, 36 38 C30 38, 25 42, 24 48 L14 48 C11 48, 10 47, 10 46 Z" fill="url(#vanGrad)"/>
+  <!-- Cab Window -->
+  <path d="M75 18 L84 18 C88 18, 92 21, 95 27 L100 32 L75 32 Z" fill="#FDE68A" opacity="0.85"/>
+  <!-- Side Door Line -->
+  <line x1="68" y1="16" x2="68" y2="45" stroke="#B45309" stroke-width="1.5" stroke-dasharray="2 2"/>
+  <!-- Headlights & Taillights -->
+  <path d="M108 36 L112 38 L108 41 Z" fill="#FEF08A"/>
+  <rect x="8" y="24" width="3" height="12" rx="1" fill="#EF4444"/>
+  <!-- Wheels -->
+  <circle cx="36" cy="48" r="9.5" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="36" cy="48" r="4" fill="#6B7280"/>
+  <circle cx="84" cy="48" r="9.5" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="84" cy="48" r="4" fill="#6B7280"/>
+</svg>

@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 60" width="120" height="60" fill="none">
+  <defs>
+    <linearGradient id="carGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#3B82F6"/>
+      <stop offset="100%" stop-color="#1D4ED8"/>
+    </linearGradient>
+  </defs>
+  <!-- Car Body -->
+  <path d="M15 36 L25 24 C30 18, 42 16, 55 16 L75 16 C88 16, 96 22, 102 28 L108 34 C112 36, 114 40, 113 44 C112 47, 108 48, 102 48 L95 48 C94 43, 89 39, 84 39 C79 39, 74 43, 73 48 L47 48 C46 43, 41 39, 36 39 C31 39, 26 43, 25 48 L12 48 C8 48, 6 45, 7 42 C8 39, 11 36, 15 36 Z" fill="url(#carGrad)"/>
+  <!-- Windows -->
+  <path d="M33 24 L48 24 L48 33 L24 33 C26 29, 29 25, 33 24 Z" fill="#93C5FD" opacity="0.85"/>
+  <path d="M53 24 L74 24 C80 24, 85 27, 88 33 L53 33 Z" fill="#93C5FD" opacity="0.85"/>
+  <!-- Headlights & Taillights -->
+  <path d="M107 33 L112 35 L108 38 Z" fill="#FEF08A"/>
+  <path d="M9 38 L7 41 L10 41 Z" fill="#EF4444"/>
+  <!-- Wheels -->
+  <circle cx="36" cy="48" r="9" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="36" cy="48" r="4" fill="#6B7280"/>
+  <circle cx="84" cy="48" r="9" fill="#1F2937" stroke="#9CA3AF" stroke-width="2"/>
+  <circle cx="84" cy="48" r="4" fill="#6B7280"/>
+</svg>
