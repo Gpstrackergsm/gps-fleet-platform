@@ -93,6 +93,59 @@ export interface TranslationDictionary {
     loginFailed: string;
     noAccount: string;
     haveAccount: string;
+
+    // Fleet / Vehicles Page
+    fleetManagement: string;
+    fleetManagementDesc: string;
+    addVehicle: string;
+    addNewVehicle: string;
+    editVehicle: string;
+    totalVehicles: string;
+    allVehicles: string;
+    searchVehiclesPlaceholder: string;
+    statusCol: string;
+    vehicleCol: string;
+    driverCol: string;
+    speedCol: string;
+    lastUpdateCol: string;
+    actionsCol: string;
+    assignDriver: string;
+    noDriver: string;
+    unnamedVehicle: string;
+    movingState: string;
+    parkedState: string;
+    offlineState: string;
+    editAction: string;
+    viewOnMap: string;
+    viewHistoryAction: string;
+    copyImei: string;
+    deleteVehicle: string;
+    deleteVehicleConfirmTitle: string;
+    deleteVehicleConfirmDesc: string;
+    vehiclePhoto: string;
+    uploadPhoto: string;
+    uploadPhotoHint: string;
+    removePhoto: string;
+    orChoosePreset: string;
+    vehicleNameLabel: string;
+    vehicleNamePlaceholder: string;
+    driverNameLabel: string;
+    driverNamePlaceholder: string;
+    plateNumberLabel: string;
+    plateNumberPlaceholder: string;
+    modelBrandLabel: string;
+    modelBrandPlaceholder: string;
+    saveChanges: string;
+    savingChanges: string;
+    addingVehicleText: string;
+    deviceImeiLabel: string;
+    deviceImeiPlaceholder: string;
+    noVehiclesFound: string;
+    noVehiclesFoundDesc: string;
+    addFirstVehicle: string;
+    vehicleUpdatedSuccess: string;
+    vehicleAddedSuccess: string;
+    vehicleDeletedSuccess: string;
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -183,7 +236,60 @@ export const translations: Record<Language, TranslationDictionary> = {
         loginButton: "Sign In",
         loginFailed: "Invalid email or password",
         noAccount: "Don't have an account?",
-        haveAccount: "Already have an account?"
+        haveAccount: "Already have an account?",
+
+        // Fleet / Vehicles Page
+        fleetManagement: "Fleet Management",
+        fleetManagementDesc: "Monitor and manage your vehicles, drivers, photos and GPS trackers",
+        addVehicle: "Add Vehicle",
+        addNewVehicle: "Add New Vehicle",
+        editVehicle: "Edit Vehicle",
+        totalVehicles: "Total Vehicles",
+        allVehicles: "All",
+        searchVehiclesPlaceholder: "Search by name, driver, IMEI...",
+        statusCol: "Status",
+        vehicleCol: "Vehicle",
+        driverCol: "Driver",
+        speedCol: "Speed",
+        lastUpdateCol: "Last Update",
+        actionsCol: "Actions",
+        assignDriver: "Assign driver",
+        noDriver: "No driver",
+        unnamedVehicle: "Unnamed Vehicle",
+        movingState: "MOVING",
+        parkedState: "PARKED",
+        offlineState: "OFFLINE",
+        editAction: "Edit",
+        viewOnMap: "View on Map",
+        viewHistoryAction: "View History",
+        copyImei: "Copy IMEI",
+        deleteVehicle: "Delete Vehicle",
+        deleteVehicleConfirmTitle: "Delete this vehicle?",
+        deleteVehicleConfirmDesc: "This action will permanently delete this vehicle and all its tracking history.",
+        vehiclePhoto: "Vehicle Photo / Image",
+        uploadPhoto: "Upload Photo",
+        uploadPhotoHint: "PNG, JPG or WebP up to 8MB. Displayed across the dashboard and live map.",
+        removePhoto: "Remove",
+        orChoosePreset: "Or choose a preset model:",
+        vehicleNameLabel: "Vehicle Name *",
+        vehicleNamePlaceholder: "e.g. V7, Toyota Hilux, Delivery Van",
+        driverNameLabel: "Driver Name",
+        driverNamePlaceholder: "e.g. John Doe, Alex Smith",
+        plateNumberLabel: "License Plate",
+        plateNumberPlaceholder: "e.g. 12345-A-26",
+        modelBrandLabel: "Model / Brand",
+        modelBrandPlaceholder: "e.g. Dacia Duster 2024",
+        saveChanges: "Save Changes",
+        savingChanges: "Saving...",
+        addingVehicleText: "Adding...",
+        deviceImeiLabel: "Tracker IMEI Number *",
+        deviceImeiPlaceholder: "e.g. 869706063068334",
+        noVehiclesFound: "No vehicles found",
+        noVehiclesFoundDesc: "Add a vehicle or adjust your search filter",
+        addFirstVehicle: "Add your first vehicle",
+        vehicleUpdatedSuccess: "Vehicle updated successfully!",
+        vehicleAddedSuccess: "Vehicle added successfully!",
+        vehicleDeletedSuccess: "Vehicle deleted successfully"
     },
 
     fr: {
@@ -273,7 +379,60 @@ export const translations: Record<Language, TranslationDictionary> = {
         loginButton: "Se connecter",
         loginFailed: "E-mail ou mot de passe invalide",
         noAccount: "Pas encore de compte ?",
-        haveAccount: "Vous avez déjà un compte ?"
+        haveAccount: "Vous avez déjà un compte ?",
+
+        // Fleet / Vehicles Page
+        fleetManagement: "Gestion de la Flotte",
+        fleetManagementDesc: "Gérez vos véhicules, conducteurs, photos et traceurs GPS",
+        addVehicle: "Ajouter un Véhicule",
+        addNewVehicle: "Ajouter un Nouveau Véhicule",
+        editVehicle: "Modifier le Véhicule",
+        totalVehicles: "Total Véhicules",
+        allVehicles: "Tous",
+        searchVehiclesPlaceholder: "Rechercher nom, chauffeur, IMEI...",
+        statusCol: "Statut",
+        vehicleCol: "Véhicule",
+        driverCol: "Conducteur",
+        speedCol: "Vitesse",
+        lastUpdateCol: "Dernière MaJ",
+        actionsCol: "Actions",
+        assignDriver: "Assigner chauffeur",
+        noDriver: "Sans chauffeur",
+        unnamedVehicle: "Véhicule Sans Nom",
+        movingState: "EN ROUTE",
+        parkedState: "ARRÊT",
+        offlineState: "HORS LIGNE",
+        editAction: "Modifier",
+        viewOnMap: "Voir sur la Carte",
+        viewHistoryAction: "Voir l'Historique",
+        copyImei: "Copier IMEI",
+        deleteVehicle: "Supprimer Véhicule",
+        deleteVehicleConfirmTitle: "Supprimer ce véhicule ?",
+        deleteVehicleConfirmDesc: "Cette action supprimera définitivement ce véhicule ainsi que tout son historique de trajets.",
+        vehiclePhoto: "Photo / Image du Véhicule",
+        uploadPhoto: "Télécharger une Photo",
+        uploadPhotoHint: "PNG, JPG ou WebP jusqu'à 8 Mo. S'affichera sur le tableau de bord et la carte.",
+        removePhoto: "Supprimer",
+        orChoosePreset: "Ou choisissez un modèle prédéfini :",
+        vehicleNameLabel: "Nom du Véhicule *",
+        vehicleNamePlaceholder: "Ex: V7, Peugeot 208, Camion 01",
+        driverNameLabel: "Nom du Conducteur / Chauffeur",
+        driverNamePlaceholder: "Ex: Khalid Ait El Maati, Mohamed Alami",
+        plateNumberLabel: "Matricule (Immatriculation)",
+        plateNumberPlaceholder: "Ex: 12345-A-26",
+        modelBrandLabel: "Modèle / Marque",
+        modelBrandPlaceholder: "Ex: Dacia Duster 2024",
+        saveChanges: "Enregistrer les modifications",
+        savingChanges: "Enregistrement...",
+        addingVehicleText: "Ajout en cours...",
+        deviceImeiLabel: "Numéro IMEI du Traceur *",
+        deviceImeiPlaceholder: "Ex: 869706063068334",
+        noVehiclesFound: "Aucun véhicule trouvé",
+        noVehiclesFoundDesc: "Ajoutez un véhicule ou modifiez votre filtre",
+        addFirstVehicle: "Ajouter un véhicule",
+        vehicleUpdatedSuccess: "Véhicule mis à jour avec succès !",
+        vehicleAddedSuccess: "Véhicule ajouté avec succès !",
+        vehicleDeletedSuccess: "Véhicule supprimé"
     },
 
     ar: {
@@ -363,7 +522,60 @@ export const translations: Record<Language, TranslationDictionary> = {
         loginButton: "دخول",
         loginFailed: "البريد الإلكتروني أو كلمة المرور غير صحيحة",
         noAccount: "ليس لديك حساب؟",
-        haveAccount: "لديك حساب بالفعل؟"
+        haveAccount: "لديك حساب بالفعل؟",
+
+        // Fleet / Vehicles Page
+        fleetManagement: "إدارة الأسطول",
+        fleetManagementDesc: "إدارة المركبات، السائقين، الصور وأجهزة التتبع GPS",
+        addVehicle: "إضافة مركبة",
+        addNewVehicle: "إضافة مركبة جديدة",
+        editVehicle: "تعديل المركبة",
+        totalVehicles: "إجمالي المركبات",
+        allVehicles: "الكل",
+        searchVehiclesPlaceholder: "بحث بالاسم، السائق، رقم IMEI...",
+        statusCol: "الحالة",
+        vehicleCol: "المركبة",
+        driverCol: "السائق",
+        speedCol: "السرعة",
+        lastUpdateCol: "آخر تحديث",
+        actionsCol: "الإجراءات",
+        assignDriver: "تعيين سائق",
+        noDriver: "بدون سائق",
+        unnamedVehicle: "مركبة بدون اسم",
+        movingState: "متحرك",
+        parkedState: "متوقف",
+        offlineState: "غير متصل",
+        editAction: "تعديل",
+        viewOnMap: "عرض على الخريطة",
+        viewHistoryAction: "عرض السجل",
+        copyImei: "نسخ IMEI",
+        deleteVehicle: "حذف المركبة",
+        deleteVehicleConfirmTitle: "هل تريد حذف هذه المركبة؟",
+        deleteVehicleConfirmDesc: "سيؤدي هذا الإجراء إلى حذف المركبة وسجل رحلاتها بشكل نهائي.",
+        vehiclePhoto: "صورة المركبة",
+        uploadPhoto: "رفع صورة",
+        uploadPhotoHint: "صيغة PNG أو JPG أو WebP حتى 8 ميجابايت. تظهر على الخريطة ولوحة التحكم.",
+        removePhoto: "حذف الصورة",
+        orChoosePreset: "أو اختر نوع المركبة الجاهز:",
+        vehicleNameLabel: "اسم المركبة *",
+        vehicleNamePlaceholder: "مثال: V7، تويوتا، شاحنة 01",
+        driverNameLabel: "اسم السائق",
+        driverNamePlaceholder: "مثال: خالد أيت المعطي، محمد العلمي",
+        plateNumberLabel: "رقم اللوحة / الترقيم",
+        plateNumberPlaceholder: "مثال: 12345-أ-26",
+        modelBrandLabel: "الموديل / الماركة",
+        modelBrandPlaceholder: "مثال: داسيا داستر 2024",
+        saveChanges: "حفظ التعديلات",
+        savingChanges: "جاري الحفظ...",
+        addingVehicleText: "جاري الإضافة...",
+        deviceImeiLabel: "رقم IMEI للجهاز *",
+        deviceImeiPlaceholder: "مثال: 869706063068334",
+        noVehiclesFound: "لم يتم العثور على أي مركبة",
+        noVehiclesFoundDesc: "قم بإضافة مركبة جديدة أو ضبط معايير البحث",
+        addFirstVehicle: "أضف مركبتك الأولى",
+        vehicleUpdatedSuccess: "تم تحديث بيانات المركبة بنجاح!",
+        vehicleAddedSuccess: "تمت إضافة المركبة بنجاح!",
+        vehicleDeletedSuccess: "تم حذف المركبة بنجاح"
     }
 };
 

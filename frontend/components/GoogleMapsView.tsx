@@ -12,6 +12,7 @@ import {
     CheckCircle2, X, MapPin, Globe, ChevronDown, ChevronUp, ChevronLeft, ChevronRight, Tag, ExternalLink,
     Route, Fuel, TrendingUp, History
 } from 'lucide-react';
+import { useLanguage } from '@/lib/LanguageContext';
 
 const containerStyle = {
     width: '100%',
@@ -235,6 +236,7 @@ const GOOGLE_MAPS_LIBRARIES: ("places" | "geometry")[] = ["geometry"];
 
 export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProps) {
     const router = useRouter();
+    const { language } = useLanguage();
     const { isLoaded, loadError } = useJsApiLoader({
         id: 'google-map-script',
         googleMapsApiKey: process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || "AIzaSyCnQRiDe3A6Rs9kKAOYJmA4OrOqz8_y7kM",
@@ -730,7 +732,7 @@ export default function GoogleMapsView({ onSwitchToLeaflet }: GoogleMapsViewProp
                                         </div>
                                         {v.driver_name && (
                                             <span className="text-[10px] text-blue-400 font-medium truncate block max-w-[150px]">
-                                                Chauffeur : {v.driver_name}
+                                                {language === 'ar' ? `السائق: ${v.driver_name}` : language === 'fr' ? `Chauffeur : ${v.driver_name}` : `Driver: ${v.driver_name}`}
                                             </span>
                                         )}
                                     </div>
