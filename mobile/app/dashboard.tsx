@@ -213,7 +213,8 @@ export default function Dashboard() {
                         current_state: d.current_state,
                         state_start_time: d.state_start_time,
                         internetStatus: d.internet_status === 1 || d.internet_status === true,
-                        gpsStatus: d.gps_status === 1 || d.gps_status === true
+                        gpsStatus: d.gps_status === 1 || d.gps_status === true,
+                        odometer_km: Number(d.odometer_km) || 0
                     };
                 });
                 setVehicles(vehicleMap);

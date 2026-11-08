@@ -7,6 +7,7 @@ import historyRoutes from './api/history';
 import geofenceRoutes from './api/geofences';
 import alertRoutes from './api/alerts';
 import fuelRoutes from './api/fuel';
+import maintenanceRoutes from './api/maintenance';
 
 import path from 'path';
 import morgan from 'morgan';
@@ -29,6 +30,7 @@ app.use('/api/devices', historyRoutes); // Mount on devices path to extend it
 app.use('/api/geofences', geofenceRoutes);
 app.use('/api/alerts', alertRoutes);
 app.use('/api/fuel', fuelRoutes);
+app.use('/api/maintenance', maintenanceRoutes);
 
 
 // Health check

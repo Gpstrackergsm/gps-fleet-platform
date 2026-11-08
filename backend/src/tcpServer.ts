@@ -86,6 +86,7 @@ const server = net.createServer((socket) => {
                     [parsed.deviceId]
                 );
 
+                let validDistM: number | null = null;
                 if (lastPosRows.length > 0) {
                     const lastP = lastPosRows[0];
                     const prevTime = new Date(lastP.timestamp).getTime();
@@ -99,6 +100,7 @@ const server = net.createServer((socket) => {
                         console.log(`   [SPIKE REJECTED] ${parsed.deviceId}: Jump of ${Math.round(distM)}m in ${dt.toFixed(1)}s (${Math.round(speedMs * 3.6)} km/h) ignored.`);
                         return;
                     }
+                    validDistM = distM;
                 }
 
 
@@ -113,11 +115,26 @@ const server = net.createServer((socket) => {
                     return;
                 }
 
-                // Mark known device as online
-                await pool.execute(
-                    'UPDATE devices SET status = "online" WHERE device_id = ?',
-                    [parsed.deviceId]
-                );
+                // Mark known device as online & increment odometer from real movement
+                if (validDistM && validDistM > 10 && validDistM < 5000) {
+                    const incKm = validDistM / 1000;
+                    try {
+                        await pool.execute(
+                            'UPDATE devices SET status = "online", odometer_km = COALESCE(odometer_km, 0) + ? WHERE device_id = ?',
+                            [incKm, parsed.deviceId]
+                        );
+                    } catch {
+                        await pool.execute(
+                            'UPDATE devices SET status = "online" WHERE device_id = ?',
+                            [parsed.deviceId]
+                        );
+                    }
+                } else {
+                    await pool.execute(
+                        'UPDATE devices SET status = "online" WHERE device_id = ?',
+                        [parsed.deviceId]
+                    );
+                }
 
 
                 // Update positions reference table with ALL telemetry columns

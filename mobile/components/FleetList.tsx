@@ -18,6 +18,7 @@ export interface Vehicle {
     current_state?: 'moving' | 'idling' | 'parked' | 'offline';
     state_start_time?: string | Date;
     trip_distance?: number;
+    odometer_km?: number;
     internetStatus?: boolean;
     gpsStatus?: boolean;
 }
@@ -304,6 +305,15 @@ const FleetItem = memo(({ item, onPress }: { item: Vehicle, onPress: (v: Vehicle
                             {item.accStatus ? 'ACC ON' : 'ACC OFF'}
                         </Text>
                     </View>
+
+                    {/* Odometer */}
+                    {item.odometer_km ? (
+                        <View style={styles.metricItem}>
+                            <Text style={[styles.metricText, { color: '#F59E0B', fontWeight: '700' }]}>
+                                {Math.round(item.odometer_km).toLocaleString()} km
+                            </Text>
+                        </View>
+                    ) : null}
 
                     {/* Network Status */}
                     <View style={styles.metricItem}>

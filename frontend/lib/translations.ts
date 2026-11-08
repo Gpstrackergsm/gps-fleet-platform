@@ -146,6 +146,45 @@ export interface TranslationDictionary {
     vehicleUpdatedSuccess: string;
     vehicleAddedSuccess: string;
     vehicleDeletedSuccess: string;
+
+    // Maintenance & Oil Change (Vidange)
+    maintenance: string;
+    maintenanceSubtitle: string;
+    newServiceSchedule: string;
+    logCompletedService: string;
+    quickInitPresets: string;
+    quickInitDesc: string;
+    vehicleOdometer: string;
+    serviceType: string;
+    serviceTitle: string;
+    intervalKm: string;
+    lastServiceKm: string;
+    nextDueKm: string;
+    remainingKm: string;
+    dueSoonBadge: string;
+    overdueBadge: string;
+    okBadge: string;
+    costMad: string;
+    garagePerformedBy: string;
+    invoiceNumber: string;
+    markAsCompleted: string;
+    serviceHistory: string;
+    noServicesFound: string;
+    noLogsFound: string;
+    totalServices: string;
+    servicesOk: string;
+    servicesDueSoon: string;
+    servicesOverdue: string;
+    totalSpentMad: string;
+    spent30dMad: string;
+    deleteServiceConfirm: string;
+    serviceCompletedSuccess: string;
+    serviceCreatedSuccess: string;
+    serviceDeletedSuccess: string;
+    odometerUpdatedSuccess: string;
+    editOdometer: string;
+    filterByVehicle: string;
+    allStatuses: string;
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -289,7 +328,46 @@ export const translations: Record<Language, TranslationDictionary> = {
         addFirstVehicle: "Add your first vehicle",
         vehicleUpdatedSuccess: "Vehicle updated successfully!",
         vehicleAddedSuccess: "Vehicle added successfully!",
-        vehicleDeletedSuccess: "Vehicle deleted successfully"
+        vehicleDeletedSuccess: "Vehicle deleted successfully",
+
+        // Maintenance & Oil Change (Vidange)
+        maintenance: "Maintenance & Oil",
+        maintenanceSubtitle: "Automated oil changes, wear parts tracking, and digital maintenance log",
+        newServiceSchedule: "Schedule Service",
+        logCompletedService: "Record Service",
+        quickInitPresets: "Initialize Maintenance Pack",
+        quickInitDesc: "Automatically configures the 7 standard maintenance schedules (oil, filters, brakes, tires, belt) based on current odometer",
+        vehicleOdometer: "Current Odometer (km)",
+        serviceType: "Service Type",
+        serviceTitle: "Service Title",
+        intervalKm: "Interval (km)",
+        lastServiceKm: "Last Service at (km)",
+        nextDueKm: "Next Due (km)",
+        remainingKm: "Remaining",
+        dueSoonBadge: "Due Soon",
+        overdueBadge: "Overdue",
+        okBadge: "Up to Date",
+        costMad: "Cost (MAD)",
+        garagePerformedBy: "Garage / Mechanic",
+        invoiceNumber: "Invoice / Receipt #",
+        markAsCompleted: "Mark Completed",
+        serviceHistory: "Service History",
+        noServicesFound: "No maintenance schedules found",
+        noLogsFound: "No service history logged yet",
+        totalServices: "Scheduled Services",
+        servicesOk: "Up to Date",
+        servicesDueSoon: "Due Soon",
+        servicesOverdue: "Overdue",
+        totalSpentMad: "Total Maintenance Cost",
+        spent30dMad: "Last 30 Days",
+        deleteServiceConfirm: "Are you sure you want to delete this maintenance schedule?",
+        serviceCompletedSuccess: "Service intervention logged successfully!",
+        serviceCreatedSuccess: "Maintenance schedule created successfully!",
+        serviceDeletedSuccess: "Maintenance schedule deleted",
+        odometerUpdatedSuccess: "Odometer updated successfully",
+        editOdometer: "Edit Odometer",
+        filterByVehicle: "Filter by Vehicle",
+        allStatuses: "All Statuses",
     },
 
     fr: {
@@ -432,7 +510,46 @@ export const translations: Record<Language, TranslationDictionary> = {
         addFirstVehicle: "Ajouter un véhicule",
         vehicleUpdatedSuccess: "Véhicule mis à jour avec succès !",
         vehicleAddedSuccess: "Véhicule ajouté avec succès !",
-        vehicleDeletedSuccess: "Véhicule supprimé"
+        vehicleDeletedSuccess: "Véhicule supprimé",
+
+        // Maintenance & Oil Change (Vidange)
+        maintenance: "Entretien & Vidange",
+        maintenanceSubtitle: "Suivi des vidanges, pièces d'usure et carnet d'entretien digital",
+        newServiceSchedule: "Programmer un Entretien",
+        logCompletedService: "Enregistrer une Intervention",
+        quickInitPresets: "Initialiser Pack Vidange",
+        quickInitDesc: "Configure automatiquement les 7 entretiens standards (vidange, filtres, freins, pneus, courroie) selon l'odomètre actuel",
+        vehicleOdometer: "Odomètre Actuel (km)",
+        serviceType: "Type d'intervention",
+        serviceTitle: "Intitulé du service",
+        intervalKm: "Intervalle (km)",
+        lastServiceKm: "Dernière intervention à (km)",
+        nextDueKm: "Prochaine échéance (km)",
+        remainingKm: "Restant",
+        dueSoonBadge: "Échéance Proche",
+        overdueBadge: "En Retard",
+        okBadge: "À jour",
+        costMad: "Coût (MAD)",
+        garagePerformedBy: "Garage / Mécanicien",
+        invoiceNumber: "N° Facture / Bon",
+        markAsCompleted: "Valider l'Entretien",
+        serviceHistory: "Carnet d'Entretien (Historique)",
+        noServicesFound: "Aucun entretien programmé",
+        noLogsFound: "Aucune intervention enregistrée pour le moment",
+        totalServices: "Services programmés",
+        servicesOk: "À jour",
+        servicesDueSoon: "Échéance proche",
+        servicesOverdue: "En retard",
+        totalSpentMad: "Dépenses totales d'entretien",
+        spent30dMad: "30 derniers jours",
+        deleteServiceConfirm: "Êtes-vous sûr de vouloir supprimer cet entretien programmé ?",
+        serviceCompletedSuccess: "Intervention enregistrée et reprogrammée avec succès !",
+        serviceCreatedSuccess: "Entretien programmé avec succès !",
+        serviceDeletedSuccess: "Entretien supprimé",
+        odometerUpdatedSuccess: "Odomètre mis à jour avec succès",
+        editOdometer: "Modifier Odomètre",
+        filterByVehicle: "Filtrer par Véhicule",
+        allStatuses: "Tous les statuts",
     },
 
     ar: {
@@ -575,7 +692,46 @@ export const translations: Record<Language, TranslationDictionary> = {
         addFirstVehicle: "أضف مركبتك الأولى",
         vehicleUpdatedSuccess: "تم تحديث بيانات المركبة بنجاح!",
         vehicleAddedSuccess: "تمت إضافة المركبة بنجاح!",
-        vehicleDeletedSuccess: "تم حذف المركبة بنجاح"
+        vehicleDeletedSuccess: "تم حذف المركبة بنجاح",
+
+        // Maintenance & Oil Change (Vidange)
+        maintenance: "الصيانة وتغيير الزيت",
+        maintenanceSubtitle: "متابعة تغيير زيت المحرك، قطع الغيار الاستهلاكية ودفتر الصيانة الإلكتروني",
+        newServiceSchedule: "برمجة موعد صيانة",
+        logCompletedService: "تسجيل عملية صيانة",
+        quickInitPresets: "تفعيل باقة الصيانة الشاملة",
+        quickInitDesc: "يقوم تلقائياً ببرمجة 7 مواعيد صيانة قياسية (تغيير الزيت، الفلاتر، الفرامل، الإطارات، الحزام) بناءً على العداد الحالي",
+        vehicleOdometer: "عداد الكيلومترات الحالي (كم)",
+        serviceType: "نوع الصيانة",
+        serviceTitle: "عنوان الصيانة",
+        intervalKm: "الفترة (كم)",
+        lastServiceKm: "آخر صيانة عند (كم)",
+        nextDueKm: "الموعد القادم (كم)",
+        remainingKm: "المتبقي",
+        dueSoonBadge: "اقترب الموعد",
+        overdueBadge: "متأخر",
+        okBadge: "محدث",
+        costMad: "التكلفة (درهم)",
+        garagePerformedBy: "المرآب / الميكانيكي",
+        invoiceNumber: "رقم الفاتورة / الوصل",
+        markAsCompleted: "تأكيد إتمام الصيانة",
+        serviceHistory: "دفتر وسجل الصيانة",
+        noServicesFound: "لا توجد مواعيد صيانة مبرمجة",
+        noLogsFound: "لم يتم تسجيل أي عملية صيانة بعد",
+        totalServices: "المواعيد المبرمجة",
+        servicesOk: "محدثة",
+        servicesDueSoon: "اقترب موعدها",
+        servicesOverdue: "متأخرة",
+        totalSpentMad: "إجمالي مصاريف الصيانة",
+        spent30dMad: "آخر 30 يوماً",
+        deleteServiceConfirm: "هل أنت متأكد من حذف هذا الموعد المبرمج؟",
+        serviceCompletedSuccess: "تم تسجيل الصيانة وتحديث الدورة القادمة بنجاح!",
+        serviceCreatedSuccess: "تمت برمجة الصيانة بنجاح!",
+        serviceDeletedSuccess: "تم حذف الموعد المبرمج",
+        odometerUpdatedSuccess: "تم تحديث عداد الكيلومترات بنجاح",
+        editOdometer: "تعديل العداد",
+        filterByVehicle: "تصفية حسب المركبة",
+        allStatuses: "جميع الحالات",
     }
 };
 

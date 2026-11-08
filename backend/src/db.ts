@@ -204,6 +204,48 @@ const initTables = async () => {
         );
     `;
 
+    const createMaintenanceServicesTable = `
+        CREATE TABLE IF NOT EXISTS maintenance_services (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            device_id VARCHAR(50) NOT NULL,
+            service_type VARCHAR(50) NOT NULL,
+            title VARCHAR(100) NOT NULL,
+            interval_km INT DEFAULT 10000,
+            last_service_km INT DEFAULT 0,
+            last_service_date DATE NULL,
+            next_due_km INT NOT NULL,
+            alert_before_km INT DEFAULT 1000,
+            cost_mad DECIMAL(10, 2) DEFAULT 0.00,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_maint_tenant (tenant_id),
+            INDEX idx_maint_device (device_id)
+        );
+    `;
+
+    const createMaintenanceLogsTable = `
+        CREATE TABLE IF NOT EXISTS maintenance_logs (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            tenant_id INT NOT NULL,
+            device_id VARCHAR(50) NOT NULL,
+            service_id INT NULL,
+            service_type VARCHAR(50) NOT NULL,
+            title VARCHAR(100) NOT NULL,
+            service_km INT NOT NULL,
+            service_date DATE NOT NULL,
+            cost_mad DECIMAL(10, 2) DEFAULT 0.00,
+            performed_by VARCHAR(100) NULL,
+            invoice_number VARCHAR(50) NULL,
+            notes TEXT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            INDEX idx_maint_logs_tenant (tenant_id),
+            INDEX idx_maint_logs_device (device_id),
+            INDEX idx_maint_logs_date (service_date DESC)
+        );
+    `;
+
     try {
         await query(createDevicesTable);
         await query(createPositionsTable);
@@ -215,6 +257,8 @@ const initTables = async () => {
         await query(createAlertsTable);
         await query(createEmailVerificationsTable);
         await query(createSystemSettingsTable);
+        await query(createMaintenanceServicesTable);
+        await query(createMaintenanceLogsTable);
 
         // Manual Migration for existing tables (Blind ALTERs)
         try { await query("ALTER TABLE positions ADD COLUMN internet_status BOOLEAN DEFAULT FALSE"); } catch { }
@@ -243,6 +287,7 @@ const initTables = async () => {
         try { await query("ALTER TABLE devices ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN image_url TEXT DEFAULT NULL"); } catch { }
+        try { await query("ALTER TABLE devices ADD COLUMN odometer_km DOUBLE DEFAULT 0"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }

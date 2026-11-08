@@ -6,7 +6,7 @@ import { useRouter, usePathname } from 'next/navigation';
 import {
     Map, Truck, Clock, Settings, LogOut,
     MapPin, ChevronRight, Wifi, WifiOff, BarChart2,
-    Compass, ShieldAlert, Shield, Menu, X, Fuel
+    Compass, ShieldAlert, Shield, Menu, X, Fuel, Wrench
 } from 'lucide-react';
 import { socket } from '@/lib/socket';
 import LanguageSelector from '@/components/LanguageSelector';
@@ -37,6 +37,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const NAV = [
         { href: '/dashboard', icon: Map, label: t('dashboard') },
         { href: '/dashboard/vehicles', icon: Truck, label: t('fleet') },
+        { href: '/dashboard/maintenance', icon: Wrench, label: t('maintenance') },
         { href: '/dashboard/fuel', icon: Fuel, label: t('fuelEco') },
         { href: '/dashboard/history', icon: Clock, label: t('history') },
         { href: '/dashboard/geofences', icon: Compass, label: t('geofences') },

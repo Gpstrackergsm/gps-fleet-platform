@@ -1,7 +1,7 @@
 "use client"
 
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { Plus, Search, Trash2, Clock, Gauge, Car, Activity, WifiOff, MapPin, X, Loader2, Edit3, User, Camera, Upload, Check, Copy } from 'lucide-react';
+import { Plus, Search, Trash2, Clock, Gauge, Car, Activity, WifiOff, MapPin, X, Loader2, Edit3, User, Camera, Upload, Check, Copy, Wrench } from 'lucide-react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import { useLanguage } from '@/lib/LanguageContext';
@@ -24,6 +24,7 @@ interface Device {
     plate_number?: string | null;
     model?: string | null;
     vehicle_type?: string | null;
+    odometer_km?: number | null;
 }
 
 type FilterTab = 'all' | 'moving' | 'parked' | 'offline';
@@ -96,6 +97,7 @@ export default function VehiclesPage() {
     const [editPlateNumber, setEditPlateNumber] = useState('');
     const [editModel, setEditModel] = useState('');
     const [editVehicleType, setEditVehicleType] = useState('car');
+    const [editOdometerKm, setEditOdometerKm] = useState('0');
     const [saving, setSaving] = useState(false);
     const [toastMessage, setToastMessage] = useState<string | null>(null);
 
@@ -189,6 +191,7 @@ export default function VehiclesPage() {
         setEditPlateNumber(device.plate_number || '');
         setEditModel(device.model || '');
         setEditVehicleType(device.vehicle_type || 'car');
+        setEditOdometerKm(device.odometer_km ? String(Math.round(device.odometer_km)) : '0');
         setActionMenu(null);
     };
 
@@ -202,7 +205,8 @@ export default function VehiclesPage() {
                 image_url: editImageUrl || null,
                 plate_number: editPlateNumber.trim() || null,
                 model: editModel.trim() || null,
-                vehicle_type: editVehicleType
+                vehicle_type: editVehicleType,
+                odometer_km: Number(editOdometerKm) || 0
             });
 
             // Optimistic update
@@ -215,7 +219,8 @@ export default function VehiclesPage() {
                         image_url: editImageUrl || null,
                         plate_number: editPlateNumber.trim() || null,
                         model: editModel.trim() || null,
-                        vehicle_type: editVehicleType
+                        vehicle_type: editVehicleType,
+                        odometer_km: Number(editOdometerKm) || 0
                     };
                 }
                 return d;
@@ -514,6 +519,9 @@ export default function VehiclesPage() {
                                                             <Link href="/dashboard/history" onClick={() => setActionMenu(null)} className="flex items-center gap-2.5 px-3 py-2 text-sm text-gray-200 hover:bg-gray-700 hover:text-white transition-colors">
                                                                 <Clock size={14} className="text-purple-400" /> {t('viewHistoryAction')}
                                                             </Link>
+                                                            <Link href={`/dashboard/maintenance?device_id=${device.device_id}`} onClick={() => setActionMenu(null)} className="flex items-center gap-2.5 px-3 py-2 text-sm text-amber-300 hover:bg-gray-700 hover:text-white transition-colors">
+                                                                <Wrench size={14} className="text-amber-400" /> {t('maintenance')}
+                                                            </Link>
                                                             <button
                                                                 onClick={() => {
                                                                     handleCopyImei(device.device_id);
@@ -722,6 +730,25 @@ export default function VehiclesPage() {
                                         onChange={e => setEditModel(e.target.value)}
                                         placeholder={t('modelBrandPlaceholder')}
                                         className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Odometer (km) */}
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 flex items-center justify-between">
+                                    <span>{t('vehicleOdometer')}</span>
+                                    <span className="text-[11px] text-amber-400 font-normal lowercase">Calcul des vidanges & rappels</span>
+                                </label>
+                                <div className="relative">
+                                    <Gauge size={16} className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-amber-400`} />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={editOdometerKm}
+                                        onChange={e => setEditOdometerKm(e.target.value)}
+                                        placeholder="Ex: 125000"
+                                        className={`w-full bg-gray-950 border border-gray-800 rounded-xl ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2.5 text-white font-mono text-sm focus:outline-none focus:border-amber-500`}
                                     />
                                 </div>
                             </div>

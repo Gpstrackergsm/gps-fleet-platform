@@ -86,7 +86,7 @@ function saveBase64Image(dataUri: string, deviceId: string): string | null {
 
 // ADD a new device
 router.post('/', authenticateToken, async (req: AuthRequest, res) => {
-    const { deviceId, name, driver_name, image_url, plate_number, model, vehicle_type } = req.body;
+    const { deviceId, name, driver_name, image_url, plate_number, model, vehicle_type, odometer_km } = req.body;
     const tenantId = req.user.tenantId;
 
     if (!deviceId || !String(deviceId).trim()) {
@@ -105,8 +105,8 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
         }
 
         await query(
-            `INSERT INTO devices (device_id, name, driver_name, image_url, plate_number, model, vehicle_type, status, tenant_id) 
-             VALUES (?, ?, ?, ?, ?, ?, ?, 'offline', ?)`,
+            `INSERT INTO devices (device_id, name, driver_name, image_url, plate_number, model, vehicle_type, odometer_km, status, tenant_id) 
+             VALUES (?, ?, ?, ?, ?, ?, ?, ?, 'offline', ?)`,
             [
                 trimmedDeviceId,
                 name ? String(name).trim() : null,
@@ -115,6 +115,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
                 plate_number ? String(plate_number).trim() : null,
                 model ? String(model).trim() : null,
                 vehicle_type || 'car',
+                Number(odometer_km) >= 0 ? Number(odometer_km) : 0,
                 tenantId
             ]
         );
@@ -128,7 +129,7 @@ router.post('/', authenticateToken, async (req: AuthRequest, res) => {
 // UPDATE a device (Vehicle name, driver name, vehicle image, etc.)
 const handleUpdateDevice = async (req: AuthRequest, res: any) => {
     const deviceId = String(req.params.deviceId);
-    const { name, driver_name, image_url, plate_number, model, vehicle_type } = req.body;
+    const { name, driver_name, image_url, plate_number, model, vehicle_type, odometer_km } = req.body;
     const tenantId = req.user.tenantId;
     const isAdmin = req.user.role === 'admin';
 
@@ -160,6 +161,7 @@ const handleUpdateDevice = async (req: AuthRequest, res: any) => {
         const updatedPlate = plate_number !== undefined ? (plate_number ? String(plate_number).trim() : null) : existing.plate_number;
         const updatedModel = model !== undefined ? (model ? String(model).trim() : null) : existing.model;
         const updatedType = vehicle_type !== undefined ? (vehicle_type ? String(vehicle_type).trim() : 'car') : (existing.vehicle_type || 'car');
+        const updatedOdometer = odometer_km !== undefined ? Math.max(0, Number(odometer_km)) : (existing.odometer_km || 0);
 
         await query(
             `UPDATE devices SET 
@@ -168,9 +170,10 @@ const handleUpdateDevice = async (req: AuthRequest, res: any) => {
                 image_url = ?, 
                 plate_number = ?, 
                 model = ?, 
-                vehicle_type = ? 
+                vehicle_type = ?,
+                odometer_km = ?
             WHERE device_id = ?`,
-            [updatedName, updatedDriver, finalImageUrl, updatedPlate, updatedModel, updatedType, deviceId]
+            [updatedName, updatedDriver, finalImageUrl, updatedPlate, updatedModel, updatedType, updatedOdometer, deviceId]
         );
 
         res.json({
