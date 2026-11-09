@@ -87,6 +87,7 @@ export default function VehiclesPage() {
     const [newPlateNumber, setNewPlateNumber] = useState('');
     const [newModel, setNewModel] = useState('');
     const [newVehicleType, setNewVehicleType] = useState('car');
+    const [newOdometerKm, setNewOdometerKm] = useState('0');
     const [adding, setAdding] = useState(false);
 
     // Edit Modal State
@@ -164,7 +165,8 @@ export default function VehiclesPage() {
                 image_url: newImageUrl || undefined,
                 plate_number: newPlateNumber.trim() || undefined,
                 model: newModel.trim() || undefined,
-                vehicle_type: newVehicleType
+                vehicle_type: newVehicleType,
+                odometer_km: Number(newOdometerKm) || 0
             });
             setShowAddModal(false);
             setNewImei('');
@@ -174,6 +176,7 @@ export default function VehiclesPage() {
             setNewPlateNumber('');
             setNewModel('');
             setNewVehicleType('car');
+            setNewOdometerKm('0');
             showToast(t('vehicleAddedSuccess'));
             fetchDevices();
         } catch (err: any) {
@@ -361,6 +364,7 @@ export default function VehiclesPage() {
                                 <th className="px-4 py-3.5 rounded-tl-2xl">{t('statusCol')}</th>
                                 <th className="px-4 py-3.5">{t('vehicleCol')}</th>
                                 <th className="px-4 py-3.5 hidden md:table-cell">{t('driverCol')}</th>
+                                <th className="px-4 py-3.5 hidden sm:table-cell">{t('vehicleOdometer')}</th>
                                 <th className="px-4 py-3.5 hidden lg:table-cell">{t('speedCol')}</th>
                                 <th className="px-4 py-3.5 hidden xl:table-cell">{t('lastUpdateCol')}</th>
                                 <th className="px-4 py-3.5 text-right rounded-tr-2xl">{t('actionsCol')}</th>
@@ -373,6 +377,7 @@ export default function VehiclesPage() {
                                         <td className="px-4 py-3.5"><div className="h-4 w-20 bg-gray-800 rounded" /></td>
                                         <td className="px-4 py-3.5"><div className="h-10 w-44 bg-gray-800 rounded" /></td>
                                         <td className="px-4 py-3.5 hidden md:table-cell"><div className="h-4 w-28 bg-gray-800 rounded" /></td>
+                                        <td className="px-4 py-3.5 hidden sm:table-cell"><div className="h-4 w-24 bg-gray-800 rounded" /></td>
                                         <td className="px-4 py-3.5 hidden lg:table-cell"><div className="h-4 w-16 bg-gray-800 rounded" /></td>
                                         <td className="px-4 py-3.5 hidden xl:table-cell"><div className="h-4 w-20 bg-gray-800 rounded" /></td>
                                         <td className="px-4 py-3.5" />
@@ -448,6 +453,18 @@ export default function VehiclesPage() {
                                                             </span>
                                                         )}
                                                     </div>
+
+                                                    {/* Mobile Odometer Badge */}
+                                                    <div className="flex items-center gap-1.5 mt-1 sm:hidden">
+                                                        <button
+                                                            type="button"
+                                                            onClick={() => openEditModal(device)}
+                                                            className="inline-flex items-center gap-1 text-[10px] font-mono text-amber-300 font-bold bg-amber-500/10 border border-amber-500/25 px-1.5 py-0.5 rounded"
+                                                        >
+                                                            <Gauge size={10} className="text-amber-400" />
+                                                            <span>{Number(device.odometer_km || 0).toLocaleString()} km</span>
+                                                        </button>
+                                                    </div>
                                                 </div>
                                             </div>
                                         </td>
@@ -467,6 +484,20 @@ export default function VehiclesPage() {
                                                     <Plus size={12} /> {t('assignDriver')}
                                                 </button>
                                             )}
+                                        </td>
+
+                                        {/* Real Dashboard Odometer (km) */}
+                                        <td className="px-4 py-3.5 hidden sm:table-cell align-middle">
+                                            <button
+                                                type="button"
+                                                onClick={() => openEditModal(device)}
+                                                className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/25 text-amber-300 font-mono text-xs font-bold transition-all hover:scale-105"
+                                                title="Cliquer pour modifier le kilométrage réel du tableau de bord"
+                                            >
+                                                <Gauge size={13} className="text-amber-400 shrink-0" />
+                                                <span>{Number(device.odometer_km || 0).toLocaleString()} km</span>
+                                                <Edit3 size={11} className="text-amber-400/60" />
+                                            </button>
                                         </td>
 
                                         {/* Speed */}
@@ -836,6 +867,51 @@ export default function VehiclesPage() {
                                     placeholder={t('driverNamePlaceholder')}
                                     className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
                                 />
+                            </div>
+
+                            {/* Plate & Model */}
+                            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 block">
+                                        {t('plateNumberLabel')}
+                                    </label>
+                                    <input
+                                        value={newPlateNumber}
+                                        onChange={e => setNewPlateNumber(e.target.value)}
+                                        placeholder={t('plateNumberPlaceholder')}
+                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-white text-sm font-mono focus:outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 block">
+                                        {t('modelBrandLabel')}
+                                    </label>
+                                    <input
+                                        value={newModel}
+                                        onChange={e => setNewModel(e.target.value)}
+                                        placeholder={t('modelBrandPlaceholder')}
+                                        className="w-full bg-gray-950 border border-gray-800 rounded-xl px-3 py-2.5 text-white text-sm focus:outline-none focus:border-blue-500"
+                                    />
+                                </div>
+                            </div>
+
+                            {/* Odometer (km) */}
+                            <div>
+                                <label className="text-xs font-semibold uppercase tracking-wider text-gray-400 mb-1.5 flex items-center justify-between">
+                                    <span>{t('vehicleOdometer')}</span>
+                                    <span className="text-[11px] text-amber-400 font-normal lowercase">compteur réel du tableau de bord</span>
+                                </label>
+                                <div className="relative">
+                                    <Gauge size={16} className={`absolute ${isRTL ? 'right-3' : 'left-3'} top-1/2 -translate-y-1/2 text-amber-400`} />
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={newOdometerKm}
+                                        onChange={e => setNewOdometerKm(e.target.value)}
+                                        placeholder="Ex: 85000"
+                                        className={`w-full bg-gray-950 border border-gray-800 rounded-xl ${isRTL ? 'pr-9 pl-3' : 'pl-9 pr-3'} py-2.5 text-white font-mono text-sm focus:outline-none focus:border-amber-500`}
+                                    />
+                                </div>
                             </div>
 
                             {/* Photo / Presets */}
