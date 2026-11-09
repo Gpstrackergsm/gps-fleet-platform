@@ -212,16 +212,21 @@ const initTables = async () => {
             service_type VARCHAR(50) NOT NULL,
             title VARCHAR(100) NOT NULL,
             interval_km INT DEFAULT 10000,
+            interval_days INT DEFAULT 0,
             last_service_km INT DEFAULT 0,
             last_service_date DATE NULL,
             next_due_km INT NOT NULL,
+            next_due_date DATE NULL,
             alert_before_km INT DEFAULT 1000,
+            alert_before_days INT DEFAULT 30,
+            is_mandatory BOOLEAN DEFAULT FALSE,
             cost_mad DECIMAL(10, 2) DEFAULT 0.00,
             notes TEXT,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_maint_tenant (tenant_id),
-            INDEX idx_maint_device (device_id)
+            INDEX idx_maint_device (device_id),
+            INDEX idx_maint_due_date (next_due_date)
         );
     `;
 
@@ -288,6 +293,10 @@ const initTables = async () => {
         try { await query("ALTER TABLE devices ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN image_url TEXT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE devices ADD COLUMN odometer_km DOUBLE DEFAULT 0"); } catch { }
+        try { await query("ALTER TABLE maintenance_services ADD COLUMN interval_days INT DEFAULT 0"); } catch { }
+        try { await query("ALTER TABLE maintenance_services ADD COLUMN next_due_date DATE NULL"); } catch { }
+        try { await query("ALTER TABLE maintenance_services ADD COLUMN alert_before_days INT DEFAULT 30"); } catch { }
+        try { await query("ALTER TABLE maintenance_services ADD COLUMN is_mandatory BOOLEAN DEFAULT FALSE"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN satellites INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN gsm_signal INT DEFAULT NULL"); } catch { }
         try { await query("ALTER TABLE positions ADD COLUMN fuel_percent DOUBLE DEFAULT NULL"); } catch { }

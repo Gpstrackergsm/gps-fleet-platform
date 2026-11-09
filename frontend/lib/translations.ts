@@ -185,6 +185,26 @@ export interface TranslationDictionary {
     editOdometer: string;
     filterByVehicle: string;
     allStatuses: string;
+
+    // Regulatory & Mandatory Inspection (Visite Technique)
+    technicalInspection: string;
+    technicalInspectionDesc: string;
+    mandatoryObligation: string;
+    mandatoryBadge: string;
+    regulatoryInspections: string;
+    mechanicalMaintenance: string;
+    allCategories: string;
+    daysRemaining: string;
+    dueDate: string;
+    expiresInDays: string;
+    expiredDaysAgo: string;
+    urgentLegalRisk: string;
+    inspectionCenter: string;
+    annualInspectionPreset: string;
+    intervalDays: string;
+    alertBeforeDays: string;
+    isMandatoryLabel: string;
+    mandatoryCount: string;
 }
 
 export const translations: Record<Language, TranslationDictionary> = {
@@ -368,6 +388,26 @@ export const translations: Record<Language, TranslationDictionary> = {
         editOdometer: "Edit Odometer",
         filterByVehicle: "Filter by Vehicle",
         allStatuses: "All Statuses",
+
+        // Regulatory & Mandatory Inspection (Visite Technique)
+        technicalInspection: "Mandatory Annual Technical Inspection",
+        technicalInspectionDesc: "Mandatory annual regulatory vehicle inspection required by authorities",
+        mandatoryObligation: "Legal Obligation / Technical Inspection",
+        mandatoryBadge: "MANDATORY",
+        regulatoryInspections: "Technical Inspections & Legal",
+        mechanicalMaintenance: "Oil & Mechanical",
+        allCategories: "All Categories",
+        daysRemaining: "Days Remaining",
+        dueDate: "Due Date",
+        expiresInDays: "Expires in",
+        expiredDaysAgo: "Expired",
+        urgentLegalRisk: "Fine & Impoundment Risk!",
+        inspectionCenter: "Certified Center (e.g., Dekra, SGS...)",
+        annualInspectionPreset: "Technical Inspection (365 days / 1 yr)",
+        intervalDays: "Time Interval (days / yr)",
+        alertBeforeDays: "Alert in advance (days)",
+        isMandatoryLabel: "Mandatory legal requirement by transport authority",
+        mandatoryCount: "Legal Obligations",
     },
 
     fr: {
@@ -550,6 +590,26 @@ export const translations: Record<Language, TranslationDictionary> = {
         editOdometer: "Modifier Odomètre",
         filterByVehicle: "Filtrer par Véhicule",
         allStatuses: "Tous les statuts",
+
+        // Regulatory & Mandatory Inspection (Visite Technique)
+        technicalInspection: "Visite Technique Annuelle Obligatoire",
+        technicalInspectionDesc: "Contrôle technique légal annuel imposé par l'État pour éviter les amendes et l'immobilisation",
+        mandatoryObligation: "Obligation Légale / Visite Technique",
+        mandatoryBadge: "OBLIGATOIRE",
+        regulatoryInspections: "Visites Techniques & Lois",
+        mechanicalMaintenance: "Vidanges & Mécanique",
+        allCategories: "Toutes catégories",
+        daysRemaining: "Jours restants",
+        dueDate: "Date d'échéance",
+        expiresInDays: "Expire dans",
+        expiredDaysAgo: "Expiré depuis",
+        urgentLegalRisk: "Risque d'amende & fourrière !",
+        inspectionCenter: "Centre agréé (ex: Dekra, Salama, SGS...)",
+        annualInspectionPreset: "Visite Technique (365 jours / 1 an)",
+        intervalDays: "Intervalle temporel (jours / an)",
+        alertBeforeDays: "Alerter à l'avance (jours)",
+        isMandatoryLabel: "Contrôle légal obligatoire imposé par l'autorité",
+        mandatoryCount: "Obligations Légales",
     },
 
     ar: {
@@ -732,6 +792,26 @@ export const translations: Record<Language, TranslationDictionary> = {
         editOdometer: "تعديل العداد",
         filterByVehicle: "تصفية حسب المركبة",
         allStatuses: "جميع الحالات",
+
+        // Regulatory & Mandatory Inspection (Visite Technique)
+        technicalInspection: "الفحص التقني السنوي الإجباري (لافيزيت)",
+        technicalInspectionDesc: "الفحص التقني السنوي الإجباري المفروض قانونياً لتفادي الغرامات وحجز المركبة",
+        mandatoryObligation: "إجباري قانونياً / الفحص التقني",
+        mandatoryBadge: "إجباري قانوناً",
+        regulatoryInspections: "الفحص التقني والوثائق القانونية",
+        mechanicalMaintenance: "الزيوت والصيانة الميكانيكية",
+        allCategories: "جميع الفئات",
+        daysRemaining: "الأيام المتبقية",
+        dueDate: "تاريخ الانتهاء",
+        expiresInDays: "ينتهي خلال",
+        expiredDaysAgo: "منتهي الصلاحية منذ",
+        urgentLegalRisk: "خطر غرامة وحجز المركبة في المحجز!",
+        inspectionCenter: "مركز الفحص المعتمد",
+        annualInspectionPreset: "الفحص التقني (365 يوم / سنة)",
+        intervalDays: "المدة الزمنية (أيام / سنة)",
+        alertBeforeDays: "التنبيه المسبق قبل (أيام)",
+        isMandatoryLabel: "إجراء إجباري بقوة القانون من السلطات",
+        mandatoryCount: "الالتزامات القانونية",
     }
 };
 

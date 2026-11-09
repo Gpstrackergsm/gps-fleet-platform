@@ -11,10 +11,14 @@ export interface MaintenanceServiceItem {
     service_type: string;
     title: string;
     interval_km: number;
+    interval_days: number;
     last_service_km: number;
     last_service_date: string | null;
     next_due_km: number;
+    next_due_date: string | null;
     alert_before_km: number;
+    alert_before_days: number;
+    is_mandatory: boolean;
     cost_mad: number;
     notes: string | null;
     created_at: string;
@@ -27,8 +31,100 @@ export interface MaintenanceServiceItem {
     image_url?: string;
     current_odometer_km?: number;
     km_remaining?: number;
+    days_remaining?: number;
     progress_percent?: number;
     status?: 'ok' | 'due_soon' | 'overdue';
+}
+
+/**
+ * Unified computation for maintenance status and progress:
+ * Works for km-based (e.g. oil change), date-based (e.g. annual technical inspection), or dual
+ */
+export function computeServiceStatus(s: {
+    current_odometer_km?: number;
+    last_service_km?: number;
+    next_due_km?: number;
+    interval_km?: number;
+    alert_before_km?: number;
+    last_service_date?: string | null;
+    next_due_date?: string | null;
+    interval_days?: number;
+    alert_before_days?: number;
+}) {
+    const currentKm = Number(s.current_odometer_km) || 0;
+    const lastKm = Number(s.last_service_km) || 0;
+    const nextDueKm = Number(s.next_due_km) || 0;
+    const intervalKm = Number(s.interval_km) || 0;
+    const alertBeforeKm = Number(s.alert_before_km) || 1000;
+    const intervalDays = Number(s.interval_days) || 0;
+    const alertBeforeDays = Number(s.alert_before_days) || 30;
+
+    // 1. Distance calculations (if interval_km > 0)
+    let kmRemaining: number | null = null;
+    let kmProgress = 0;
+    let kmOverdue = false;
+    let kmDueSoon = false;
+
+    if (intervalKm > 0) {
+        kmRemaining = nextDueKm - currentKm;
+        if (kmRemaining < 0) {
+            kmOverdue = true;
+        } else if (kmRemaining <= alertBeforeKm) {
+            kmDueSoon = true;
+        }
+        const traveled = Math.max(0, currentKm - lastKm);
+        kmProgress = Math.min(100, Math.max(0, Math.round((traveled / intervalKm) * 100)));
+    }
+
+    // 2. Date / Days calculations (if next_due_date is set)
+    let daysRemaining: number | null = null;
+    let daysProgress = 0;
+    let dateOverdue = false;
+    let dateDueSoon = false;
+
+    if (s.next_due_date) {
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const due = new Date(s.next_due_date);
+        due.setHours(0, 0, 0, 0);
+        const diffMs = due.getTime() - today.getTime();
+        daysRemaining = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+        if (daysRemaining < 0) {
+            dateOverdue = true;
+        } else if (daysRemaining <= alertBeforeDays) {
+            dateDueSoon = true;
+        }
+
+        if (intervalDays > 0 && s.last_service_date) {
+            const lastDate = new Date(s.last_service_date);
+            lastDate.setHours(0, 0, 0, 0);
+            const elapsedDays = Math.max(0, Math.ceil((today.getTime() - lastDate.getTime()) / (1000 * 60 * 60 * 24)));
+            daysProgress = Math.min(100, Math.max(0, Math.round((elapsedDays / intervalDays) * 100)));
+        } else if (daysRemaining !== null) {
+            if (daysRemaining <= 0) daysProgress = 100;
+            else if (daysRemaining <= alertBeforeDays) {
+                daysProgress = Math.round(((alertBeforeDays - daysRemaining) / alertBeforeDays) * 100);
+            }
+        }
+    }
+
+    // 3. Combined status & progress
+    let status: 'ok' | 'due_soon' | 'overdue' = 'ok';
+    if (kmOverdue || dateOverdue) {
+        status = 'overdue';
+    } else if (kmDueSoon || dateDueSoon) {
+        status = 'due_soon';
+    }
+
+    const progressPercent = Math.max(kmProgress, daysProgress);
+
+    return {
+        km_remaining: kmRemaining !== null ? kmRemaining : undefined,
+        days_remaining: daysRemaining !== null ? daysRemaining : undefined,
+        progress_percent: progressPercent,
+        status
+    };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -55,16 +151,16 @@ router.get('/overview', authenticateToken, async (req: AuthRequest, res) => {
         let okCount = 0;
         let dueSoonCount = 0;
         let overdueCount = 0;
+        let mandatoryCount = 0;
 
         for (const s of services) {
-            const currentKm = Number(s.current_odometer_km) || 0;
-            const nextDueKm = Number(s.next_due_km) || 0;
-            const alertBeforeKm = Number(s.alert_before_km) || 1000;
-            const remaining = nextDueKm - currentKm;
-
-            if (remaining < 0) {
+            const calculated = computeServiceStatus(s);
+            if (s.is_mandatory || s.service_type === 'technical_inspection') {
+                mandatoryCount++;
+            }
+            if (calculated.status === 'overdue') {
                 overdueCount++;
-            } else if (remaining <= alertBeforeKm) {
+            } else if (calculated.status === 'due_soon') {
                 dueSoonCount++;
             } else {
                 okCount++;
@@ -88,6 +184,7 @@ router.get('/overview', authenticateToken, async (req: AuthRequest, res) => {
             ok_count: okCount,
             due_soon_count: dueSoonCount,
             overdue_count: overdueCount,
+            mandatory_count: mandatoryCount,
             total_spent_mad: Number(logStats.total_spent) || 0,
             spent_30d_mad: Number(logStats.spent_30d) || 0,
             total_logs_count: Number(logStats.total_logs) || 0
@@ -108,6 +205,7 @@ router.get('/services', authenticateToken, async (req: AuthRequest, res) => {
         const isAdmin = req.user.role === 'admin';
         const deviceId = req.query.device_id ? String(req.query.device_id) : null;
         const statusFilter = req.query.status ? String(req.query.status) : null;
+        const categoryFilter = req.query.category ? String(req.query.category) : null; // 'all' | 'mandatory' | 'mechanical'
 
         const whereClauses: string[] = [];
         const params: any[] = [];
@@ -135,41 +233,36 @@ router.get('/services', authenticateToken, async (req: AuthRequest, res) => {
             FROM maintenance_services s
             INNER JOIN devices d ON d.device_id = s.device_id
             ${whereSql}
-            ORDER BY (s.next_due_km - COALESCE(d.odometer_km, 0)) ASC
+            ORDER BY 
+                s.is_mandatory DESC,
+                CASE WHEN s.next_due_date IS NOT NULL THEN s.next_due_date ELSE '9999-12-31' END ASC,
+                (s.next_due_km - COALESCE(d.odometer_km, 0)) ASC
         `;
 
         const result = await query(sql, params);
         const rows = (result.rows as any[]) || [];
 
         const enriched = rows.map(r => {
-            const currentKm = Number(r.current_odometer_km) || 0;
-            const lastKm = Number(r.last_service_km) || 0;
-            const nextDueKm = Number(r.next_due_km) || 0;
-            const intervalKm = Number(r.interval_km) || 10000;
-            const alertBeforeKm = Number(r.alert_before_km) || 1000;
-
-            const kmRemaining = nextDueKm - currentKm;
-            let status: 'ok' | 'due_soon' | 'overdue' = 'ok';
-            if (kmRemaining < 0) {
-                status = 'overdue';
-            } else if (kmRemaining <= alertBeforeKm) {
-                status = 'due_soon';
-            }
-
-            const traveledInInterval = Math.max(0, currentKm - lastKm);
-            const progressPercent = Math.min(100, Math.max(0, Math.round((traveledInInterval / intervalKm) * 100)));
-
+            const calculated = computeServiceStatus(r);
             return {
                 ...r,
-                km_remaining: kmRemaining,
-                progress_percent: progressPercent,
-                status
+                is_mandatory: Boolean(r.is_mandatory),
+                km_remaining: calculated.km_remaining,
+                days_remaining: calculated.days_remaining,
+                progress_percent: calculated.progress_percent,
+                status: calculated.status
             };
         });
 
-        const filtered = statusFilter
-            ? enriched.filter(item => item.status === statusFilter)
-            : enriched;
+        let filtered = enriched;
+        if (statusFilter && statusFilter !== 'all') {
+            filtered = filtered.filter(item => item.status === statusFilter);
+        }
+        if (categoryFilter === 'mandatory') {
+            filtered = filtered.filter(item => item.is_mandatory || item.service_type === 'technical_inspection');
+        } else if (categoryFilter === 'mechanical') {
+            filtered = filtered.filter(item => !item.is_mandatory && item.service_type !== 'technical_inspection');
+        }
 
         return res.json(filtered);
     } catch (err: any) {
@@ -180,7 +273,7 @@ router.get('/services', authenticateToken, async (req: AuthRequest, res) => {
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 3. POST /api/maintenance/services
-// Create a new scheduled maintenance service
+// Create a new scheduled maintenance service (km-based or date-based or dual)
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/services', authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -191,9 +284,13 @@ router.post('/services', authenticateToken, async (req: AuthRequest, res) => {
             service_type,
             title,
             interval_km,
+            interval_days,
             last_service_km,
             last_service_date,
+            next_due_date,
             alert_before_km,
+            alert_before_days,
+            is_mandatory,
             cost_mad,
             notes
         } = req.body;
@@ -214,30 +311,47 @@ router.post('/services', authenticateToken, async (req: AuthRequest, res) => {
             return res.status(404).json({ error: 'Device not found or unauthorized' });
         }
 
-        const interval = Math.max(500, Number(interval_km) || 10000);
+        const intervalKm = Math.max(0, Number(interval_km) || 0);
+        const intervalDays = Math.max(0, Number(interval_days) || 0);
         const lastKm = Number(last_service_km) >= 0 ? Number(last_service_km) : (Number(dev.odometer_km) || 0);
-        const nextDueKm = lastKm + interval;
-        const alertBefore = Math.max(100, Number(alert_before_km) || 1000);
+        const nextDueKm = intervalKm > 0 ? (lastKm + intervalKm) : lastKm;
+        const alertBeforeKm = Math.max(100, Number(alert_before_km) || 1000);
+        const alertBeforeDays = Math.max(1, Number(alert_before_days) || 30);
+        const isMandatory = Boolean(is_mandatory || service_type === 'technical_inspection');
         const serviceType = service_type || 'custom';
         const initialCost = Number(cost_mad) || 0;
+        const lastDate = last_service_date || new Date().toISOString().split('T')[0];
+
+        // Compute next_due_date if not explicitly given and interval_days > 0
+        let dueDate = next_due_date || null;
+        if (!dueDate && intervalDays > 0) {
+            const baseDate = new Date(lastDate);
+            baseDate.setDate(baseDate.getDate() + intervalDays);
+            dueDate = baseDate.toISOString().split('T')[0];
+        }
 
         const insertSql = `
             INSERT INTO maintenance_services (
                 tenant_id, device_id, service_type, title,
-                interval_km, last_service_km, last_service_date,
-                next_due_km, alert_before_km, cost_mad, notes
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                interval_km, interval_days, last_service_km, last_service_date,
+                next_due_km, next_due_date, alert_before_km, alert_before_days,
+                is_mandatory, cost_mad, notes
+            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `;
         const insertRes = await query(insertSql, [
             tenantId,
             device_id,
             serviceType,
             String(title).trim(),
-            interval,
+            intervalKm,
+            intervalDays,
             lastKm,
-            last_service_date || null,
+            lastDate,
             nextDueKm,
-            alertBefore,
+            dueDate,
+            alertBeforeKm,
+            alertBeforeDays,
+            isMandatory ? 1 : 0,
             initialCost,
             notes || null
         ]);
@@ -245,7 +359,8 @@ router.post('/services', authenticateToken, async (req: AuthRequest, res) => {
         return res.status(201).json({
             message: 'Service schedule created successfully',
             id: insertRes.insertId,
-            next_due_km: nextDueKm
+            next_due_km: nextDueKm,
+            next_due_date: dueDate
         });
     } catch (err: any) {
         console.error('[Maintenance API] Error in POST /services:', err);
@@ -266,9 +381,13 @@ router.put('/services/:id', authenticateToken, async (req: AuthRequest, res) => 
             title,
             service_type,
             interval_km,
+            interval_days,
             last_service_km,
             last_service_date,
+            next_due_date,
             alert_before_km,
+            alert_before_days,
+            is_mandatory,
             cost_mad,
             notes
         } = req.body;
@@ -283,20 +402,34 @@ router.put('/services/:id', authenticateToken, async (req: AuthRequest, res) => 
             return res.status(404).json({ error: 'Maintenance service not found' });
         }
 
-        const newInterval = interval_km !== undefined ? Math.max(500, Number(interval_km)) : existing.interval_km;
+        const newIntervalKm = interval_km !== undefined ? Math.max(0, Number(interval_km)) : existing.interval_km;
+        const newIntervalDays = interval_days !== undefined ? Math.max(0, Number(interval_days)) : (existing.interval_days || 0);
         const newLastKm = last_service_km !== undefined ? Math.max(0, Number(last_service_km)) : existing.last_service_km;
-        const newNextDueKm = newLastKm + newInterval;
-        const newAlertBefore = alert_before_km !== undefined ? Math.max(100, Number(alert_before_km)) : existing.alert_before_km;
+        const newNextDueKm = newIntervalKm > 0 ? (newLastKm + newIntervalKm) : newLastKm;
+        const newAlertBeforeKm = alert_before_km !== undefined ? Math.max(100, Number(alert_before_km)) : existing.alert_before_km;
+        const newAlertBeforeDays = alert_before_days !== undefined ? Math.max(1, Number(alert_before_days)) : (existing.alert_before_days || 30);
+        const newIsMandatory = is_mandatory !== undefined ? Boolean(is_mandatory) : Boolean(existing.is_mandatory);
+
+        let newNextDueDate = next_due_date !== undefined ? next_due_date : existing.next_due_date;
+        if (!newNextDueDate && newIntervalDays > 0) {
+            const baseDate = new Date(last_service_date || existing.last_service_date || new Date());
+            baseDate.setDate(baseDate.getDate() + newIntervalDays);
+            newNextDueDate = baseDate.toISOString().split('T')[0];
+        }
 
         const updateSql = `
             UPDATE maintenance_services SET
                 title = COALESCE(?, title),
                 service_type = COALESCE(?, service_type),
                 interval_km = ?,
+                interval_days = ?,
                 last_service_km = ?,
                 last_service_date = ?,
                 next_due_km = ?,
+                next_due_date = ?,
                 alert_before_km = ?,
+                alert_before_days = ?,
+                is_mandatory = ?,
                 cost_mad = COALESCE(?, cost_mad),
                 notes = ?
             WHERE id = ?
@@ -305,17 +438,25 @@ router.put('/services/:id', authenticateToken, async (req: AuthRequest, res) => 
         await query(updateSql, [
             title ? String(title).trim() : null,
             service_type || null,
-            newInterval,
+            newIntervalKm,
+            newIntervalDays,
             newLastKm,
             last_service_date || existing.last_service_date,
             newNextDueKm,
-            newAlertBefore,
+            newNextDueDate || null,
+            newAlertBeforeKm,
+            newAlertBeforeDays,
+            newIsMandatory ? 1 : 0,
             cost_mad !== undefined ? Number(cost_mad) : null,
             notes !== undefined ? notes : existing.notes,
             id
         ]);
 
-        return res.json({ message: 'Service schedule updated successfully', next_due_km: newNextDueKm });
+        return res.json({
+            message: 'Service schedule updated successfully',
+            next_due_km: newNextDueKm,
+            next_due_date: newNextDueDate
+        });
     } catch (err: any) {
         console.error('[Maintenance API] Error in PUT /services/:id:', err);
         return res.status(500).json({ error: 'Failed to update maintenance schedule' });
@@ -346,7 +487,7 @@ router.delete('/services/:id', authenticateToken, async (req: AuthRequest, res) 
 
 // ─────────────────────────────────────────────────────────────────────────────
 // 6. POST /api/maintenance/services/:id/complete
-// Complete an intervention (log it and roll over next service interval)
+// Complete an intervention (log it and roll over next service interval km / date)
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/services/:id/complete', authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -361,7 +502,8 @@ router.post('/services/:id/complete', authenticateToken, async (req: AuthRequest
             performed_by,
             invoice_number,
             notes,
-            next_interval_km
+            next_interval_km,
+            next_interval_days
         } = req.body;
 
         const checkSql = isAdmin
@@ -377,8 +519,18 @@ router.post('/services/:id/complete', authenticateToken, async (req: AuthRequest
         const actualKm = Number(service_km) >= 0 ? Number(service_km) : service.next_due_km;
         const actualDate = service_date || new Date().toISOString().split('T')[0];
         const actualCost = Math.max(0, Number(cost_mad) || 0);
-        const interval = next_interval_km ? Math.max(500, Number(next_interval_km)) : service.interval_km;
-        const nextDueKm = actualKm + interval;
+
+        const intervalKm = next_interval_km !== undefined ? Number(next_interval_km) : service.interval_km;
+        const intervalDays = next_interval_days !== undefined ? Number(next_interval_days) : (service.interval_days || 0);
+
+        const nextDueKm = intervalKm > 0 ? (actualKm + intervalKm) : actualKm;
+
+        let nextDueDate: string | null = null;
+        if (intervalDays > 0) {
+            const nextDateObj = new Date(actualDate);
+            nextDateObj.setDate(nextDateObj.getDate() + intervalDays);
+            nextDueDate = nextDateObj.toISOString().split('T')[0];
+        }
 
         // 1. Insert into maintenance_logs
         const logSql = `
@@ -406,31 +558,39 @@ router.post('/services/:id/complete', authenticateToken, async (req: AuthRequest
         const updateServiceSql = `
             UPDATE maintenance_services SET
                 interval_km = ?,
+                interval_days = ?,
                 last_service_km = ?,
                 last_service_date = ?,
                 next_due_km = ?,
+                next_due_date = ?,
                 cost_mad = ?
             WHERE id = ?
         `;
         await query(updateServiceSql, [
-            interval,
+            intervalKm,
+            intervalDays,
             actualKm,
             actualDate,
             nextDueKm,
+            nextDueDate,
             actualCost,
             service.id
         ]);
 
         // 3. Update device odometer if the service km is higher than current recorded odometer
-        await query(
-            'UPDATE devices SET odometer_km = GREATEST(COALESCE(odometer_km, 0), ?) WHERE device_id = ?',
-            [actualKm, service.device_id]
-        );
+        if (actualKm > 0) {
+            await query(
+                'UPDATE devices SET odometer_km = GREATEST(COALESCE(odometer_km, 0), ?) WHERE device_id = ?',
+                [actualKm, service.device_id]
+            );
+        }
 
         return res.json({
             message: 'Intervention enregistrée avec succès',
             next_due_km: nextDueKm,
-            service_km: actualKm
+            next_due_date: nextDueDate,
+            service_km: actualKm,
+            service_date: actualDate
         });
     } catch (err: any) {
         console.error('[Maintenance API] Error in complete service:', err);
@@ -474,6 +634,7 @@ router.get('/logs', authenticateToken, async (req: AuthRequest, res) => {
             LEFT JOIN devices d ON d.device_id = l.device_id
             ${whereSql}
             ORDER BY l.service_date DESC, l.id DESC
+            LIMIT 200
         `;
 
         const result = await query(sql, params);
@@ -509,6 +670,7 @@ router.delete('/logs/:id', authenticateToken, async (req: AuthRequest, res) => {
 // ─────────────────────────────────────────────────────────────────────────────
 // 9. POST /api/maintenance/batch-init/:deviceId
 // Quick 1-click preset initializer (Standard Moroccan Fleet Maintenance Package)
+// Includes the mandatory annual technical inspection (Visite Technique Annuelle)
 // ─────────────────────────────────────────────────────────────────────────────
 router.post('/batch-init/:deviceId', authenticateToken, async (req: AuthRequest, res) => {
     try {
@@ -536,15 +698,96 @@ router.post('/batch-init/:deviceId', authenticateToken, async (req: AuthRequest,
             await query('UPDATE devices SET odometer_km = ? WHERE device_id = ?', [currentOdometer, deviceId]);
         }
 
-        // Standard Fleet Package presets
+        // Standard Fleet Package presets (including the annual mandatory technical inspection)
         const presets = [
-            { type: 'oil_change', title: 'Vidange Huile Moteur (10W40 / 5W30)', interval: 10000, alert: 1000 },
-            { type: 'oil_filter', title: 'Filtre à Huile', interval: 10000, alert: 1000 },
-            { type: 'fuel_filter', title: 'Filtre à Carburant (Gasoil / Essence)', interval: 20000, alert: 2000 },
-            { type: 'air_filter', title: 'Filtre à Air & Habitacle', interval: 20000, alert: 2000 },
-            { type: 'brake_pads', title: 'Plaquettes de Frein Avant / Arrière', interval: 30000, alert: 3000 },
-            { type: 'tires', title: 'Rotation & Contrôle Pneumatiques', interval: 40000, alert: 4000 },
-            { type: 'timing_belt', title: 'Courroie de Distribution & Pompe à Eau', interval: 80000, alert: 5000 },
+            {
+                type: 'technical_inspection',
+                title: 'Visite Technique Annuelle Obligatoire (Centre Agréé)',
+                interval_km: 0,
+                interval_days: 365,
+                alert_km: 0,
+                alert_days: 30,
+                is_mandatory: true,
+                cost_mad: 350,
+                notes: 'Obligatoire chaque année selon la réglementation des transports pour éviter amendes, fourrière et nullité d\'assurance.'
+            },
+            {
+                type: 'oil_change',
+                title: 'Vidange Huile Moteur (10W40 / 5W30)',
+                interval_km: 10000,
+                interval_days: 0,
+                alert_km: 1000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 450,
+                notes: null
+            },
+            {
+                type: 'oil_filter',
+                title: 'Filtre à Huile',
+                interval_km: 10000,
+                interval_days: 0,
+                alert_km: 1000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 90,
+                notes: null
+            },
+            {
+                type: 'fuel_filter',
+                title: 'Filtre à Carburant (Gasoil / Essence)',
+                interval_km: 20000,
+                interval_days: 0,
+                alert_km: 2000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 180,
+                notes: null
+            },
+            {
+                type: 'air_filter',
+                title: 'Filtre à Air & Habitacle',
+                interval_km: 20000,
+                interval_days: 0,
+                alert_km: 2000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 150,
+                notes: null
+            },
+            {
+                type: 'brake_pads',
+                title: 'Plaquettes de Frein Avant / Arrière',
+                interval_km: 30000,
+                interval_days: 0,
+                alert_km: 3000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 400,
+                notes: null
+            },
+            {
+                type: 'tires',
+                title: 'Rotation & Contrôle Pneumatiques',
+                interval_km: 40000,
+                interval_days: 0,
+                alert_km: 4000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 0,
+                notes: null
+            },
+            {
+                type: 'timing_belt',
+                title: 'Courroie de Distribution & Pompe à Eau',
+                interval_km: 80000,
+                interval_days: 0,
+                alert_km: 5000,
+                alert_days: 30,
+                is_mandatory: false,
+                cost_mad: 1800,
+                notes: null
+            },
         ];
 
         let createdCount = 0;
@@ -555,29 +798,57 @@ router.post('/batch-init/:deviceId', authenticateToken, async (req: AuthRequest,
                 [deviceId, p.type]
             );
             if ((existingCheck.rows as any[]).length === 0) {
+                const nextDueKm = p.interval_km > 0 ? (baseKm + p.interval_km) : baseKm;
+                const nextDueDateSql = p.interval_days > 0
+                    ? 'DATE_ADD(CURDATE(), INTERVAL ? DAY)'
+                    : 'NULL';
+
                 await query(
                     `INSERT INTO maintenance_services (
                         tenant_id, device_id, service_type, title,
-                        interval_km, last_service_km, last_service_date,
-                        next_due_km, alert_before_km, cost_mad
-                    ) VALUES (?, ?, ?, ?, ?, ?, CURDATE(), ?, ?, 0)`,
-                    [
-                        tenantId,
-                        deviceId,
-                        p.type,
-                        p.title,
-                        p.interval,
-                        baseKm,
-                        baseKm + p.interval,
-                        p.alert
-                    ]
+                        interval_km, interval_days, last_service_km, last_service_date,
+                        next_due_km, next_due_date, alert_before_km, alert_before_days,
+                        is_mandatory, cost_mad, notes
+                    ) VALUES (?, ?, ?, ?, ?, ?, ?, CURDATE(), ?, ${nextDueDateSql}, ?, ?, ?, ?, ?)`,
+                    p.interval_days > 0
+                        ? [
+                            tenantId,
+                            deviceId,
+                            p.type,
+                            p.title,
+                            p.interval_km,
+                            p.interval_days,
+                            baseKm,
+                            nextDueKm,
+                            p.interval_days,
+                            p.alert_km,
+                            p.alert_days,
+                            p.is_mandatory ? 1 : 0,
+                            p.cost_mad,
+                            p.notes
+                        ]
+                        : [
+                            tenantId,
+                            deviceId,
+                            p.type,
+                            p.title,
+                            p.interval_km,
+                            p.interval_days,
+                            baseKm,
+                            nextDueKm,
+                            p.alert_km,
+                            p.alert_days,
+                            p.is_mandatory ? 1 : 0,
+                            p.cost_mad,
+                            p.notes
+                        ]
                 );
                 createdCount++;
             }
         }
 
         return res.json({
-            message: `${createdCount} rappels d'entretien initialisés avec succès`,
+            message: `${createdCount} rappels d'entretien et obligations réglementaires initialisés avec succès`,
             base_km: baseKm,
             created_count: createdCount
         });
@@ -588,7 +859,7 @@ router.post('/batch-init/:deviceId', authenticateToken, async (req: AuthRequest,
 });
 
 // ─────────────────────────────────────────────────────────────────────────────
-// 10. PUT /api/devices/:deviceId/odometer
+// 10. PUT /api/maintenance/odometer/:deviceId
 // Update vehicle baseline odometer reading
 // ─────────────────────────────────────────────────────────────────────────────
 router.put('/odometer/:deviceId', authenticateToken, async (req: AuthRequest, res) => {
