@@ -6,7 +6,7 @@ import { useParams, useRouter } from "next/navigation";
 import {
     ArrowLeft, Smartphone, Plus, Car, Trash2, MapPin,
     Pencil, Copy, Check, Phone, User, Shield, Info,
-    Truck, Navigation, Activity, Calendar
+    Truck, Navigation, Activity, Calendar, Eye
 } from "lucide-react";
 
 export default function ClientDetailPage() {
@@ -136,6 +136,28 @@ export default function ClientDetailPage() {
         }
     };
 
+    const handleImpersonate = async () => {
+        if (!client) return;
+        try {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                localStorage.setItem('admin_backup_token', currentToken);
+            }
+            const res = await api.post(`/admin/clients/${client.id}/impersonate`);
+            if (res.data.token) {
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                localStorage.setItem('role', res.data.user.role || 'client');
+                localStorage.setItem('is_impersonating', 'true');
+                localStorage.setItem('impersonated_email', client.email);
+                localStorage.setItem('impersonated_company', client.company_name || '');
+                window.location.href = '/dashboard';
+            }
+        } catch (err: any) {
+            alert(err.response?.data?.error || "Erreur lors de la connexion en tant que client");
+        }
+    };
+
     if (loading) {
         return <div className="p-8 text-zinc-400">Loading client and vehicle directory...</div>;
     }
@@ -180,13 +202,23 @@ export default function ClientDetailPage() {
                     </div>
                 </div>
 
-                <button
-                    onClick={openAddModal}
-                    className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold text-sm transition-colors shadow-lg shadow-green-600/20 shrink-0"
-                >
-                    <Plus size={18} />
-                    Add Tracker / Vehicle
-                </button>
+                <div className="flex items-center gap-3 shrink-0">
+                    <button
+                        onClick={handleImpersonate}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg font-semibold text-sm transition-all hover:scale-105 shadow-sm"
+                        title="Se connecter directement sur ce compte sans changer son mot de passe"
+                    >
+                        <Eye size={17} className="text-amber-400" />
+                        <span>Voir en tant que client</span>
+                    </button>
+                    <button
+                        onClick={openAddModal}
+                        className="flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-500 text-white rounded-lg font-semibold text-sm transition-colors shadow-lg shadow-green-600/20"
+                    >
+                        <Plus size={18} />
+                        Add Tracker / Vehicle
+                    </button>
+                </div>
             </div>
 
             {/* Quick Stats Grid */}

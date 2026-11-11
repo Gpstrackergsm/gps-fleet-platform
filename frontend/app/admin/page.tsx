@@ -5,7 +5,7 @@ import api from "@/lib/api";
 import {
     Search, User, Car, ArrowRight, Plus, Building2,
     Mail, Phone, Trash2, Pencil, RefreshCw, KeyRound,
-    AlertCircle, CheckCircle2, Shield
+    AlertCircle, CheckCircle2, Shield, Eye
 } from "lucide-react";
 import { useRouter } from "next/navigation";
 
@@ -115,6 +115,27 @@ export default function AdminPage() {
             alert(err.response?.data?.error || "Failed to delete client");
         } finally {
             setDeletingId(null);
+        }
+    };
+
+    const handleImpersonate = async (client: any) => {
+        try {
+            const currentToken = localStorage.getItem('token');
+            if (currentToken) {
+                localStorage.setItem('admin_backup_token', currentToken);
+            }
+            const res = await api.post(`/admin/clients/${client.id}/impersonate`);
+            if (res.data.token) {
+                localStorage.setItem('token', res.data.token);
+                localStorage.setItem('user', JSON.stringify(res.data.user));
+                localStorage.setItem('role', res.data.user.role || 'client');
+                localStorage.setItem('is_impersonating', 'true');
+                localStorage.setItem('impersonated_email', client.email);
+                localStorage.setItem('impersonated_company', client.company_name || '');
+                window.location.href = '/dashboard';
+            }
+        } catch (err: any) {
+            alert(err.response?.data?.error || "Erreur lors de la connexion en tant que client");
         }
     };
 
@@ -258,6 +279,14 @@ export default function AdminPage() {
                                     </td>
                                     <td className="px-6 py-4 text-right">
                                         <div className="flex items-center justify-end gap-2">
+                                            <button
+                                                onClick={() => handleImpersonate(client)}
+                                                className="px-3 py-1.5 bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 border border-amber-500/30 rounded-lg text-xs font-semibold flex items-center gap-1.5 transition-all hover:scale-105 shadow-sm"
+                                                title="Se connecter directement sur le compte de ce client sans changer son mot de passe"
+                                            >
+                                                <Eye size={13} className="text-amber-400" />
+                                                <span>Voir en tant que client</span>
+                                            </button>
                                             <button
                                                 onClick={() => router.push(`/admin/clients/${client.id}`)}
                                                 className="px-3 py-1.5 bg-blue-600/10 hover:bg-blue-600/20 text-blue-400 border border-blue-500/30 rounded-lg text-xs font-medium flex items-center gap-1 transition-colors"

@@ -29,6 +29,8 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
     const pathname = usePathname();
     const [userEmail, setUserEmail] = useState('');
     const [isAdmin, setIsAdmin] = useState(false);
+    const [isImpersonating, setIsImpersonating] = useState(false);
+    const [impersonatedEmail, setImpersonatedEmail] = useState('');
     const [connected, setConnected] = useState(false);
     const [expanded, setExpanded] = useState(false);
     const [mobileNavOpen, setMobileNavOpen] = useState(false);
@@ -57,6 +59,10 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
             if (role === 'admin') {
                 setIsAdmin(true);
             }
+            if (localStorage.getItem('is_impersonating') === 'true') {
+                setIsImpersonating(true);
+                setImpersonatedEmail(localStorage.getItem('impersonated_email') || payload.email || '');
+            }
         } catch { /* ignore */ }
 
         // Socket connection status
@@ -76,9 +82,28 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         setMobileNavOpen(false);
     }, [pathname]);
 
+    const handleExitImpersonation = () => {
+        const adminToken = localStorage.getItem('admin_backup_token');
+        if (adminToken) {
+            localStorage.setItem('token', adminToken);
+            localStorage.removeItem('admin_backup_token');
+            localStorage.removeItem('is_impersonating');
+            localStorage.removeItem('impersonated_email');
+            localStorage.removeItem('impersonated_company');
+            localStorage.setItem('role', 'admin');
+            window.location.href = '/admin';
+        } else {
+            localStorage.removeItem('token');
+            localStorage.removeItem('is_impersonating');
+            window.location.href = '/login';
+        }
+    };
+
     const handleLogout = () => {
         localStorage.removeItem('token');
         localStorage.removeItem('role');
+        localStorage.removeItem('is_impersonating');
+        localStorage.removeItem('admin_backup_token');
         router.push('/login');
     };
 
@@ -218,6 +243,25 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
 
             {/* ── Main Column ── */}
             <div className="flex flex-col flex-1 overflow-hidden">
+
+                {/* Impersonation Mode Banner */}
+                {isImpersonating && (
+                    <div className="bg-gradient-to-r from-amber-500 via-amber-400 to-orange-500 text-black px-4 py-2 text-xs font-bold flex items-center justify-between shrink-0 shadow-lg z-50">
+                        <div className="flex items-center gap-2">
+                            <span className="text-base">👁️</span>
+                            <span>
+                                Mode Support Client : Vous visualisez actuellement l'espace de <strong>{impersonatedEmail || userEmail}</strong> (mot de passe inchangé)
+                            </span>
+                        </div>
+                        <button
+                            onClick={handleExitImpersonation}
+                            className="bg-black hover:bg-zinc-900 text-amber-300 px-3.5 py-1 rounded-lg text-xs font-bold transition-all shadow flex items-center gap-1.5"
+                        >
+                            <span>Quitter et retourner à l'Admin</span>
+                            <span>→</span>
+                        </button>
+                    </div>
+                )}
 
                 {/* ── Header ── */}
                 <header className="relative z-50 flex items-center h-12 px-3 md:px-4 border-b border-gray-800 bg-gray-900/95 backdrop-blur shrink-0 gap-2 md:gap-3">

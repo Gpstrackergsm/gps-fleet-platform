@@ -1,9 +1,11 @@
 import { Router } from 'express';
 import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
 import { authenticateToken, AuthRequest, requireAdmin } from '../middleware/auth';
 import { query, transaction } from '../db';
 
 const router = Router();
+const JWT_SECRET = process.env.JWT_SECRET || 'supersecretkey';
 
 // GET All Clients with Vehicle Counts
 router.get('/clients', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
@@ -142,6 +144,55 @@ router.get('/clients/:id', authenticateToken, requireAdmin, async (req: AuthRequ
     } catch (err) {
         console.error('[Admin] Failed to fetch client details:', err);
         res.status(500).json({ error: 'Failed to fetch client details' });
+    }
+});
+
+// IMPERSONATE Client (SuperAdmin view/login as client without modifying password)
+router.post('/clients/:id/impersonate', authenticateToken, requireAdmin, async (req: AuthRequest, res) => {
+    const userId = req.params.id;
+    try {
+        const userRes = await query(`
+            SELECT u.id, u.email, u.role, u.tenant_id, u.phone, t.name as company_name
+            FROM users u
+            JOIN tenants t ON u.tenant_id = t.id
+            WHERE u.id = ?
+        `, [userId]);
+
+        const users = userRes.rows as any[];
+        if (users.length === 0) {
+            return res.status(404).json({ error: 'Client not found' });
+        }
+
+        const client = users[0];
+
+        const token = jwt.sign(
+            {
+                id: client.id,
+                email: client.email,
+                role: client.role,
+                tenantId: client.tenant_id,
+                isImpersonating: true,
+                impersonatorAdminId: req.user?.id
+            },
+            JWT_SECRET,
+            { expiresIn: '8h' }
+        );
+
+        return res.json({
+            message: `Impersonating client ${client.email}`,
+            token,
+            user: {
+                id: client.id,
+                email: client.email,
+                role: client.role,
+                tenantId: client.tenant_id,
+                companyName: client.company_name,
+                phone: client.phone
+            }
+        });
+    } catch (err) {
+        console.error('[Admin] Impersonate error:', err);
+        return res.status(500).json({ error: 'Failed to impersonate client' });
     }
 });
 
