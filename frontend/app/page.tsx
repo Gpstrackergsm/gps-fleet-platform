@@ -90,15 +90,15 @@ export default function Home() {
 
   return (
     <div
-      className={`flex flex-col min-h-screen bg-[#060913] text-slate-100 selection:bg-blue-600 selection:text-white ${
+      className={`flex flex-col min-h-screen bg-[#F8FAFC] text-slate-800 selection:bg-blue-600 selection:text-white ${
         isRTL ? "font-sans" : ""
       }`}
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* ══════════════════════════════════════════════════════════════════════════
-          1. STICKY HEADER
+          1. STICKY HEADER (CRISP LIGHT LUXURY)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-[#070B14]/85 backdrop-blur-2xl">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
@@ -108,28 +108,30 @@ export default function Home() {
               className="w-9 h-9 rounded-xl group-hover:scale-105 transition-transform"
             />
             <div>
-              <span className="font-extrabold text-white text-base tracking-tight block leading-none">
-                Geofence<span className="text-emerald-400">.</span>
+              <span className="font-extrabold text-slate-900 text-base tracking-tight block leading-none">
+                Geofence<span className="text-blue-600">.</span>
               </span>
-              <span className="text-[10px] text-slate-400 font-mono tracking-wider">GPS-EU PLATFORM</span>
+              <span className="text-[10px] text-slate-500 font-mono tracking-wider font-semibold">
+                GPS-EU PLATFORM
+              </span>
             </div>
           </Link>
 
           {/* Desktop Section Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-400">
-            <a href="#platform-tour" className="hover:text-white transition-colors">
+          <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-slate-600">
+            <a href="#platform-tour" className="hover:text-blue-600 transition-colors">
               {T.navPlatform}
             </a>
-            <a href="#features" className="hover:text-white transition-colors">
+            <a href="#features" className="hover:text-blue-600 transition-colors">
               {T.navFeatures}
             </a>
-            <a href="#analytics-roi" className="hover:text-white transition-colors">
+            <a href="#analytics-roi" className="hover:text-blue-600 transition-colors">
               {T.navAnalytics}
             </a>
-            <a href="#hardware" className="hover:text-white transition-colors">
+            <a href="#hardware" className="hover:text-blue-600 transition-colors">
               {T.navHardware}
             </a>
-            <a href="#faq" className="hover:text-white transition-colors">
+            <a href="#faq" className="hover:text-blue-600 transition-colors">
               FAQ
             </a>
           </nav>
@@ -139,10 +141,10 @@ export default function Home() {
             {/* Direct Phone Call Button */}
             <a
               href={`tel:${T.phoneNumber}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold transition-all shadow-xs"
               title="Appelez-nous directement"
             >
-              <Phone size={13} className="text-emerald-400" />
+              <Phone size={13} className="text-emerald-600" />
               <span className="font-mono tracking-wide">{T.phoneNumber}</span>
             </a>
 
@@ -153,7 +155,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-[#0A101F] hover:bg-[#0E172A] border-slate-700/80 text-slate-200 text-xs font-semibold px-3.5 rounded-xl transition-colors"
+                className="bg-white hover:bg-slate-50 border-slate-200 text-slate-700 text-xs font-semibold px-3.5 rounded-xl transition-colors shadow-xs"
               >
                 {T.ctaSecondary}
               </Button>
@@ -162,7 +164,7 @@ export default function Home() {
             <Link href="/register" className="hidden sm:block">
               <Button
                 size="sm"
-                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-4 rounded-xl shadow-lg shadow-blue-900/40 border-t border-blue-400/30 transition-all"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/30"
               >
                 {T.ctaPrimary}
               </Button>
@@ -172,33 +174,33 @@ export default function Home() {
       </header>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          2. HERO SECTION
+          2. HERO SECTION (BRIGHT, PRESTIGIOUS & ELEGANT)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 px-4 sm:px-6 overflow-hidden">
-        {/* Ambient Atmospheric Lighting (World-Class Aesthetics) */}
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(37,99,235,0.22),transparent)] pointer-events-none" />
-        <div className="absolute top-48 right-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_80%_30%,rgba(16,185,129,0.1),transparent)] pointer-events-none" />
-        <div className="absolute top-80 left-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_20%_40%,rgba(245,158,11,0.07),transparent)] pointer-events-none" />
+      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9]">
+        {/* Soft Ambient Light Glows */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(37,99,235,0.07),transparent)] pointer-events-none" />
+        <div className="absolute top-48 right-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_80%_30%,rgba(16,185,129,0.05),transparent)] pointer-events-none" />
+        <div className="absolute top-80 left-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_20%_40%,rgba(245,158,11,0.05),transparent)] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Top Hero Copy */}
           <div className="text-center max-w-4xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#0A101F]/90 border border-slate-700/70 text-xs text-slate-200 shadow-[0_0_24px_rgba(16,185,129,0.12)] backdrop-blur-xl">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50/80 border border-blue-200/80 text-xs text-blue-800 shadow-xs">
               <span className="relative flex h-2 w-2">
-                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
               </span>
               <span className="font-semibold">{T.badge}</span>
             </div>
 
-            <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
+            <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.14]">
               {T.title1} <br />
-              <span className="bg-gradient-to-r from-amber-200 via-emerald-300 to-sky-300 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-blue-700 via-indigo-600 to-emerald-600 bg-clip-text text-transparent">
                 {T.title2}
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base md:text-lg text-slate-300/90 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-slate-600 max-w-3xl mx-auto leading-relaxed font-normal">
               {T.subtitle}
             </p>
 
@@ -207,7 +209,7 @@ export default function Home() {
               <Link href="/login" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold px-8 py-6 rounded-2xl shadow-2xl shadow-blue-900/40 border-t border-blue-400/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold px-8 py-6 rounded-2xl shadow-xl shadow-blue-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                 >
                   <span>{T.ctaSecondary}</span>
                   <ArrowIcon className="h-5 w-5 shrink-0" />
@@ -218,9 +220,9 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto bg-[#0A101F]/80 hover:bg-[#0E172A] border-slate-700/80 text-slate-200 text-sm sm:text-base font-semibold px-7 py-6 rounded-2xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-sm sm:text-base font-semibold px-7 py-6 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-2"
                 >
-                  <Play size={16} className="text-blue-400 fill-blue-400" />
+                  <Play size={16} className="text-blue-600 fill-blue-600" />
                   <span>{T.heroTourBtn}</span>
                 </Button>
               </a>
@@ -228,35 +230,35 @@ export default function Home() {
           </div>
 
           {/* KPI Strip */}
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4 max-w-5xl mx-auto mt-10">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3.5 sm:gap-4 max-w-5xl mx-auto mt-12">
             {T.stats.map((st, idx) => (
               <div
                 key={idx}
-                className="bg-[#0A101F]/80 border border-slate-800/80 rounded-2xl p-4 text-center backdrop-blur-md hover:border-slate-700/90 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all"
+                className="bg-white border border-slate-200/90 rounded-2xl p-5 text-center shadow-xs hover:shadow-md hover:border-blue-300/80 transition-all"
               >
-                <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
+                <div className="text-2xl sm:text-3xl font-black text-slate-900 tracking-tight">
                   {st.value}
                 </div>
-                <div className="text-xs text-slate-400 mt-1">{st.label}</div>
+                <div className="text-xs text-slate-500 font-medium mt-1">{st.label}</div>
               </div>
             ))}
           </div>
 
           {/* Hero Command Center Image + Floating Live Cards */}
-          <div className="mt-12 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-slate-800/80 shadow-[0_25px_90px_-15px_rgba(15,23,42,0.7)] bg-[#0A101F]">
+          <div className="mt-14 relative">
+            <div className="relative rounded-3xl overflow-hidden border border-slate-200/90 shadow-[0_20px_60px_-15px_rgba(0,0,0,0.12)] bg-white">
               {/* Top Browser Bar */}
-              <div className="h-10 bg-[#0A101F]/95 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs">
+              <div className="h-10 bg-slate-100/90 border-b border-slate-200/90 px-4 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
-                  <span className="w-3 h-3 rounded-full bg-red-500/80" />
-                  <span className="w-3 h-3 rounded-full bg-amber-500/80" />
-                  <span className="w-3 h-3 rounded-full bg-emerald-500/80" />
-                  <span className="ml-2 font-mono text-[11px] text-zinc-400 hidden sm:inline">
+                  <span className="w-3 h-3 rounded-full bg-red-400" />
+                  <span className="w-3 h-3 rounded-full bg-amber-400" />
+                  <span className="w-3 h-3 rounded-full bg-emerald-400" />
+                  <span className="ml-2 font-mono text-[11px] text-slate-500 hidden sm:inline">
                     https://www.gps-eu.com/dashboard
                   </span>
                 </div>
                 <div className="flex items-center gap-3">
-                  <span className="px-2 py-0.5 rounded bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-[10px] font-bold">
+                  <span className="px-2.5 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200 text-[10px] font-bold">
                     {T.liveSocketConnected}
                   </span>
                 </div>
@@ -269,78 +271,77 @@ export default function Home() {
                   alt="Geofence GPS Command Center"
                   className="w-full h-auto object-cover max-h-[620px]"
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-zinc-950 via-transparent to-transparent opacity-65" />
               </div>
 
               {/* Floating Live Telemetry Overlay Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 sm:p-5 bg-[#070B14]/90 border-t border-slate-800/90 backdrop-blur-xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3.5 p-4 sm:p-5 bg-white/95 border-t border-slate-200/90 backdrop-blur-xl">
                 {/* Card 1: Vehicle Live Telemetry */}
-                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                      <span className="text-xs font-bold text-white">{T.heroLiveStatus}</span>
+                      <span className="text-xs font-bold text-slate-900">{T.heroLiveStatus}</span>
                     </div>
-                    <div className="text-[11px] text-zinc-400 flex items-center gap-1">
-                      <MapPin size={11} className="text-blue-400" />
+                    <div className="text-[11px] text-slate-500 flex items-center gap-1">
+                      <MapPin size={11} className="text-blue-600" />
                       <span>{T.heroLiveAddress}</span>
                     </div>
                     <div className="flex items-center gap-2 pt-1 text-[10px] font-semibold">
-                      <span className="px-2 py-0.5 rounded bg-blue-500/15 text-blue-400">
+                      <span className="px-2 py-0.5 rounded bg-blue-100/70 text-blue-800">
                         {T.heroLiveTodayKm}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-orange-500/15 text-orange-400">
+                      <span className="px-2 py-0.5 rounded bg-amber-100/70 text-amber-800">
                         {T.heroLiveTodayCost}
                       </span>
                     </div>
                   </div>
                   <div className="text-right">
-                    <div className="text-xl font-black text-emerald-400 font-mono">86</div>
-                    <div className="text-[10px] text-zinc-500 uppercase">km/h</div>
+                    <div className="text-xl font-black text-emerald-600 font-mono">86</div>
+                    <div className="text-[10px] text-slate-400 uppercase font-semibold">km/h</div>
                   </div>
                 </div>
 
                 {/* Card 2: Route Aller/Retour + Parking Badge */}
-                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs">
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <span className="w-5 h-5 rounded bg-amber-500 text-zinc-950 font-black text-[10px] inline-flex items-center justify-center">
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <span className="w-5 h-5 rounded bg-amber-500 text-white font-black text-[10px] inline-flex items-center justify-center">
                         P1
                       </span>
                       <span>{T.heroCard2Title}</span>
                     </div>
-                    <div className="text-[11px] text-zinc-400">{T.heroCard2Stop}</div>
+                    <div className="text-[11px] text-slate-500">{T.heroCard2Stop}</div>
                     <div className="flex items-center gap-3 pt-1 text-[10px]">
-                      <span className="flex items-center gap-1 text-blue-400 font-semibold">
-                        <span className="w-3 h-1 rounded bg-blue-500 inline-block" /> {T.heroCard2Aller}
+                      <span className="flex items-center gap-1 text-blue-700 font-semibold">
+                        <span className="w-3 h-1 rounded bg-blue-600 inline-block" /> {T.heroCard2Aller}
                       </span>
-                      <span className="flex items-center gap-1 text-orange-400 font-semibold">
+                      <span className="flex items-center gap-1 text-orange-700 font-semibold">
                         <span className="w-3 h-1 rounded bg-orange-500 inline-block" /> {T.heroCard2Retour}
                       </span>
-                      <span className="flex items-center gap-1 text-purple-400 font-semibold">
+                      <span className="flex items-center gap-1 text-purple-700 font-semibold">
                         <span className="w-3 h-1 rounded bg-purple-500 inline-block" /> {T.heroCard2Third}
                       </span>
                     </div>
                   </div>
-                  <span className="px-2.5 py-1 rounded-full bg-amber-500/20 text-amber-300 border border-amber-500/40 text-xs font-extrabold">
+                  <span className="px-2.5 py-1 rounded-full bg-amber-100 text-amber-800 border border-amber-200 text-xs font-black">
                     25m
                   </span>
                 </div>
 
                 {/* Card 3: Remote Engine Immobilizer */}
-                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
+                <div className="bg-slate-50 border border-slate-200/80 rounded-2xl p-4 flex items-center justify-between shadow-xs">
                   <div className="space-y-1">
-                    <div className="text-xs font-bold text-white flex items-center gap-1.5">
-                      <Lock size={13} className="text-red-400" />
+                    <div className="text-xs font-bold text-slate-900 flex items-center gap-1.5">
+                      <Lock size={13} className="text-rose-600" />
                       <span>{T.heroCard3Title}</span>
                     </div>
-                    <div className="text-[11px] text-zinc-400">{T.heroCard3Sub}</div>
-                    <div className="text-[10px] text-emerald-400 font-semibold pt-1">
+                    <div className="text-[11px] text-slate-500">{T.heroCard3Sub}</div>
+                    <div className="text-[10px] text-emerald-700 font-semibold pt-1">
                       {T.heroCard3Safety}
                     </div>
                   </div>
                   <Link href="/login">
-                    <span className="px-3 py-1.5 rounded-xl bg-red-600/20 hover:bg-red-600/30 text-red-400 border border-red-500/30 text-xs font-bold transition-colors whitespace-nowrap">
+                    <span className="px-3 py-1.5 rounded-xl bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 text-xs font-bold transition-colors whitespace-nowrap">
                       {T.heroCard3Btn}
                     </span>
                   </Link>
@@ -354,28 +355,28 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           3. INTERACTIVE 6-MODULE PLATFORM TOUR
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="platform-tour" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
+      <section id="platform-tour" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-white">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* Section Title */}
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-700 bg-blue-50 border border-blue-200 px-3.5 py-1 rounded-full">
               {T.tourBadge}
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {T.tourTitle}
             </h2>
-            <p className="text-sm sm:text-base text-slate-300/90">{T.tourSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-600">{T.tourSubtitle}</p>
           </div>
 
           {/* 6 Module Selector Tabs */}
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2.5">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-3">
             {[
-              { id: "live" as ShowcaseTab, label: T.tab1, icon: MapPin, color: "text-blue-400" },
-              { id: "history" as ShowcaseTab, label: T.tab2, icon: Clock, color: "text-amber-400" },
-              { id: "fuel" as ShowcaseTab, label: T.tab3, icon: Fuel, color: "text-emerald-400" },
-              { id: "reports" as ShowcaseTab, label: T.tab4, icon: BarChart2, color: "text-purple-400" },
-              { id: "geofence" as ShowcaseTab, label: T.tab5, icon: Compass, color: "text-pink-400" },
-              { id: "security" as ShowcaseTab, label: T.tab6, icon: Shield, color: "text-red-400" },
+              { id: "live" as ShowcaseTab, label: T.tab1, icon: MapPin, color: "text-blue-600" },
+              { id: "history" as ShowcaseTab, label: T.tab2, icon: Clock, color: "text-amber-600" },
+              { id: "fuel" as ShowcaseTab, label: T.tab3, icon: Fuel, color: "text-emerald-600" },
+              { id: "reports" as ShowcaseTab, label: T.tab4, icon: BarChart2, color: "text-purple-600" },
+              { id: "geofence" as ShowcaseTab, label: T.tab5, icon: Compass, color: "text-rose-600" },
+              { id: "security" as ShowcaseTab, label: T.tab6, icon: Shield, color: "text-red-600" },
             ].map((t) => {
               const Icon = t.icon;
               const isSelected = activeTab === t.id;
@@ -383,10 +384,10 @@ export default function Home() {
                 <button
                   key={t.id}
                   onClick={() => setActiveTab(t.id)}
-                  className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all ${
+                  className={`flex flex-col items-center justify-center p-4 rounded-2xl border text-center transition-all cursor-pointer ${
                     isSelected
-                      ? "bg-gradient-to-b from-blue-600/30 to-[#0A101F] border-blue-500/80 text-white shadow-lg shadow-blue-950/60 scale-[1.02]"
-                      : "bg-[#0A101F]/60 border-slate-800/80 text-slate-400 hover:text-white hover:bg-[#0E172A]"
+                      ? "bg-blue-50/80 border-2 border-blue-600 text-blue-700 shadow-sm scale-[1.02]"
+                      : "bg-slate-50 border-slate-200 text-slate-600 hover:text-slate-900 hover:bg-slate-100/80"
                   }`}
                 >
                   <Icon size={20} className={`${t.color} mb-1.5`} />
@@ -397,44 +398,44 @@ export default function Home() {
           </div>
 
           {/* Interactive Module Stage */}
-          <div className="bg-[#0A101F]/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
+          <div className="bg-slate-50 border border-slate-200/90 rounded-3xl p-6 sm:p-9 shadow-sm">
             {/* MODULE 1: LIVE MAP */}
             {activeTab === "live" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-blue-100/60 border border-blue-200 text-blue-700 text-xs font-bold">
                     <MapPin size={14} /> {T.m1Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m1Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m1Desc}</p>
-                  <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m1Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m1Desc}</p>
+                  <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium">
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m1Point1}</span>
                     </li>
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m1Point2}</span>
                     </li>
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m1Point3}</span>
                     </li>
                     <li className="flex items-center gap-2.5">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m1Point4}</span>
                     </li>
                   </ul>
                   <div className="pt-2">
                     <Link href="/login">
-                      <Button className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl px-6">
+                      <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 shadow-md shadow-blue-500/20">
                         {T.m1Btn}
                       </Button>
                     </Link>
                   </div>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/live-map.jpg"
                     alt={T.m1Title}
@@ -448,14 +449,14 @@ export default function Home() {
             {activeTab === "history" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-500/10 border border-amber-500/20 text-amber-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-amber-100/60 border border-amber-200 text-amber-800 text-xs font-bold">
                     <Clock size={14} /> {T.m2Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m2Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m2Desc}</p>
-                  <ul className="space-y-2.5 text-xs sm:text-sm text-zinc-300">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m2Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m2Desc}</p>
+                  <ul className="space-y-2.5 text-xs sm:text-sm text-slate-700 font-medium">
                     <li className="flex items-center gap-2.5">
-                      <span className="w-3.5 h-3.5 rounded-full bg-blue-500 shrink-0" />
+                      <span className="w-3.5 h-3.5 rounded-full bg-blue-600 shrink-0" />
                       <span>{T.m2Point1}</span>
                     </li>
                     <li className="flex items-center gap-2.5">
@@ -463,7 +464,7 @@ export default function Home() {
                       <span>{T.m2Point2}</span>
                     </li>
                     <li className="flex items-center gap-2.5">
-                      <span className="w-5 h-5 rounded bg-amber-500 text-zinc-950 font-black text-[10px] inline-flex items-center justify-center shrink-0">
+                      <span className="w-5 h-5 rounded bg-amber-500 text-white font-black text-[10px] inline-flex items-center justify-center shrink-0">
                         P1
                       </span>
                       <span>{T.m2Point3}</span>
@@ -471,7 +472,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/history-parkings.jpg"
                     alt={T.m2Title}
@@ -485,28 +486,28 @@ export default function Home() {
             {activeTab === "fuel" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-emerald-100/60 border border-emerald-200 text-emerald-800 text-xs font-bold">
                     <Fuel size={14} /> {T.m3Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m3Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m3Desc}</p>
-                  <ul className="space-y-2 text-xs sm:text-sm text-zinc-300">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m3Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m3Desc}</p>
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-700 font-medium">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m3Point1}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m3Point2}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-emerald-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-emerald-600 shrink-0" />
                       <span>{T.m3Point3}</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/fuel-eco.jpg"
                     alt={T.m3Title}
@@ -520,28 +521,28 @@ export default function Home() {
             {activeTab === "reports" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-500/10 border border-purple-500/20 text-purple-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-purple-100/60 border border-purple-200 text-purple-800 text-xs font-bold">
                     <BarChart2 size={14} /> {T.m4Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m4Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m4Desc}</p>
-                  <ul className="space-y-2 text-xs sm:text-sm text-zinc-300">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m4Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m4Desc}</p>
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-700 font-medium">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-purple-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-purple-600 shrink-0" />
                       <span>{T.m4Point1}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-purple-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-purple-600 shrink-0" />
                       <span>{T.m4Point2}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-purple-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-purple-600 shrink-0" />
                       <span>{T.m4Point3}</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/reports.jpg"
                     alt={T.m4Title}
@@ -555,24 +556,24 @@ export default function Home() {
             {activeTab === "geofence" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-pink-500/10 border border-pink-500/20 text-pink-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-rose-100/60 border border-rose-200 text-rose-800 text-xs font-bold">
                     <Compass size={14} /> {T.m5Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m5Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m5Desc}</p>
-                  <ul className="space-y-2 text-xs sm:text-sm text-zinc-300">
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m5Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m5Desc}</p>
+                  <ul className="space-y-2 text-xs sm:text-sm text-slate-700 font-medium">
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-pink-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-rose-600 shrink-0" />
                       <span>{T.m5Point1}</span>
                     </li>
                     <li className="flex items-center gap-2">
-                      <CheckCircle2 size={16} className="text-pink-400 shrink-0" />
+                      <CheckCircle2 size={16} className="text-rose-600 shrink-0" />
                       <span>{T.m5Point2}</span>
                     </li>
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/geofence-alerts.jpg"
                     alt={T.m5Title}
@@ -586,18 +587,18 @@ export default function Home() {
             {activeTab === "security" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
                 <div className="lg:col-span-5 space-y-5">
-                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-red-500/10 border border-red-500/20 text-red-400 text-xs font-bold">
+                  <div className="inline-flex items-center gap-2 px-3 py-1 rounded-lg bg-red-100/60 border border-red-200 text-red-800 text-xs font-bold">
                     <Shield size={14} /> {T.m6Badge}
                   </div>
-                  <h3 className="text-2xl sm:text-3xl font-extrabold text-white">{T.m6Title}</h3>
-                  <p className="text-sm text-zinc-400 leading-relaxed">{T.m6Desc}</p>
+                  <h3 className="text-2xl sm:text-3xl font-black text-slate-900">{T.m6Title}</h3>
+                  <p className="text-sm text-slate-600 leading-relaxed">{T.m6Desc}</p>
                   <div className="pt-1">
                     <button
                       onClick={() => setEngineCutDemo((v) => !v)}
-                      className={`px-5 py-3 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer ${
+                      className={`px-5 py-3 rounded-xl font-bold text-xs flex items-center gap-2 transition-all cursor-pointer shadow-sm ${
                         engineCutDemo
-                          ? "bg-emerald-600 hover:bg-emerald-500 text-white"
-                          : "bg-red-600 hover:bg-red-500 text-white"
+                          ? "bg-emerald-600 hover:bg-emerald-700 text-white"
+                          : "bg-red-600 hover:bg-red-700 text-white"
                       }`}
                     >
                       <Power size={15} />
@@ -606,7 +607,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-200 shadow-md">
                   <img
                     src="/landing/engine-cutoff.jpg"
                     alt={T.m6Title}
@@ -622,32 +623,32 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           4. CHARTS & INTERACTIVE ROI CALCULATOR (IN MAD)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="analytics-roi" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
+      <section id="analytics-roi" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-slate-50/70">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-full">
               {T.roiBadge}
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {T.roiTitle}
             </h2>
-            <p className="text-sm sm:text-base text-slate-300/90">{T.roiSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-600">{T.roiSubtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             {/* Left: Interactive Fleet ROI Simulator */}
-            <div className="lg:col-span-5 bg-[#0A101F]/80 border border-slate-800/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xl">
-              <div className="space-y-5">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  <Sparkles size={18} className="text-amber-400" />
+            <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 flex flex-col justify-between space-y-6 shadow-sm">
+              <div className="space-y-6">
+                <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                  <Sparkles size={18} className="text-amber-500" />
                   <span>{T.roiSimTitle}</span>
                 </h3>
 
                 {/* Slider 1: Fleet Size */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400 font-medium">{T.roiVehiclesLabel}</span>
-                    <span className="font-extrabold text-blue-400 text-sm">
+                    <span className="text-slate-600 font-semibold">{T.roiVehiclesLabel}</span>
+                    <span className="font-extrabold text-blue-700 text-sm">
                       {T.roiVehiclesCount(fleetSize)}
                     </span>
                   </div>
@@ -657,15 +658,15 @@ export default function Home() {
                     max={150}
                     value={fleetSize}
                     onChange={(e) => setFleetSize(Number(e.target.value))}
-                    className="w-full accent-blue-500 cursor-pointer"
+                    className="w-full accent-blue-600 cursor-pointer"
                   />
                 </div>
 
                 {/* Slider 2: Monthly Fuel Spend per Vehicle */}
-                <div className="space-y-2">
+                <div className="space-y-2.5">
                   <div className="flex justify-between text-xs">
-                    <span className="text-zinc-400 font-medium">{T.roiBudgetLabel}</span>
-                    <span className="font-extrabold text-amber-400 text-sm">
+                    <span className="text-slate-600 font-semibold">{T.roiBudgetLabel}</span>
+                    <span className="font-extrabold text-amber-700 text-sm">
                       {monthlyFuelPerVehicle.toLocaleString(T.locale)} MAD
                     </span>
                   </div>
@@ -676,22 +677,22 @@ export default function Home() {
                     step={250}
                     value={monthlyFuelPerVehicle}
                     onChange={(e) => setMonthlyFuelPerVehicle(Number(e.target.value))}
-                    className="w-full accent-amber-500 cursor-pointer"
+                    className="w-full accent-amber-600 cursor-pointer"
                   />
                 </div>
               </div>
 
               {/* ROI Result Boxes */}
-              <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800">
-                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4">
-                  <span className="text-[11px] text-emerald-300 block">{T.roiMonthlySavedLabel}</span>
-                  <span className="text-xl sm:text-2xl font-black text-emerald-400 mt-1 block">
+              <div className="grid grid-cols-2 gap-3.5 pt-4 border-t border-slate-200">
+                <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
+                  <span className="text-[11px] text-emerald-800 font-semibold block">{T.roiMonthlySavedLabel}</span>
+                  <span className="text-xl sm:text-2xl font-black text-emerald-700 mt-1 block">
                     {roiStats.monthlySaved.toLocaleString(T.locale)} MAD
                   </span>
                 </div>
-                <div className="bg-blue-950/40 border border-blue-500/30 rounded-2xl p-4">
-                  <span className="text-[11px] text-blue-300 block">{T.roiYearlySavedLabel}</span>
-                  <span className="text-xl sm:text-2xl font-black text-blue-400 mt-1 block">
+                <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
+                  <span className="text-[11px] text-blue-800 font-semibold block">{T.roiYearlySavedLabel}</span>
+                  <span className="text-xl sm:text-2xl font-black text-blue-700 mt-1 block">
                     {roiStats.yearlySaved.toLocaleString(T.locale)} MAD
                   </span>
                 </div>
@@ -699,62 +700,74 @@ export default function Home() {
             </div>
 
             {/* Right: Recharts Comparison Chart */}
-            <div className="lg:col-span-7 bg-[#0A101F]/80 border border-slate-800/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between shadow-xl">
+            <div className="lg:col-span-7 bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 flex flex-col justify-between shadow-sm">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <div>
-                  <h3 className="text-base font-bold text-white">{T.roiChartTitle}</h3>
-                  <p className="text-xs text-zinc-400">{T.roiChartSubtitle(fleetSize)}</p>
+                  <h3 className="text-base font-bold text-slate-900">{T.roiChartTitle}</h3>
+                  <p className="text-xs text-slate-500">{T.roiChartSubtitle(fleetSize)}</p>
                 </div>
-                <span className="px-3 py-1 rounded-full bg-emerald-500/15 text-emerald-400 border border-emerald-500/30 text-xs font-bold flex items-center gap-1 w-fit">
-                  <TrendingDown size={14} /> {T.roiChartBadge}
+                <span className="px-3 py-1 rounded-full bg-emerald-50 text-emerald-800 border border-emerald-200 text-xs font-bold flex items-center gap-1 w-fit">
+                  <TrendingDown size={14} className="text-emerald-600" />
+                  <span>{T.roiChartBadge}</span>
                 </span>
               </div>
 
-              <div className="h-64 w-full">
+              <div className="h-64 sm:h-72 w-full pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={fuelTrendData}>
+                  <AreaChart data={fuelTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
                     <defs>
-                      <linearGradient id="gradAvant" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#ef4444" stopOpacity={0.35} />
-                        <stop offset="95%" stopColor="#ef4444" stopOpacity={0} />
+                      <linearGradient id="colorSansGps" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
+                        <stop offset="95%" stopColor="#EF4444" stopOpacity={0} />
                       </linearGradient>
-                      <linearGradient id="gradAvec" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#10b981" stopOpacity={0.45} />
-                        <stop offset="95%" stopColor="#10b981" stopOpacity={0} />
+                      <linearGradient id="colorAvecGps" x1="0" y1="0" x2="0" y2="1">
+                        <stop offset="5%" stopColor="#10B981" stopOpacity={0.25} />
+                        <stop offset="95%" stopColor="#10B981" stopOpacity={0} />
                       </linearGradient>
                     </defs>
-                    <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-                    <XAxis dataKey="day" stroke="#a1a1aa" fontSize={12} />
-                    <YAxis stroke="#a1a1aa" fontSize={11} unit=" MAD" />
+                    <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
+                    <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} />
+                    <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} unit=" MAD" />
                     <Tooltip
                       contentStyle={{
-                        backgroundColor: "#09090b",
-                        borderColor: "#27272a",
-                        borderRadius: 12,
-                        fontSize: 12,
+                        backgroundColor: "#FFFFFF",
+                        borderColor: "#E2E8F0",
+                        borderRadius: "14px",
+                        boxShadow: "0 10px 15px -3px rgba(0, 0, 0, 0.08)",
+                        fontSize: "12px",
                       }}
+                      itemStyle={{ color: "#0F172A", fontWeight: "600" }}
                     />
-                    <Legend wrapperStyle={{ fontSize: 12 }} />
+                    <Legend
+                      verticalAlign="top"
+                      height={36}
+                      wrapperStyle={{ fontSize: "11px", fontWeight: "600", color: "#475569" }}
+                    />
                     <Area
                       type="monotone"
                       dataKey="avant"
                       name={T.roiChartNoGps}
-                      stroke="#ef4444"
-                      strokeWidth={2}
+                      stroke="#EF4444"
+                      strokeWidth={2.5}
                       fillOpacity={1}
-                      fill="url(#gradAvant)"
+                      fill="url(#colorSansGps)"
                     />
                     <Area
                       type="monotone"
                       dataKey="avecGeofence"
                       name={T.roiChartWithTrackPro}
-                      stroke="#10b981"
+                      stroke="#10B981"
                       strokeWidth={2.5}
                       fillOpacity={1}
-                      fill="url(#gradAvec)"
+                      fill="url(#colorAvecGps)"
                     />
                   </AreaChart>
                 </ResponsiveContainer>
+              </div>
+
+              <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
+                <span>✦ Économie constatée : 24% en moyenne</span>
+                <span className="font-semibold text-slate-700">Calcul basé sur gasoil MAD</span>
               </div>
             </div>
           </div>
@@ -762,23 +775,19 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          5. COMPLETE FEATURE MATRIX (ALL 15 OPTIONS & MODULES)
+          5. COMPLETE FEATURE MATRIX (ALL 15 OPTIONS & MODULES IN CRISP LIGHT)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="features" className="py-24 px-4 sm:px-6 border-t border-slate-800/70 bg-[#070B14] relative overflow-hidden">
-        {/* Subtle background ambient lights */}
-        <div className="absolute top-1/4 left-10 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
-        <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
-
+      <section id="features" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-white relative overflow-hidden">
         <div className="max-w-7xl mx-auto space-y-14 relative z-10">
           <div className="text-center max-w-3xl mx-auto space-y-4">
-            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-bold uppercase tracking-wider">
-              <Sparkles size={13} className="text-emerald-400" />
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={13} className="text-blue-600" />
               <span>{T.navFeatures} · 15 Modules Complets</span>
             </div>
-            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-black text-slate-900 tracking-tight">
               {T.featHeader}
             </h2>
-            <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-2xl mx-auto">
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed max-w-2xl mx-auto font-normal">
               {T.featSub}
             </p>
           </div>
@@ -786,21 +795,21 @@ export default function Home() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {T.feats.map((f, i) => {
               const configs = [
-                { icon: MapPin, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", pill: "text-emerald-300 bg-emerald-950/60 border-emerald-500/30", glow: "hover:border-emerald-500/50 hover:shadow-emerald-950/30" },
-                { icon: Route, color: "text-blue-400 bg-blue-500/10 border-blue-500/25", pill: "text-blue-300 bg-blue-950/60 border-blue-500/30", glow: "hover:border-blue-500/50 hover:shadow-blue-950/30" },
-                { icon: Sliders, color: "text-sky-400 bg-sky-500/10 border-sky-500/25", pill: "text-sky-300 bg-sky-950/60 border-sky-500/30", glow: "hover:border-sky-500/50 hover:shadow-sky-950/30" },
-                { icon: Clock, color: "text-amber-400 bg-amber-500/10 border-amber-500/25", pill: "text-amber-300 bg-amber-950/60 border-amber-500/30", glow: "hover:border-amber-500/50 hover:shadow-amber-950/30" },
-                { icon: Wrench, color: "text-teal-400 bg-teal-500/10 border-teal-500/25", pill: "text-teal-300 bg-teal-950/60 border-teal-500/30", glow: "hover:border-teal-500/50 hover:shadow-teal-950/30" },
-                { icon: FileCheck, color: "text-amber-300 bg-amber-500/15 border-amber-500/30", pill: "text-amber-200 bg-amber-950/80 border-amber-500/40", glow: "hover:border-amber-400/50 hover:shadow-amber-950/40" },
-                { icon: Gauge, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25", pill: "text-indigo-300 bg-indigo-950/60 border-indigo-500/30", glow: "hover:border-indigo-500/50 hover:shadow-indigo-950/30" },
-                { icon: Power, color: "text-rose-400 bg-rose-500/10 border-rose-500/25", pill: "text-rose-300 bg-rose-950/60 border-rose-500/30", glow: "hover:border-rose-500/50 hover:shadow-rose-950/30" },
-                { icon: Compass, color: "text-violet-400 bg-violet-500/10 border-violet-500/25", pill: "text-violet-300 bg-violet-950/60 border-violet-500/30", glow: "hover:border-violet-500/50 hover:shadow-violet-950/30" },
-                { icon: Fuel, color: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30", pill: "text-emerald-200 bg-emerald-950/70 border-emerald-500/40", glow: "hover:border-emerald-400/50 hover:shadow-emerald-950/40" },
-                { icon: Smartphone, color: "text-blue-300 bg-blue-500/15 border-blue-500/30", pill: "text-blue-200 bg-blue-950/70 border-blue-500/40", glow: "hover:border-blue-400/50 hover:shadow-blue-950/40" },
-                { icon: Eye, color: "text-purple-400 bg-purple-500/10 border-purple-500/25", pill: "text-purple-300 bg-purple-950/60 border-purple-500/30", glow: "hover:border-purple-500/50 hover:shadow-purple-950/30" },
-                { icon: Users, color: "text-orange-400 bg-orange-500/10 border-orange-500/25", pill: "text-orange-300 bg-orange-950/60 border-orange-500/30", glow: "hover:border-orange-500/50 hover:shadow-orange-950/30" },
-                { icon: BarChart2, color: "text-pink-400 bg-pink-500/10 border-pink-500/25", pill: "text-pink-300 bg-pink-950/60 border-pink-500/30", glow: "hover:border-pink-500/50 hover:shadow-pink-950/30" },
-                { icon: Radio, color: "text-cyan-300 bg-cyan-500/10 border-cyan-500/25", pill: "text-cyan-200 bg-cyan-950/70 border-cyan-500/40", glow: "hover:border-cyan-400/50 hover:shadow-cyan-950/40" },
+                { icon: MapPin, color: "text-emerald-700 bg-emerald-50 border-emerald-200", pill: "text-emerald-800 bg-emerald-50 border-emerald-200" },
+                { icon: Route, color: "text-blue-700 bg-blue-50 border-blue-200", pill: "text-blue-800 bg-blue-50 border-blue-200" },
+                { icon: Sliders, color: "text-sky-700 bg-sky-50 border-sky-200", pill: "text-sky-800 bg-sky-50 border-sky-200" },
+                { icon: Clock, color: "text-amber-700 bg-amber-50 border-amber-200", pill: "text-amber-800 bg-amber-50 border-amber-200" },
+                { icon: Wrench, color: "text-teal-700 bg-teal-50 border-teal-200", pill: "text-teal-800 bg-teal-50 border-teal-200" },
+                { icon: FileCheck, color: "text-amber-800 bg-amber-100/60 border-amber-300", pill: "text-amber-900 bg-amber-100/80 border-amber-300" },
+                { icon: Gauge, color: "text-indigo-700 bg-indigo-50 border-indigo-200", pill: "text-indigo-800 bg-indigo-50 border-indigo-200" },
+                { icon: Power, color: "text-rose-700 bg-rose-50 border-rose-200", pill: "text-rose-800 bg-rose-50 border-rose-200" },
+                { icon: Compass, color: "text-violet-700 bg-violet-50 border-violet-200", pill: "text-violet-800 bg-violet-50 border-violet-200" },
+                { icon: Fuel, color: "text-emerald-800 bg-emerald-100/60 border-emerald-300", pill: "text-emerald-900 bg-emerald-100/80 border-emerald-300" },
+                { icon: Smartphone, color: "text-blue-800 bg-blue-100/60 border-blue-300", pill: "text-blue-900 bg-blue-100/80 border-blue-300" },
+                { icon: Eye, color: "text-purple-700 bg-purple-50 border-purple-200", pill: "text-purple-800 bg-purple-50 border-purple-200" },
+                { icon: Users, color: "text-orange-700 bg-orange-50 border-orange-200", pill: "text-orange-800 bg-orange-50 border-orange-200" },
+                { icon: BarChart2, color: "text-pink-700 bg-pink-50 border-pink-200", pill: "text-pink-800 bg-pink-50 border-pink-200" },
+                { icon: Radio, color: "text-cyan-700 bg-cyan-50 border-cyan-200", pill: "text-cyan-800 bg-cyan-50 border-cyan-200" },
               ];
               const cfg = configs[i] || configs[0];
               const Icon = cfg.icon;
@@ -808,11 +817,11 @@ export default function Home() {
               return (
                 <div
                   key={i}
-                  className={`group relative p-6 sm:p-7 rounded-2xl bg-[#0A101F]/80 border border-slate-800/80 hover:border-slate-700 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.35)] transition-all duration-300 flex flex-col justify-between space-y-4 hover:-translate-y-1 ${cfg.glow}`}
+                  className="group relative p-6 sm:p-7 rounded-2xl bg-white border border-slate-200/90 hover:border-blue-400 shadow-xs hover:shadow-xl hover:shadow-blue-500/5 transition-all duration-300 flex flex-col justify-between space-y-4 hover:-translate-y-1"
                 >
                   <div className="space-y-4">
                     <div className="flex items-center justify-between gap-3">
-                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${cfg.color}`}>
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-xs ${cfg.color}`}>
                         <Icon size={22} />
                       </div>
                       {f.badge && (
@@ -824,16 +833,16 @@ export default function Home() {
 
                     <div>
                       {f.category && (
-                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest block mb-1.5">
+                        <span className="text-[11px] font-bold text-slate-400 uppercase tracking-widest block mb-1">
                           {f.category}
                         </span>
                       )}
-                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-300 transition-colors">
+                      <h3 className="text-base sm:text-lg font-bold text-slate-900 group-hover:text-blue-600 transition-colors">
                         {f.title}
                       </h3>
                     </div>
 
-                    <p className="text-xs sm:text-sm text-slate-300/85 leading-relaxed">
+                    <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
                       {f.desc}
                     </p>
                   </div>
@@ -845,18 +854,18 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          6. HARDWARE COMPATIBILITY
+          6. HARDWARE COMPATIBILITY (CLEAN LIGHT DESIGN)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="hardware" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
+      <section id="hardware" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-slate-50/70">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-6">
-            <span className="text-xs font-bold uppercase tracking-widest text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-800 bg-emerald-50 border border-emerald-200 px-3.5 py-1 rounded-full">
               {T.hwBadge}
             </span>
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+            <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {T.hwTitle}
             </h2>
-            <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed">{T.hwSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{T.hwSubtitle}</p>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               {[
@@ -865,19 +874,19 @@ export default function Home() {
                 { brand: "Concox / Jimi IoT", models: "GT06N, GV20, ET200, VL03" },
                 { brand: "OBD & Mobile Apps", models: "Traceurs OBD-II Plug & Play" },
               ].map((hw, i) => (
-                <div key={i} className="p-3.5 rounded-xl bg-[#0A101F] border border-slate-800/80">
-                  <div className="font-bold text-white flex items-center gap-1.5">
-                    <Cpu size={14} className="text-blue-400" />
+                <div key={i} className="p-4 rounded-xl bg-white border border-slate-200/90 shadow-xs">
+                  <div className="font-bold text-slate-900 flex items-center gap-1.5">
+                    <Cpu size={14} className="text-blue-600" />
                     <span>{hw.brand}</span>
                   </div>
-                  <div className="text-zinc-400 mt-1 text-[11px]">{hw.models}</div>
+                  <div className="text-slate-500 mt-1 text-[11px] font-medium">{hw.models}</div>
                 </div>
               ))}
             </div>
 
             <div className="pt-2 flex flex-wrap gap-3">
               <Link href="/register">
-                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl px-7 shadow-lg shadow-blue-900/30 border-t border-blue-400/30">
+                <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-7 shadow-md shadow-blue-500/20">
                   {T.hwBtnPrimary}
                 </Button>
               </Link>
@@ -885,7 +894,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="bg-[#0A101F] hover:bg-[#0E172A] border-slate-700/80 text-slate-200 font-semibold rounded-xl px-6"
+                  className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-xl px-6 shadow-xs"
                 >
                   {T.hwBtnSecondary}
                 </Button>
@@ -894,7 +903,7 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-6">
-            <div className="rounded-3xl overflow-hidden border border-slate-800/80 shadow-2xl">
+            <div className="rounded-3xl overflow-hidden border border-slate-200 shadow-xl bg-white">
               <img
                 src="/landing/connected-fleet.jpg"
                 alt={T.hwTitle}
@@ -906,18 +915,18 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          6.5 FAQ SECTION (Rich Snippets & Google SEO)
+          6.5 FAQ SECTION (RICH SNIPPETS & GOOGLE SEO)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="faq" className="py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-slate-800/60">
+      <section id="faq" className="py-24 px-4 sm:px-6 max-w-5xl mx-auto border-t border-slate-200/80 bg-white">
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
-          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
+          <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-50 border border-blue-200 text-blue-700 text-xs font-semibold">
             <HelpCircle size={14} />
             <span>{T.faqBadge}</span>
           </div>
-          <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+          <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
             {T.faqTitle}
           </h2>
-          <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
             {T.faqSubtitle}
           </p>
         </div>
@@ -930,27 +939,27 @@ export default function Home() {
                 key={idx}
                 className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                   isOpen
-                    ? "bg-[#0A101F] border-blue-500/40 shadow-lg shadow-blue-500/5"
-                    : "bg-[#0A101F]/60 border-slate-800/80 hover:border-slate-700"
+                    ? "bg-slate-50/90 border-2 border-blue-600 shadow-sm"
+                    : "bg-white border-slate-200/90 hover:border-slate-300 shadow-xs"
                 }`}
               >
                 <button
                   type="button"
                   onClick={() => setOpenFaqIndex(isOpen ? null : idx)}
-                  className="w-full py-4 px-5 sm:px-6 flex items-center justify-between gap-4 text-start transition-colors"
+                  className="w-full py-4 px-5 sm:px-6 flex items-center justify-between gap-4 text-start transition-colors cursor-pointer"
                 >
-                  <span className="text-sm sm:text-base font-semibold text-white">
+                  <span className="text-sm sm:text-base font-bold text-slate-900">
                     {item.q}
                   </span>
                   <ChevronDown
                     size={18}
-                    className={`text-blue-400 shrink-0 transition-transform duration-200 ${
+                    className={`text-blue-600 shrink-0 transition-transform duration-200 ${
                       isOpen ? "rotate-180" : ""
                     }`}
                   />
                 </button>
                 {isOpen && (
-                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-zinc-300 leading-relaxed border-t border-zinc-800/50">
+                  <div className="px-5 sm:px-6 pb-5 pt-1 text-xs sm:text-sm text-slate-600 leading-relaxed border-t border-slate-200/60 font-normal">
                     {item.a}
                   </div>
                 )}
@@ -961,18 +970,18 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          7. FOOTER
+          7. FOOTER (CLEAN LIGHT DESIGN)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <footer className="border-t border-slate-900 bg-[#04060C] py-10 px-4 sm:px-6 text-xs text-slate-500">
+      <footer className="border-t border-slate-200 bg-slate-100/80 py-12 px-4 sm:px-6 text-xs text-slate-600">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-7 h-7 rounded-lg" />
-            <span className="font-bold text-white">Geofence GPS</span>
+            <span className="font-bold text-slate-900">Geofence GPS</span>
             <span>· © {new Date().getFullYear()} {T.footerRights}</span>
-            <span className="hidden sm:inline text-zinc-600">|</span>
+            <span className="hidden sm:inline text-slate-300">|</span>
             <a
               href={`tel:${T.phoneNumber}`}
-              className="hidden sm:inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold"
+              className="hidden sm:inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-bold"
             >
               <Phone size={12} />
               <span>{T.callUsText} {T.phoneNumber}</span>
@@ -982,15 +991,15 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <a
               href={`tel:${T.phoneNumber}`}
-              className="sm:hidden inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold"
+              className="sm:hidden inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-bold"
             >
               <Phone size={12} />
               <span>{T.phoneNumber}</span>
             </a>
-            <Link href="/login" className="hover:text-white transition-colors">
+            <Link href="/login" className="hover:text-blue-600 transition-colors font-medium">
               {T.footerLogin}
             </Link>
-            <Link href="/register" className="hover:text-white transition-colors">
+            <Link href="/register" className="hover:text-blue-600 transition-colors font-medium">
               {T.footerRegister}
             </Link>
             <LanguageSelector compact={false} />
