@@ -25,6 +25,13 @@ import {
   Phone,
   ChevronDown,
   HelpCircle,
+  Wrench,
+  FileCheck,
+  Smartphone,
+  Eye,
+  Sliders,
+  Radio,
+  Users,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -83,7 +90,7 @@ export default function Home() {
 
   return (
     <div
-      className={`flex flex-col min-h-screen bg-zinc-950 text-white selection:bg-blue-600 selection:text-white ${
+      className={`flex flex-col min-h-screen bg-[#060913] text-slate-100 selection:bg-blue-600 selection:text-white ${
         isRTL ? "font-sans" : ""
       }`}
       dir={isRTL ? "rtl" : "ltr"}
@@ -91,7 +98,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           1. STICKY HEADER
          ══════════════════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/80 bg-zinc-950/85 backdrop-blur-xl">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-800/80 bg-[#070B14]/85 backdrop-blur-2xl">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
@@ -102,14 +109,14 @@ export default function Home() {
             />
             <div>
               <span className="font-extrabold text-white text-base tracking-tight block leading-none">
-                Geofence<span className="text-cyan-400">.</span>
+                Geofence<span className="text-emerald-400">.</span>
               </span>
-              <span className="text-[10px] text-zinc-400 font-mono tracking-wider">GPS-EU PLATFORM</span>
+              <span className="text-[10px] text-slate-400 font-mono tracking-wider">GPS-EU PLATFORM</span>
             </div>
           </Link>
 
           {/* Desktop Section Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-zinc-400">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-400">
             <a href="#platform-tour" className="hover:text-white transition-colors">
               {T.navPlatform}
             </a>
@@ -132,10 +139,10 @@ export default function Home() {
             {/* Direct Phone Call Button */}
             <a
               href={`tel:${T.phoneNumber}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-cyan-500/10 hover:bg-cyan-500/20 border border-cyan-500/30 text-cyan-300 text-xs font-bold transition-all shadow-sm"
+              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-500/10 hover:bg-emerald-500/20 border border-emerald-500/30 text-emerald-300 text-xs font-bold transition-all shadow-sm"
               title="Appelez-nous directement"
             >
-              <Phone size={13} className="text-cyan-400" />
+              <Phone size={13} className="text-emerald-400" />
               <span className="font-mono tracking-wide">{T.phoneNumber}</span>
             </a>
 
@@ -146,7 +153,7 @@ export default function Home() {
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-zinc-900/90 hover:bg-zinc-800 border-zinc-700 text-zinc-200 text-xs font-semibold px-3.5 rounded-xl transition-colors"
+                className="bg-[#0A101F] hover:bg-[#0E172A] border-slate-700/80 text-slate-200 text-xs font-semibold px-3.5 rounded-xl transition-colors"
               >
                 {T.ctaSecondary}
               </Button>
@@ -155,7 +162,7 @@ export default function Home() {
             <Link href="/register" className="hidden sm:block">
               <Button
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold px-4 rounded-xl shadow-lg shadow-blue-600/30 transition-all hover:shadow-blue-600/50"
+                className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-xs font-bold px-4 rounded-xl shadow-lg shadow-blue-900/40 border-t border-blue-400/30 transition-all"
               >
                 {T.ctaPrimary}
               </Button>
@@ -168,14 +175,15 @@ export default function Home() {
           2. HERO SECTION
          ══════════════════════════════════════════════════════════════════════════ */}
       <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 px-4 sm:px-6 overflow-hidden">
-        {/* Background Glows */}
-        <div className="absolute top-12 left-1/2 -translate-x-1/2 w-[850px] h-[420px] bg-blue-600/15 blur-[140px] rounded-full pointer-events-none" />
-        <div className="absolute top-72 right-10 w-[400px] h-[300px] bg-amber-500/10 blur-[130px] rounded-full pointer-events-none" />
+        {/* Ambient Atmospheric Lighting (World-Class Aesthetics) */}
+        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-20%,rgba(37,99,235,0.22),transparent)] pointer-events-none" />
+        <div className="absolute top-48 right-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_80%_30%,rgba(16,185,129,0.1),transparent)] pointer-events-none" />
+        <div className="absolute top-80 left-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_20%_40%,rgba(245,158,11,0.07),transparent)] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Top Hero Copy */}
           <div className="text-center max-w-4xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-zinc-900/90 border border-zinc-800 text-xs text-zinc-300 shadow-xl backdrop-blur">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[#0A101F]/90 border border-slate-700/70 text-xs text-slate-200 shadow-[0_0_24px_rgba(16,185,129,0.12)] backdrop-blur-xl">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
@@ -185,12 +193,12 @@ export default function Home() {
 
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-extrabold tracking-tight text-white leading-[1.12]">
               {T.title1} <br />
-              <span className="bg-gradient-to-r from-blue-400 via-cyan-300 to-indigo-400 bg-clip-text text-transparent">
+              <span className="bg-gradient-to-r from-amber-200 via-emerald-300 to-sky-300 bg-clip-text text-transparent">
                 {T.title2}
               </span>
             </h1>
 
-            <p className="text-sm sm:text-base md:text-lg text-zinc-400 max-w-3xl mx-auto leading-relaxed">
+            <p className="text-sm sm:text-base md:text-lg text-slate-300/90 max-w-3xl mx-auto leading-relaxed">
               {T.subtitle}
             </p>
 
@@ -199,7 +207,7 @@ export default function Home() {
               <Link href="/login" className="w-full sm:w-auto">
                 <Button
                   size="lg"
-                  className="w-full sm:w-auto bg-blue-600 hover:bg-blue-500 text-white text-sm sm:text-base font-bold px-8 py-6 rounded-2xl shadow-2xl shadow-blue-600/35 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white text-sm sm:text-base font-bold px-8 py-6 rounded-2xl shadow-2xl shadow-blue-900/40 border-t border-blue-400/30 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                 >
                   <span>{T.ctaSecondary}</span>
                   <ArrowIcon className="h-5 w-5 shrink-0" />
@@ -210,7 +218,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto bg-zinc-900/70 hover:bg-zinc-800 border-zinc-700 text-zinc-200 text-sm sm:text-base font-semibold px-7 py-6 rounded-2xl transition-colors flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-[#0A101F]/80 hover:bg-[#0E172A] border-slate-700/80 text-slate-200 text-sm sm:text-base font-semibold px-7 py-6 rounded-2xl transition-colors flex items-center justify-center gap-2"
                 >
                   <Play size={16} className="text-blue-400 fill-blue-400" />
                   <span>{T.heroTourBtn}</span>
@@ -224,21 +232,21 @@ export default function Home() {
             {T.stats.map((st, idx) => (
               <div
                 key={idx}
-                className="bg-zinc-900/70 border border-zinc-800/90 rounded-2xl p-4 text-center backdrop-blur-md hover:border-blue-500/40 transition-colors"
+                className="bg-[#0A101F]/80 border border-slate-800/80 rounded-2xl p-4 text-center backdrop-blur-md hover:border-slate-700/90 shadow-[0_4px_20px_rgba(0,0,0,0.3)] transition-all"
               >
                 <div className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
                   {st.value}
                 </div>
-                <div className="text-xs text-zinc-400 mt-1">{st.label}</div>
+                <div className="text-xs text-slate-400 mt-1">{st.label}</div>
               </div>
             ))}
           </div>
 
           {/* Hero Command Center Image + Floating Live Cards */}
           <div className="mt-12 relative">
-            <div className="relative rounded-3xl overflow-hidden border border-zinc-800/90 shadow-[0_25px_90px_-15px_rgba(37,99,235,0.35)] bg-zinc-900">
+            <div className="relative rounded-3xl overflow-hidden border border-slate-800/80 shadow-[0_25px_90px_-15px_rgba(15,23,42,0.7)] bg-[#0A101F]">
               {/* Top Browser Bar */}
-              <div className="h-10 bg-zinc-900/95 border-b border-zinc-800 px-4 flex items-center justify-between text-xs">
+              <div className="h-10 bg-[#0A101F]/95 border-b border-slate-800/80 px-4 flex items-center justify-between text-xs">
                 <div className="flex items-center gap-2">
                   <span className="w-3 h-3 rounded-full bg-red-500/80" />
                   <span className="w-3 h-3 rounded-full bg-amber-500/80" />
@@ -265,9 +273,9 @@ export default function Home() {
               </div>
 
               {/* Floating Live Telemetry Overlay Cards */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 sm:p-5 bg-zinc-950/90 border-t border-zinc-800/90 backdrop-blur-xl">
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-3 p-4 sm:p-5 bg-[#070B14]/90 border-t border-slate-800/90 backdrop-blur-xl">
                 {/* Card 1: Vehicle Live Telemetry */}
-                <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between">
+                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="flex items-center gap-2">
                       <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -293,7 +301,7 @@ export default function Home() {
                 </div>
 
                 {/* Card 2: Route Aller/Retour + Parking Badge */}
-                <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between">
+                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
                       <span className="w-5 h-5 rounded bg-amber-500 text-zinc-950 font-black text-[10px] inline-flex items-center justify-center">
@@ -320,7 +328,7 @@ export default function Home() {
                 </div>
 
                 {/* Card 3: Remote Engine Immobilizer */}
-                <div className="bg-zinc-900/90 border border-zinc-800 rounded-2xl p-3.5 flex items-center justify-between">
+                <div className="bg-[#0A101F]/90 border border-slate-800/90 rounded-2xl p-3.5 shadow-lg flex items-center justify-between">
                   <div className="space-y-1">
                     <div className="text-xs font-bold text-white flex items-center gap-1.5">
                       <Lock size={13} className="text-red-400" />
@@ -346,17 +354,17 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           3. INTERACTIVE 6-MODULE PLATFORM TOUR
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="platform-tour" className="py-20 px-4 sm:px-6 border-t border-zinc-900 bg-zinc-950/60">
+      <section id="platform-tour" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
         <div className="max-w-7xl mx-auto space-y-10">
           {/* Section Title */}
           <div className="text-center max-w-3xl mx-auto space-y-3">
-            <span className="text-xs font-bold uppercase tracking-widest text-blue-400 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-blue-300 bg-blue-500/10 border border-blue-500/20 px-3 py-1 rounded-full">
               {T.tourBadge}
             </span>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
               {T.tourTitle}
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400">{T.tourSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-300/90">{T.tourSubtitle}</p>
           </div>
 
           {/* 6 Module Selector Tabs */}
@@ -377,8 +385,8 @@ export default function Home() {
                   onClick={() => setActiveTab(t.id)}
                   className={`flex flex-col items-center justify-center p-3.5 rounded-2xl border text-center transition-all ${
                     isSelected
-                      ? "bg-blue-600/20 border-blue-500 text-white shadow-lg shadow-blue-950/50 scale-[1.02]"
-                      : "bg-zinc-900/70 border-zinc-800 text-zinc-400 hover:text-white hover:bg-zinc-900"
+                      ? "bg-gradient-to-b from-blue-600/30 to-[#0A101F] border-blue-500/80 text-white shadow-lg shadow-blue-950/60 scale-[1.02]"
+                      : "bg-[#0A101F]/60 border-slate-800/80 text-slate-400 hover:text-white hover:bg-[#0E172A]"
                   }`}
                 >
                   <Icon size={20} className={`${t.color} mb-1.5`} />
@@ -389,7 +397,7 @@ export default function Home() {
           </div>
 
           {/* Interactive Module Stage */}
-          <div className="bg-zinc-900/75 border border-zinc-800 rounded-3xl p-6 sm:p-8 shadow-2xl">
+          <div className="bg-[#0A101F]/90 border border-slate-800/80 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-xl">
             {/* MODULE 1: LIVE MAP */}
             {activeTab === "live" && (
               <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
@@ -426,7 +434,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/live-map.jpg"
                     alt={T.m1Title}
@@ -463,7 +471,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/history-parkings.jpg"
                     alt={T.m2Title}
@@ -498,7 +506,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/fuel-eco.jpg"
                     alt={T.m3Title}
@@ -533,7 +541,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/reports.jpg"
                     alt={T.m4Title}
@@ -564,7 +572,7 @@ export default function Home() {
                   </ul>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/geofence-alerts.jpg"
                     alt={T.m5Title}
@@ -598,7 +606,7 @@ export default function Home() {
                   </div>
                 </div>
 
-                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-zinc-800 shadow-2xl">
+                <div className="lg:col-span-7 rounded-2xl overflow-hidden border border-slate-800/80 shadow-2xl">
                   <img
                     src="/landing/engine-cutoff.jpg"
                     alt={T.m6Title}
@@ -614,7 +622,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           4. CHARTS & INTERACTIVE ROI CALCULATOR (IN MAD)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="analytics-roi" className="py-20 px-4 sm:px-6 border-t border-zinc-900">
+      <section id="analytics-roi" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
         <div className="max-w-7xl mx-auto space-y-12">
           <div className="text-center max-w-3xl mx-auto space-y-3">
             <span className="text-xs font-bold uppercase tracking-widest text-emerald-400 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
@@ -623,12 +631,12 @@ export default function Home() {
             <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
               {T.roiTitle}
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400">{T.roiSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-300/90">{T.roiSubtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-stretch">
             {/* Left: Interactive Fleet ROI Simulator */}
-            <div className="lg:col-span-5 bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6">
+            <div className="lg:col-span-5 bg-[#0A101F]/80 border border-slate-800/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between space-y-6 shadow-xl">
               <div className="space-y-5">
                 <h3 className="text-lg font-bold text-white flex items-center gap-2">
                   <Sparkles size={18} className="text-amber-400" />
@@ -675,13 +683,13 @@ export default function Home() {
 
               {/* ROI Result Boxes */}
               <div className="grid grid-cols-2 gap-3 pt-4 border-t border-zinc-800">
-                <div className="bg-emerald-500/10 border border-emerald-500/30 rounded-2xl p-4">
+                <div className="bg-emerald-950/40 border border-emerald-500/30 rounded-2xl p-4">
                   <span className="text-[11px] text-emerald-300 block">{T.roiMonthlySavedLabel}</span>
                   <span className="text-xl sm:text-2xl font-black text-emerald-400 mt-1 block">
                     {roiStats.monthlySaved.toLocaleString(T.locale)} MAD
                   </span>
                 </div>
-                <div className="bg-blue-500/10 border border-blue-500/30 rounded-2xl p-4">
+                <div className="bg-blue-950/40 border border-blue-500/30 rounded-2xl p-4">
                   <span className="text-[11px] text-blue-300 block">{T.roiYearlySavedLabel}</span>
                   <span className="text-xl sm:text-2xl font-black text-blue-400 mt-1 block">
                     {roiStats.yearlySaved.toLocaleString(T.locale)} MAD
@@ -691,7 +699,7 @@ export default function Home() {
             </div>
 
             {/* Right: Recharts Comparison Chart */}
-            <div className="lg:col-span-7 bg-zinc-900/80 border border-zinc-800 rounded-3xl p-6 sm:p-7 flex flex-col justify-between">
+            <div className="lg:col-span-7 bg-[#0A101F]/80 border border-slate-800/80 rounded-3xl p-6 sm:p-7 flex flex-col justify-between shadow-xl">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-4">
                 <div>
                   <h3 className="text-base font-bold text-white">{T.roiChartTitle}</h3>
@@ -754,40 +762,81 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          5. COMPLETE FEATURE MATRIX (6 CAPABILITIES)
+          5. COMPLETE FEATURE MATRIX (ALL 15 OPTIONS & MODULES)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="features" className="py-20 px-4 sm:px-6 border-t border-zinc-900 bg-zinc-950/60">
-        <div className="max-w-7xl mx-auto space-y-12">
-          <div className="text-center max-w-3xl mx-auto space-y-3">
-            <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
+      <section id="features" className="py-24 px-4 sm:px-6 border-t border-slate-800/70 bg-[#070B14] relative overflow-hidden">
+        {/* Subtle background ambient lights */}
+        <div className="absolute top-1/4 left-10 w-96 h-96 bg-emerald-500/5 blur-[120px] rounded-full pointer-events-none" />
+        <div className="absolute bottom-10 right-10 w-96 h-96 bg-blue-500/5 blur-[120px] rounded-full pointer-events-none" />
+
+        <div className="max-w-7xl mx-auto space-y-14 relative z-10">
+          <div className="text-center max-w-3xl mx-auto space-y-4">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-emerald-500/10 border border-emerald-500/25 text-emerald-300 text-xs font-bold uppercase tracking-wider">
+              <Sparkles size={13} className="text-emerald-400" />
+              <span>{T.navFeatures} · 15 Modules Complets</span>
+            </div>
+            <h2 className="text-2xl sm:text-4xl md:text-5xl font-extrabold text-white tracking-tight">
               {T.featHeader}
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400">{T.featSub}</p>
+            <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed max-w-2xl mx-auto">
+              {T.featSub}
+            </p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {T.feats.map((f, i) => {
-              const icons = [MapPin, Route, Clock, Fuel, Power, BarChart2];
-              const colors = [
-                "text-blue-400 bg-blue-500/10",
-                "text-orange-400 bg-orange-500/10",
-                "text-amber-400 bg-amber-500/10",
-                "text-emerald-400 bg-emerald-500/10",
-                "text-red-400 bg-red-500/10",
-                "text-purple-400 bg-purple-500/10",
+              const configs = [
+                { icon: MapPin, color: "text-emerald-400 bg-emerald-500/10 border-emerald-500/25", pill: "text-emerald-300 bg-emerald-950/60 border-emerald-500/30", glow: "hover:border-emerald-500/50 hover:shadow-emerald-950/30" },
+                { icon: Route, color: "text-blue-400 bg-blue-500/10 border-blue-500/25", pill: "text-blue-300 bg-blue-950/60 border-blue-500/30", glow: "hover:border-blue-500/50 hover:shadow-blue-950/30" },
+                { icon: Sliders, color: "text-sky-400 bg-sky-500/10 border-sky-500/25", pill: "text-sky-300 bg-sky-950/60 border-sky-500/30", glow: "hover:border-sky-500/50 hover:shadow-sky-950/30" },
+                { icon: Clock, color: "text-amber-400 bg-amber-500/10 border-amber-500/25", pill: "text-amber-300 bg-amber-950/60 border-amber-500/30", glow: "hover:border-amber-500/50 hover:shadow-amber-950/30" },
+                { icon: Wrench, color: "text-teal-400 bg-teal-500/10 border-teal-500/25", pill: "text-teal-300 bg-teal-950/60 border-teal-500/30", glow: "hover:border-teal-500/50 hover:shadow-teal-950/30" },
+                { icon: FileCheck, color: "text-amber-300 bg-amber-500/15 border-amber-500/30", pill: "text-amber-200 bg-amber-950/80 border-amber-500/40", glow: "hover:border-amber-400/50 hover:shadow-amber-950/40" },
+                { icon: Gauge, color: "text-indigo-400 bg-indigo-500/10 border-indigo-500/25", pill: "text-indigo-300 bg-indigo-950/60 border-indigo-500/30", glow: "hover:border-indigo-500/50 hover:shadow-indigo-950/30" },
+                { icon: Power, color: "text-rose-400 bg-rose-500/10 border-rose-500/25", pill: "text-rose-300 bg-rose-950/60 border-rose-500/30", glow: "hover:border-rose-500/50 hover:shadow-rose-950/30" },
+                { icon: Compass, color: "text-violet-400 bg-violet-500/10 border-violet-500/25", pill: "text-violet-300 bg-violet-950/60 border-violet-500/30", glow: "hover:border-violet-500/50 hover:shadow-violet-950/30" },
+                { icon: Fuel, color: "text-emerald-300 bg-emerald-500/15 border-emerald-500/30", pill: "text-emerald-200 bg-emerald-950/70 border-emerald-500/40", glow: "hover:border-emerald-400/50 hover:shadow-emerald-950/40" },
+                { icon: Smartphone, color: "text-blue-300 bg-blue-500/15 border-blue-500/30", pill: "text-blue-200 bg-blue-950/70 border-blue-500/40", glow: "hover:border-blue-400/50 hover:shadow-blue-950/40" },
+                { icon: Eye, color: "text-purple-400 bg-purple-500/10 border-purple-500/25", pill: "text-purple-300 bg-purple-950/60 border-purple-500/30", glow: "hover:border-purple-500/50 hover:shadow-purple-950/30" },
+                { icon: Users, color: "text-orange-400 bg-orange-500/10 border-orange-500/25", pill: "text-orange-300 bg-orange-950/60 border-orange-500/30", glow: "hover:border-orange-500/50 hover:shadow-orange-950/30" },
+                { icon: BarChart2, color: "text-pink-400 bg-pink-500/10 border-pink-500/25", pill: "text-pink-300 bg-pink-950/60 border-pink-500/30", glow: "hover:border-pink-500/50 hover:shadow-pink-950/30" },
+                { icon: Radio, color: "text-cyan-300 bg-cyan-500/10 border-cyan-500/25", pill: "text-cyan-200 bg-cyan-950/70 border-cyan-500/40", glow: "hover:border-cyan-400/50 hover:shadow-cyan-950/40" },
               ];
-              const Icon = icons[i] || MapPin;
-              const color = colors[i] || "text-blue-400 bg-blue-500/10";
+              const cfg = configs[i] || configs[0];
+              const Icon = cfg.icon;
+
               return (
                 <div
                   key={i}
-                  className="p-6 rounded-2xl bg-zinc-900/60 border border-zinc-800/90 hover:border-blue-500/40 transition-all space-y-3"
+                  className={`group relative p-6 sm:p-7 rounded-2xl bg-[#0A101F]/80 border border-slate-800/80 hover:border-slate-700 backdrop-blur-xl shadow-[0_8px_30px_rgb(0,0,0,0.35)] transition-all duration-300 flex flex-col justify-between space-y-4 hover:-translate-y-1 ${cfg.glow}`}
                 >
-                  <div className={`w-11 h-11 rounded-xl flex items-center justify-center ${color}`}>
-                    <Icon size={22} />
+                  <div className="space-y-4">
+                    <div className="flex items-center justify-between gap-3">
+                      <div className={`w-12 h-12 rounded-2xl flex items-center justify-center border shadow-inner ${cfg.color}`}>
+                        <Icon size={22} />
+                      </div>
+                      {f.badge && (
+                        <span className={`text-[10px] font-extrabold uppercase tracking-wider px-2.5 py-1 rounded-full border ${cfg.pill}`}>
+                          {f.badge}
+                        </span>
+                      )}
+                    </div>
+
+                    <div>
+                      {f.category && (
+                        <span className="text-[11px] font-semibold text-slate-400 uppercase tracking-widest block mb-1.5">
+                          {f.category}
+                        </span>
+                      )}
+                      <h3 className="text-base sm:text-lg font-bold text-white group-hover:text-blue-300 transition-colors">
+                        {f.title}
+                      </h3>
+                    </div>
+
+                    <p className="text-xs sm:text-sm text-slate-300/85 leading-relaxed">
+                      {f.desc}
+                    </p>
                   </div>
-                  <h3 className="text-base font-bold text-white">{f.title}</h3>
-                  <p className="text-xs sm:text-sm text-zinc-400 leading-relaxed">{f.desc}</p>
                 </div>
               );
             })}
@@ -798,16 +847,16 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           6. HARDWARE COMPATIBILITY
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="hardware" className="py-20 px-4 sm:px-6 border-t border-zinc-900">
+      <section id="hardware" className="py-20 px-4 sm:px-6 border-t border-slate-800/70 bg-[#060913]">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
           <div className="lg:col-span-6 space-y-6">
-            <span className="text-xs font-bold uppercase tracking-widest text-cyan-400 bg-cyan-500/10 border border-cyan-500/20 px-3 py-1 rounded-full">
+            <span className="text-xs font-bold uppercase tracking-widest text-emerald-300 bg-emerald-500/10 border border-emerald-500/20 px-3 py-1 rounded-full">
               {T.hwBadge}
             </span>
             <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
               {T.hwTitle}
             </h2>
-            <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">{T.hwSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed">{T.hwSubtitle}</p>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               {[
@@ -816,7 +865,7 @@ export default function Home() {
                 { brand: "Concox / Jimi IoT", models: "GT06N, GV20, ET200, VL03" },
                 { brand: "OBD & Mobile Apps", models: "Traceurs OBD-II Plug & Play" },
               ].map((hw, i) => (
-                <div key={i} className="p-3.5 rounded-xl bg-zinc-900 border border-zinc-800">
+                <div key={i} className="p-3.5 rounded-xl bg-[#0A101F] border border-slate-800/80">
                   <div className="font-bold text-white flex items-center gap-1.5">
                     <Cpu size={14} className="text-blue-400" />
                     <span>{hw.brand}</span>
@@ -828,7 +877,7 @@ export default function Home() {
 
             <div className="pt-2 flex flex-wrap gap-3">
               <Link href="/register">
-                <Button size="lg" className="bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl px-7">
+                <Button size="lg" className="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl px-7 shadow-lg shadow-blue-900/30 border-t border-blue-400/30">
                   {T.hwBtnPrimary}
                 </Button>
               </Link>
@@ -836,7 +885,7 @@ export default function Home() {
                 <Button
                   size="lg"
                   variant="outline"
-                  className="bg-zinc-900 hover:bg-zinc-800 border-zinc-700 text-zinc-200 font-semibold rounded-xl px-6"
+                  className="bg-[#0A101F] hover:bg-[#0E172A] border-slate-700/80 text-slate-200 font-semibold rounded-xl px-6"
                 >
                   {T.hwBtnSecondary}
                 </Button>
@@ -845,7 +894,7 @@ export default function Home() {
           </div>
 
           <div className="lg:col-span-6">
-            <div className="rounded-3xl overflow-hidden border border-zinc-800 shadow-2xl">
+            <div className="rounded-3xl overflow-hidden border border-slate-800/80 shadow-2xl">
               <img
                 src="/landing/connected-fleet.jpg"
                 alt={T.hwTitle}
@@ -859,7 +908,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           6.5 FAQ SECTION (Rich Snippets & Google SEO)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section id="faq" className="py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-zinc-900/60">
+      <section id="faq" className="py-20 px-4 sm:px-6 max-w-5xl mx-auto border-t border-slate-800/60">
         <div className="text-center max-w-3xl mx-auto space-y-4 mb-12">
           <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-semibold">
             <HelpCircle size={14} />
@@ -868,7 +917,7 @@ export default function Home() {
           <h2 className="text-2xl sm:text-4xl font-extrabold text-white tracking-tight">
             {T.faqTitle}
           </h2>
-          <p className="text-sm sm:text-base text-zinc-400 leading-relaxed">
+          <p className="text-sm sm:text-base text-slate-300/90 leading-relaxed">
             {T.faqSubtitle}
           </p>
         </div>
@@ -881,8 +930,8 @@ export default function Home() {
                 key={idx}
                 className={`rounded-2xl border transition-all duration-200 overflow-hidden ${
                   isOpen
-                    ? "bg-zinc-900/90 border-blue-500/40 shadow-lg shadow-blue-500/5"
-                    : "bg-zinc-950/60 border-zinc-800/80 hover:border-zinc-700"
+                    ? "bg-[#0A101F] border-blue-500/40 shadow-lg shadow-blue-500/5"
+                    : "bg-[#0A101F]/60 border-slate-800/80 hover:border-slate-700"
                 }`}
               >
                 <button
@@ -914,7 +963,7 @@ export default function Home() {
       {/* ══════════════════════════════════════════════════════════════════════════
           7. FOOTER
          ══════════════════════════════════════════════════════════════════════════ */}
-      <footer className="border-t border-zinc-900 bg-black py-10 px-4 sm:px-6 text-xs text-zinc-500">
+      <footer className="border-t border-slate-900 bg-[#04060C] py-10 px-4 sm:px-6 text-xs text-slate-500">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-7 h-7 rounded-lg" />
@@ -923,7 +972,7 @@ export default function Home() {
             <span className="hidden sm:inline text-zinc-600">|</span>
             <a
               href={`tel:${T.phoneNumber}`}
-              className="hidden sm:inline-flex items-center gap-1.5 text-cyan-400 hover:text-cyan-300 font-semibold"
+              className="hidden sm:inline-flex items-center gap-1.5 text-emerald-400 hover:text-emerald-300 font-semibold"
             >
               <Phone size={12} />
               <span>{T.callUsText} {T.phoneNumber}</span>
@@ -933,7 +982,7 @@ export default function Home() {
           <div className="flex items-center gap-4">
             <a
               href={`tel:${T.phoneNumber}`}
-              className="sm:hidden inline-flex items-center gap-1 text-cyan-400 hover:text-cyan-300 font-semibold"
+              className="sm:hidden inline-flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold"
             >
               <Phone size={12} />
               <span>{T.phoneNumber}</span>
