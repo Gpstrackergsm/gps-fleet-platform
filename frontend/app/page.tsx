@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -32,6 +32,9 @@ import {
   Sliders,
   Radio,
   Users,
+  MessageCircle,
+  Gift,
+  Check,
 } from "lucide-react";
 import {
   ResponsiveContainer,
@@ -58,20 +61,29 @@ export default function Home() {
 
   const [activeTab, setActiveTab] = useState<ShowcaseTab>("live");
   const [fleetSize, setFleetSize] = useState<number>(15);
-  const [monthlyFuelPerVehicle, setMonthlyFuelPerVehicle] = useState<number>(3500);
+  const [monthlyFuelPerVehicle, setMonthlyFuelPerVehicle] = useState<number>(() => T.defaultFuelBudget || 350);
   const [engineCutDemo, setEngineCutDemo] = useState<boolean>(false);
   const [openFaqIndex, setOpenFaqIndex] = useState<number | null>(0);
 
-  // Dynamic Fuel Trend data with localized day names
+  // Synchronize fuel budget default when switching currency (EUR vs USD vs MAD)
+  useEffect(() => {
+    setMonthlyFuelPerVehicle(T.defaultFuelBudget);
+  }, [T.defaultFuelBudget]);
+
+  // Dynamic Fuel Trend data with localized day names & currency scaling
   const fuelTrendData = useMemo(() => {
+    const isEur = T.currencyCode === "EUR";
+    const isUsd = T.currencyCode === "USD";
+    const multiplier = isEur ? 0.1 : isUsd ? 0.11 : 1.0;
+
     const rawValues = [
-      { avant: 1450, avecGeofence: 980, km: 620 },
-      { avant: 1620, avecGeofence: 1090, km: 710 },
-      { avant: 1380, avecGeofence: 920, km: 590 },
-      { avant: 1790, avecGeofence: 1150, km: 780 },
-      { avant: 1910, avecGeofence: 1210, km: 830 },
-      { avant: 1120, avecGeofence: 740, km: 490 },
-      { avant: 680, avecGeofence: 430, km: 310 },
+      { avant: Math.round(1450 * multiplier), avecGeofence: Math.round(980 * multiplier), km: 620 },
+      { avant: Math.round(1620 * multiplier), avecGeofence: Math.round(1090 * multiplier), km: 710 },
+      { avant: Math.round(1380 * multiplier), avecGeofence: Math.round(920 * multiplier), km: 590 },
+      { avant: Math.round(1790 * multiplier), avecGeofence: Math.round(1150 * multiplier), km: 780 },
+      { avant: Math.round(1910 * multiplier), avecGeofence: Math.round(1210 * multiplier), km: 830 },
+      { avant: Math.round(1120 * multiplier), avecGeofence: Math.round(740 * multiplier), km: 490 },
+      { avant: Math.round(680 * multiplier), avecGeofence: Math.round(430 * multiplier), km: 310 },
     ];
     return rawValues.map((v, i) => ({
       day: T.chartDays[i] || `D${i + 1}`,
@@ -96,9 +108,9 @@ export default function Home() {
       dir={isRTL ? "rtl" : "ltr"}
     >
       {/* ══════════════════════════════════════════════════════════════════════════
-          1. STICKY HEADER (CRISP LIGHT LUXURY)
+          1. STICKY HEADER (LIGHT CRISP WITH DIRECT WHATSAPP & FREE TRIAL PILL)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/90 backdrop-blur-xl shadow-xs">
+      <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-xl shadow-xs">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
@@ -112,13 +124,17 @@ export default function Home() {
                 Geofence<span className="text-blue-600">.</span>
               </span>
               <span className="text-[10px] text-slate-500 font-mono tracking-wider font-semibold">
-                GPS-EU PLATFORM
+                GLOBAL GPS PLATFORM
               </span>
             </div>
           </Link>
 
           {/* Desktop Section Links */}
-          <nav className="hidden lg:flex items-center gap-7 text-xs font-semibold text-slate-600">
+          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-600">
+            <a href="#free-trial" className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1">
+              <Gift size={13} className="text-emerald-600" />
+              <span>{T.freeTrialHighlight}</span>
+            </a>
             <a href="#platform-tour" className="hover:text-blue-600 transition-colors">
               {T.navPlatform}
             </a>
@@ -138,14 +154,17 @@ export default function Home() {
 
           {/* Right Controls */}
           <div className="flex items-center gap-2 sm:gap-3">
-            {/* Direct Phone Call Button */}
+            {/* Direct WhatsApp Callout Button */}
             <a
-              href={`tel:${T.phoneNumber}`}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-200 text-emerald-700 text-xs font-bold transition-all shadow-xs"
-              title="Appelez-nous directement"
+              href={T.whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold transition-all shadow-xs"
+              title="WhatsApp direct assistance: 00212661176946"
             >
-              <Phone size={13} className="text-emerald-600" />
-              <span className="font-mono tracking-wide">{T.phoneNumber}</span>
+              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+              <MessageCircle size={14} className="text-emerald-600" />
+              <span className="font-mono tracking-wide">{T.whatsappNumber}</span>
             </a>
 
             <ThemeToggle />
@@ -166,7 +185,7 @@ export default function Home() {
                 size="sm"
                 className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/30"
               >
-                {T.ctaPrimary}
+                {T.freeTrialCta}
               </Button>
             </Link>
           </div>
@@ -174,23 +193,22 @@ export default function Home() {
       </header>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          2. HERO SECTION (BRIGHT, PRESTIGIOUS & ELEGANT)
+          2. HERO SECTION (WORLDWIDE REACH, LIGHT LUXURY & 1 MONTH FREE OFFER)
          ══════════════════════════════════════════════════════════════════════════ */}
-      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-28 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9]">
+      <section className="relative pt-12 pb-20 sm:pt-16 sm:pb-24 px-4 sm:px-6 overflow-hidden bg-gradient-to-b from-white via-[#F8FAFC] to-[#F1F5F9]">
         {/* Soft Ambient Light Glows */}
         <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full max-w-7xl h-[550px] bg-[radial-gradient(ellipse_80%_60%_at_50%_-10%,rgba(37,99,235,0.07),transparent)] pointer-events-none" />
         <div className="absolute top-48 right-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_80%_30%,rgba(16,185,129,0.05),transparent)] pointer-events-none" />
-        <div className="absolute top-80 left-0 w-[500px] h-[400px] bg-[radial-gradient(ellipse_60%_50%_at_20%_40%,rgba(245,158,11,0.05),transparent)] pointer-events-none" />
 
         <div className="max-w-7xl mx-auto relative z-10">
           {/* Top Hero Copy */}
           <div className="text-center max-w-4xl mx-auto space-y-6">
-            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-blue-50/80 border border-blue-200/80 text-xs text-blue-800 shadow-xs">
+            <div className="inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-emerald-50 border border-emerald-300 text-xs text-emerald-900 shadow-xs">
               <span className="relative flex h-2 w-2">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-500 opacity-75" />
                 <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-600" />
               </span>
-              <span className="font-semibold">{T.badge}</span>
+              <span className="font-extrabold">{T.freeTrialBadge}</span>
             </div>
 
             <h1 className="text-3xl sm:text-5xl md:text-6xl font-black tracking-tight text-slate-900 leading-[1.14]">
@@ -204,28 +222,52 @@ export default function Home() {
               {T.subtitle}
             </p>
 
-            {/* CTA Buttons */}
+            {/* CTA Buttons with 1-Month Free Trial Focus */}
             <div className="flex flex-col sm:flex-row gap-3.5 justify-center items-center pt-2">
-              <Link href="/login" className="w-full sm:w-auto">
+              <Link href="/register" className="w-full sm:w-auto">
                 <Button
                   size="lg"
                   className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white text-sm sm:text-base font-bold px-8 py-6 rounded-2xl shadow-xl shadow-blue-500/25 hover:scale-[1.02] transition-all flex items-center justify-center gap-2"
                 >
-                  <span>{T.ctaSecondary}</span>
+                  <Gift size={18} className="text-blue-100" />
+                  <span>{T.freeTrialCta}</span>
                   <ArrowIcon className="h-5 w-5 shrink-0" />
                 </Button>
               </Link>
 
-              <a href="#platform-tour" className="w-full sm:w-auto">
+              <a
+                href={T.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="w-full sm:w-auto"
+              >
                 <Button
                   size="lg"
                   variant="outline"
-                  className="w-full sm:w-auto bg-white hover:bg-slate-50 border border-slate-300 text-slate-800 text-sm sm:text-base font-semibold px-7 py-6 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto bg-emerald-50 hover:bg-emerald-100/90 border border-emerald-300 text-emerald-800 text-sm sm:text-base font-bold px-7 py-6 rounded-2xl transition-all shadow-xs flex items-center justify-center gap-2"
                 >
-                  <Play size={16} className="text-blue-600 fill-blue-600" />
-                  <span>{T.heroTourBtn}</span>
+                  <MessageCircle size={18} className="text-emerald-600" />
+                  <span>WhatsApp: {T.whatsappNumber}</span>
                 </Button>
               </a>
+            </div>
+
+            {/* Reassurance Micro-Copy */}
+            <div className="flex flex-wrap items-center justify-center gap-4 text-xs font-medium text-slate-500 pt-1">
+              <span className="flex items-center gap-1.5 text-emerald-700">
+                <Check size={14} className="text-emerald-600 stroke-[3]" />
+                100% Gratuit 30 jours
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5 text-slate-700">
+                <Check size={14} className="text-blue-600 stroke-[3]" />
+                N'importe quel traceur GPS mondial
+              </span>
+              <span>•</span>
+              <span className="flex items-center gap-1.5 text-slate-700">
+                <Check size={14} className="text-blue-600 stroke-[3]" />
+                Sans carte bancaire
+              </span>
             </div>
           </div>
 
@@ -268,7 +310,7 @@ export default function Home() {
               <div className="relative">
                 <img
                   src="/landing/hero-command-center.jpg"
-                  alt="Geofence GPS Command Center"
+                  alt="Geofence GPS Worldwide Command Center"
                   className="w-full h-auto object-cover max-h-[620px]"
                 />
               </div>
@@ -290,7 +332,7 @@ export default function Home() {
                       <span className="px-2 py-0.5 rounded bg-blue-100/70 text-blue-800">
                         {T.heroLiveTodayKm}
                       </span>
-                      <span className="px-2 py-0.5 rounded bg-amber-100/70 text-amber-800">
+                      <span className="px-2 py-0.5 rounded bg-emerald-100/70 text-emerald-800">
                         {T.heroLiveTodayCost}
                       </span>
                     </div>
@@ -345,6 +387,118 @@ export default function Home() {
                       {T.heroCard3Btn}
                     </span>
                   </Link>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* ══════════════════════════════════════════════════════════════════════════
+          2.5 HIGH-CONVERTING 1-MONTH FREE TRIAL & UNIVERSAL GPS BANNER
+         ══════════════════════════════════════════════════════════════════════════ */}
+      <section id="free-trial" className="py-14 px-4 sm:px-6 bg-white border-t border-b border-slate-200/80">
+        <div className="max-w-7xl mx-auto">
+          <div className="rounded-3xl p-7 sm:p-10 bg-gradient-to-br from-blue-50 via-white to-emerald-50/50 border-2 border-blue-200 shadow-md">
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center">
+              {/* Left Column: Value Proposition */}
+              <div className="lg:col-span-7 space-y-4">
+                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-emerald-100 text-emerald-800 text-xs font-extrabold border border-emerald-300">
+                  <Gift size={14} className="text-emerald-700" />
+                  <span>{T.freeTrialBadge}</span>
+                </div>
+                <h2 className="text-2xl sm:text-3xl md:text-4xl font-black text-slate-900 tracking-tight leading-snug">
+                  {T.freeTrialTitle}
+                </h2>
+                <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+                  {T.freeTrialSubtitle}
+                </p>
+
+                {/* Important Hardware Condition Clarification */}
+                <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-slate-900">
+                    <Radio size={16} className="text-blue-600" />
+                    <span>{T.universalGpsTitle}</span>
+                  </div>
+                  <p className="text-xs sm:text-sm text-slate-600 leading-relaxed font-normal">
+                    {T.universalGpsRequirement}
+                  </p>
+                  <p className="text-xs text-slate-500 font-medium">
+                    ✦ {T.universalGpsSimNotice}
+                  </p>
+                </div>
+
+                <div className="pt-2 flex flex-wrap items-center gap-3">
+                  <Link href="/register">
+                    <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-7 shadow-lg shadow-blue-500/25">
+                      {T.freeTrialCta}
+                    </Button>
+                  </Link>
+
+                  <a
+                    href={T.whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm shadow-md transition-all"
+                  >
+                    <MessageCircle size={17} />
+                    <span>WhatsApp: {T.whatsappNumber}</span>
+                  </a>
+                </div>
+              </div>
+
+              {/* Right Column: Steps to Connect Any GPS */}
+              <div className="lg:col-span-5 bg-white border border-slate-200/90 rounded-2xl p-6 sm:p-7 shadow-sm space-y-5">
+                <h3 className="text-base font-bold text-slate-900 border-b border-slate-100 pb-3 flex items-center justify-between">
+                  <span>3 Étapes Simples pour Démarrer</span>
+                  <span className="text-[11px] font-extrabold text-emerald-700 bg-emerald-50 px-2.5 py-0.5 rounded-full border border-emerald-200">
+                    30 Jours Gratuits
+                  </span>
+                </h3>
+
+                <ul className="space-y-4 text-xs sm:text-sm text-slate-700">
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center justify-center shrink-0 mt-0.5">
+                      1
+                    </span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">Insérez votre carte SIM Data</span>
+                      <span className="text-slate-500 text-xs">Dans n'importe quel traceur GPS existant ou neuf (Maroc, Europe, Monde).</span>
+                    </div>
+                  </li>
+
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-blue-100 text-blue-700 font-bold text-xs inline-flex items-center justify-center shrink-0 mt-0.5">
+                      2
+                    </span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">Configurez l'adresse IP (Port 5001)</span>
+                      <span className="text-slate-500 text-xs">Par simple SMS ou logiciel de votre balise vers notre passerelle TCP.</span>
+                    </div>
+                  </li>
+
+                  <li className="flex items-start gap-3">
+                    <span className="w-6 h-6 rounded-full bg-emerald-100 text-emerald-700 font-bold text-xs inline-flex items-center justify-center shrink-0 mt-0.5">
+                      3
+                    </span>
+                    <div>
+                      <span className="font-bold text-slate-900 block">Suivez vos véhicules en direct</span>
+                      <span className="text-slate-500 text-xs">Accédez à votre espace web et mobile gratuit pendant 1 mois complet.</span>
+                    </div>
+                  </li>
+                </ul>
+
+                <div className="pt-2 border-t border-slate-100 text-xs text-slate-500 flex items-center justify-between">
+                  <span>Besoin d'aide ?</span>
+                  <a
+                    href={T.whatsappLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="font-bold text-emerald-700 hover:text-emerald-800 flex items-center gap-1"
+                  >
+                    <MessageCircle size={13} />
+                    <span>WhatsApp 00212661176946</span>
+                  </a>
                 </div>
               </div>
             </div>
@@ -427,9 +581,9 @@ export default function Home() {
                     </li>
                   </ul>
                   <div className="pt-2">
-                    <Link href="/login">
+                    <Link href="/register">
                       <Button className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-6 shadow-md shadow-blue-500/20">
-                        {T.m1Btn}
+                        {T.freeTrialCta}
                       </Button>
                     </Link>
                   </div>
@@ -621,7 +775,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          4. CHARTS & INTERACTIVE ROI CALCULATOR (IN MAD)
+          4. CHARTS & INTERACTIVE ROI CALCULATOR (DYNAMIC CURRENCY EUR / USD / MAD)
          ══════════════════════════════════════════════════════════════════════════ */}
       <section id="analytics-roi" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-slate-50/70">
         <div className="max-w-7xl mx-auto space-y-12">
@@ -667,14 +821,14 @@ export default function Home() {
                   <div className="flex justify-between text-xs">
                     <span className="text-slate-600 font-semibold">{T.roiBudgetLabel}</span>
                     <span className="font-extrabold text-amber-700 text-sm">
-                      {monthlyFuelPerVehicle.toLocaleString(T.locale)} MAD
+                      {T.formatCurrency(monthlyFuelPerVehicle)}
                     </span>
                   </div>
                   <input
                     type="range"
-                    min={1000}
-                    max={15000}
-                    step={250}
+                    min={T.fuelSliderMin}
+                    max={T.fuelSliderMax}
+                    step={T.fuelSliderStep}
                     value={monthlyFuelPerVehicle}
                     onChange={(e) => setMonthlyFuelPerVehicle(Number(e.target.value))}
                     className="w-full accent-amber-600 cursor-pointer"
@@ -687,13 +841,13 @@ export default function Home() {
                 <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4">
                   <span className="text-[11px] text-emerald-800 font-semibold block">{T.roiMonthlySavedLabel}</span>
                   <span className="text-xl sm:text-2xl font-black text-emerald-700 mt-1 block">
-                    {roiStats.monthlySaved.toLocaleString(T.locale)} MAD
+                    {T.formatCurrency(roiStats.monthlySaved)}
                   </span>
                 </div>
                 <div className="bg-blue-50 border border-blue-200 rounded-2xl p-4">
                   <span className="text-[11px] text-blue-800 font-semibold block">{T.roiYearlySavedLabel}</span>
                   <span className="text-xl sm:text-2xl font-black text-blue-700 mt-1 block">
-                    {roiStats.yearlySaved.toLocaleString(T.locale)} MAD
+                    {T.formatCurrency(roiStats.yearlySaved)}
                   </span>
                 </div>
               </div>
@@ -714,7 +868,7 @@ export default function Home() {
 
               <div className="h-64 sm:h-72 w-full pt-4">
                 <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={fuelTrendData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <AreaChart data={fuelTrendData} margin={{ top: 10, right: 10, left: -10, bottom: 0 }}>
                     <defs>
                       <linearGradient id="colorSansGps" x1="0" y1="0" x2="0" y2="1">
                         <stop offset="5%" stopColor="#EF4444" stopOpacity={0.2} />
@@ -727,7 +881,7 @@ export default function Home() {
                     </defs>
                     <CartesianGrid strokeDasharray="3 3" stroke="#F1F5F9" />
                     <XAxis dataKey="day" stroke="#94A3B8" fontSize={11} tickLine={false} />
-                    <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} unit=" MAD" />
+                    <YAxis stroke="#94A3B8" fontSize={11} tickLine={false} unit={` ${T.currencySymbol}`} />
                     <Tooltip
                       contentStyle={{
                         backgroundColor: "#FFFFFF",
@@ -767,7 +921,7 @@ export default function Home() {
 
               <div className="flex items-center justify-between pt-4 border-t border-slate-100 text-xs text-slate-500">
                 <span>✦ Économie constatée : 24% en moyenne</span>
-                <span className="font-semibold text-slate-700">Calcul basé sur gasoil MAD</span>
+                <span className="font-semibold text-slate-700">Devise active : {T.currencyCode} ({T.currencySymbol})</span>
               </div>
             </div>
           </div>
@@ -854,7 +1008,7 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          6. HARDWARE COMPATIBILITY (CLEAN LIGHT DESIGN)
+          6. HARDWARE COMPATIBILITY & SIM DATA INSTRUCTION (WORLDWIDE)
          ══════════════════════════════════════════════════════════════════════════ */}
       <section id="hardware" className="py-24 px-4 sm:px-6 border-t border-slate-200/80 bg-slate-50/70">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-10 items-center">
@@ -865,7 +1019,20 @@ export default function Home() {
             <h2 className="text-2xl sm:text-4xl font-black text-slate-900 tracking-tight">
               {T.hwTitle}
             </h2>
-            <p className="text-sm sm:text-base text-slate-600 leading-relaxed">{T.hwSubtitle}</p>
+            <p className="text-sm sm:text-base text-slate-600 leading-relaxed font-normal">
+              {T.hwSubtitle}
+            </p>
+
+            {/* Universal SIM & Tracker Note */}
+            <div className="p-4 rounded-2xl bg-white border border-slate-200/90 shadow-xs space-y-2">
+              <div className="font-bold text-slate-900 flex items-center gap-2 text-xs">
+                <CheckCircle2 size={16} className="text-emerald-600" />
+                <span>{T.universalGpsRequirement}</span>
+              </div>
+              <p className="text-xs text-slate-500">
+                ✦ {T.universalGpsSimNotice}
+              </p>
+            </div>
 
             <div className="grid grid-cols-2 gap-3 text-xs">
               {[
@@ -884,21 +1051,21 @@ export default function Home() {
               ))}
             </div>
 
-            <div className="pt-2 flex flex-wrap gap-3">
+            <div className="pt-2 flex flex-wrap items-center gap-3">
               <Link href="/register">
                 <Button size="lg" className="bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl px-7 shadow-md shadow-blue-500/20">
-                  {T.hwBtnPrimary}
+                  {T.freeTrialCta}
                 </Button>
               </Link>
-              <Link href="/login">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="bg-white hover:bg-slate-50 border border-slate-200 text-slate-800 font-semibold rounded-xl px-6 shadow-xs"
-                >
-                  {T.hwBtnSecondary}
-                </Button>
-              </Link>
+              <a
+                href={T.whatsappLink}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-sm shadow-xs transition-all"
+              >
+                <MessageCircle size={16} />
+                <span>WhatsApp: {T.whatsappNumber}</span>
+              </a>
             </div>
           </div>
 
@@ -970,31 +1137,35 @@ export default function Home() {
       </section>
 
       {/* ══════════════════════════════════════════════════════════════════════════
-          7. FOOTER (CLEAN LIGHT DESIGN)
+          7. FOOTER (CLEAN LIGHT DESIGN WITH WHATSAPP 00212661176946)
          ══════════════════════════════════════════════════════════════════════════ */}
       <footer className="border-t border-slate-200 bg-slate-100/80 py-12 px-4 sm:px-6 text-xs text-slate-600">
         <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <img src="/geofence-logo.svg" alt="Geofence GPS" className="w-7 h-7 rounded-lg" />
-            <span className="font-bold text-slate-900">Geofence GPS</span>
+            <span className="font-bold text-slate-900">Geofence GPS Worldwide</span>
             <span>· © {new Date().getFullYear()} {T.footerRights}</span>
             <span className="hidden sm:inline text-slate-300">|</span>
             <a
-              href={`tel:${T.phoneNumber}`}
+              href={T.whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="hidden sm:inline-flex items-center gap-1.5 text-emerald-700 hover:text-emerald-800 font-bold"
             >
-              <Phone size={12} />
-              <span>{T.callUsText} {T.phoneNumber}</span>
+              <MessageCircle size={13} className="text-emerald-600" />
+              <span>WhatsApp: {T.whatsappNumber}</span>
             </a>
           </div>
 
           <div className="flex items-center gap-4">
             <a
-              href={`tel:${T.phoneNumber}`}
+              href={T.whatsappLink}
+              target="_blank"
+              rel="noopener noreferrer"
               className="sm:hidden inline-flex items-center gap-1 text-emerald-700 hover:text-emerald-800 font-bold"
             >
-              <Phone size={12} />
-              <span>{T.phoneNumber}</span>
+              <MessageCircle size={13} />
+              <span>{T.whatsappNumber}</span>
             </a>
             <Link href="/login" className="hover:text-blue-600 transition-colors font-medium">
               {T.footerLogin}
@@ -1006,6 +1177,28 @@ export default function Home() {
           </div>
         </div>
       </footer>
+
+      {/* ══════════════════════════════════════════════════════════════════════════
+          8. FLOATING WHATSAPP PILL BUTTON (ALWAYS ACCESSIBLE WORLDWIDE)
+         ══════════════════════════════════════════════════════════════════════════ */}
+      <aside
+        aria-label="Support WhatsApp"
+        className={`fixed bottom-6 z-50 ${isRTL ? "left-6" : "right-6"}`}
+      >
+        <a
+          href={T.whatsappLink}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="flex items-center gap-2.5 px-4 py-3 bg-[#25D366] hover:bg-[#20bd5a] text-white font-bold text-xs sm:text-sm rounded-full shadow-2xl shadow-emerald-500/40 hover:scale-105 transition-all"
+        >
+          <span className="relative flex h-2.5 w-2.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75" />
+            <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-white" />
+          </span>
+          <MessageCircle size={18} />
+          <span>WhatsApp : {T.whatsappNumber}</span>
+        </a>
+      </aside>
     </div>
   );
 }

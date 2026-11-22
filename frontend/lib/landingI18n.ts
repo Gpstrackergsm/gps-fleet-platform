@@ -2,6 +2,35 @@ import type { Language } from './translations';
 
 export interface LandingDict {
   locale: string;
+  currencySymbol: string;
+  currencyCode: string;
+  defaultFuelBudget: number;
+  fuelSliderMin: number;
+  fuelSliderMax: number;
+  fuelSliderStep: number;
+  formatCurrency: (amount: number) => string;
+
+  // Free Trial Offer (1 Month Free per Vehicle)
+  freeTrialBadge: string;
+  freeTrialTitle: string;
+  freeTrialSubtitle: string;
+  freeTrialHighlight: string;
+  freeTrialCta: string;
+
+  // Universal Hardware & SIM Requirement
+  universalGpsBadge: string;
+  universalGpsTitle: string;
+  universalGpsRequirement: string;
+  universalGpsSimNotice: string;
+  universalGpsPortInfo: string;
+
+  // WhatsApp Support
+  whatsappText: string;
+  whatsappNumber: string;
+  whatsappDisplayNumber: string;
+  whatsappLink: string;
+  whatsappCta: string;
+
   badge: string;
   title1: string;
   title2: string;
@@ -143,9 +172,37 @@ export interface LandingDict {
 
 const fr: LandingDict = {
   locale: 'fr-FR',
+  currencySymbol: '€',
+  currencyCode: 'EUR',
+  defaultFuelBudget: 350,
+  fuelSliderMin: 50,
+  fuelSliderMax: 1500,
+  fuelSliderStep: 25,
+  formatCurrency: (a: number) => `${a.toLocaleString('fr-FR')} €`,
+
+  // Offre 1 Mois Gratuit
+  freeTrialBadge: "Offre Mondiale · 1 Mois Gratuit par Véhicule",
+  freeTrialTitle: "Testez Notre Plateforme Gratuitement Pendant 1 Mois pour Chaque Véhicule",
+  freeTrialSubtitle: "Aucune carte bancaire requise, aucun engagement. Activez votre flotte immédiatement et constatez les économies dès le premier jour.",
+  freeTrialHighlight: "1 Mois 100% Offert",
+  freeTrialCta: "Activer Mon Mois Gratuit",
+
+  // Compatibilité GPS Universelle & Carte SIM
+  universalGpsBadge: "Compatibilité Mondiale 100% Universelle",
+  universalGpsTitle: "Vous Possédez Déjà des Balises GPS ? Connectez-les Directement !",
+  universalGpsRequirement: "Il vous suffit de posséder n'importe quel traceur GPS dans le monde muni d'une carte SIM avec forfait data actif pour suivre vos véhicules avec notre plateforme.",
+  universalGpsSimNotice: "Toute carte SIM avec un forfait data basique (quelques Mo par mois suffisent) fonctionne parfaitement dans tous les pays.",
+  universalGpsPortInfo: "Configuration simple : orientez simplement votre traceur vers notre serveur TCP (Port 5001).",
+
+  // WhatsApp Support
+  whatsappText: "Une question ou besoin d'aide pour configurer votre balise ?",
+  whatsappNumber: "00212661176946",
+  whatsappDisplayNumber: "00212661176946",
+  whatsappLink: "https://wa.me/212661176946?text=Bonjour%2C%20je%20souhaite%20activer%20l%27essai%20gratuit%20de%201%20mois%20sur%20Geofence%20GPS",
+  whatsappCta: "Écrivez-nous sur WhatsApp au 00212661176946",
   badge: "Plateforme GPS & Gestion de Flotte Nouvelle Génération · En Direct 24/7",
   title1: "Pilotez Toute Votre Flotte en Temps Réel.",
-  title2: "Suivi Live, Parkings, Carburant (MAD) & Sécurité.",
+  title2: "Suivi Live Mondial, Parkings, Économie de Carburant (€) & Sécurité.",
   subtitle:
     "Visualisez vos véhicules à la seconde près : adresse exacte en direct, historique Aller/Retour multicolore, détection automatique de tous les parkings avec durée, analyse carburant en MAD, rapports Excel/PDF et coupure moteur à distance.",
   ctaPrimary: "Créer un Compte",
@@ -244,11 +301,11 @@ const fr: LandingDict = {
   roiBudgetLabel: "Budget carburant mensuel / véhicule :",
   roiMonthlySavedLabel: "Économie Mensuelle Est.",
   roiYearlySavedLabel: "Économie Annuelle Est.",
-  roiChartTitle: "Courbe de Dépense Carburant (Avant vs Avec Geofence)",
-  roiChartSubtitle: (c: number) => `Suivi hebdomadaire en MAD sur une flotte de ${c} véhicules`,
+  roiChartTitle: "Courbe de Dépense Carburant (€) (Avant vs Avec Geofence)",
+  roiChartSubtitle: (c: number) => `Suivi hebdomadaire en Euro (€) sur une flotte de ${c} véhicules`,
   roiChartBadge: "-24% de coût carburant",
-  roiChartNoGps: "Sans Suivi GPS (MAD)",
-  roiChartWithTrackPro: "Avec Geofence (MAD)",
+  roiChartNoGps: "Sans Suivi GPS (€)",
+  roiChartWithTrackPro: "Avec Geofence (€)",
   chartDays: ["Lun", "Mar", "Mer", "Jeu", "Ven", "Sam", "Dim"],
 
   featHeader: "Une Suite Complète pour Tous Vos Véhicules",
@@ -385,6 +442,34 @@ const fr: LandingDict = {
 
 const en: LandingDict = {
   locale: 'en-US',
+  currencySymbol: '$',
+  currencyCode: 'USD',
+  defaultFuelBudget: 380,
+  fuelSliderMin: 50,
+  fuelSliderMax: 1800,
+  fuelSliderStep: 25,
+  formatCurrency: (a: number) => `$${a.toLocaleString('en-US')}`,
+
+  // Free Trial Offer
+  freeTrialBadge: "Worldwide Offer · 1 Month Free Trial per Vehicle",
+  freeTrialTitle: "Try Our Fleet Tracking Platform Free for 1 Full Month for Each Vehicle",
+  freeTrialSubtitle: "No credit card required, zero commitment. Activate your fleet right away and start saving fuel and boosting security on day one.",
+  freeTrialHighlight: "1 Month 100% Free",
+  freeTrialCta: "Start 1 Month Free Trial",
+
+  // Universal GPS & SIM Requirement
+  universalGpsBadge: "100% Universal Worldwide Compatibility",
+  universalGpsTitle: "Already Have GPS Trackers? Connect Them Instantly!",
+  universalGpsRequirement: "You only need any GPS tracker in the world with an active Data SIM card to track all your vehicles with us.",
+  universalGpsSimNotice: "Any standard SIM card with a basic data plan (only a few MBs per month required) works seamlessly in every country.",
+  universalGpsPortInfo: "Plug & Play setup: simply point your tracker to our high-speed TCP gateway (Port 5001).",
+
+  // WhatsApp Support
+  whatsappText: "Have questions or need help configuring your GPS tracker?",
+  whatsappNumber: "00212661176946",
+  whatsappDisplayNumber: "00212661176946",
+  whatsappLink: "https://wa.me/212661176946?text=Hello%2C%20I%20would%20like%20to%20activate%20the%201%20month%20free%20trial%20on%20Geofence%20GPS",
+  whatsappCta: "Message us on WhatsApp: 00212661176946",
   badge: "Next-Gen GPS Fleet Management & Telemetry Platform · Live 24/7",
   title1: "Total Control Over Your Entire Fleet.",
   title2: "Live Tracking, Fuel Analytics (MAD) & Security.",
@@ -486,11 +571,11 @@ const en: LandingDict = {
   roiBudgetLabel: "Monthly fuel budget / vehicle:",
   roiMonthlySavedLabel: "Est. Monthly Savings",
   roiYearlySavedLabel: "Est. Annual Savings",
-  roiChartTitle: "Fuel Spend Trend (Without vs With Geofence)",
-  roiChartSubtitle: (c: number) => `Weekly spend in MAD for a fleet of ${c} vehicles`,
+  roiChartTitle: "Fuel Expense Curve ($) (Before vs With Geofence)",
+  roiChartSubtitle: (c: number) => `Weekly monitoring in USD ($) for a fleet of ${c} vehicles`,
   roiChartBadge: "-24% fuel cost reduction",
-  roiChartNoGps: "Without GPS Tracking (MAD)",
-  roiChartWithTrackPro: "With Geofence (MAD)",
+  roiChartNoGps: "Without GPS ($)",
+  roiChartWithTrackPro: "With Geofence ($)",
   chartDays: ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"],
 
   featHeader: "An All-in-One Suite for Your Entire Fleet",
@@ -627,6 +712,34 @@ const en: LandingDict = {
 
 const ar: LandingDict = {
   locale: 'ar-MA',
+  currencySymbol: 'د.م.',
+  currencyCode: 'MAD',
+  defaultFuelBudget: 3500,
+  fuelSliderMin: 500,
+  fuelSliderMax: 15000,
+  fuelSliderStep: 250,
+  formatCurrency: (a: number) => `${a.toLocaleString('ar-MA')} د.م.`,
+
+  // Free Trial Offer
+  freeTrialBadge: "عرض عالمي خاص · شهر تجريبي مجاني لكل مركبة",
+  freeTrialTitle: "جرّب منصتنا لتتبع المركبات مجاناً لمدة شهر كامل (30 يوماً) لكل سيارة",
+  freeTrialSubtitle: "بدون بطاقة بنكية، وبدون أي التزام مسبق. ابدأ تتبع أسطولك فوراً ولاحظ التوفير في الوقود والأمان من اليوم الأول.",
+  freeTrialHighlight: "شهر كامل 100% مجاناً",
+  freeTrialCta: "تفعيل الشهر التجريبي المجاني",
+
+  // Universal GPS & SIM Requirement
+  universalGpsBadge: "توافق عالمي 100% مع جميع الأجهزة",
+  universalGpsTitle: "هل تمتلك أجهزة تتبع GPS بالفعل؟ اربطها بمنصتنا فوراً !",
+  universalGpsRequirement: "كل ما تحتاجه هو أي جهاز تتبع GPS في العالم مزود بشريحة بيانات إنترنت (SIM Data) لتتبع جميع مركباتك معنا بكل سهولة.",
+  universalGpsSimNotice: "أي بطاقة SIM تحتوي على رصيد إنترنت بسيط (بضع ميغابايت شهرياً كافية تماماً) تعمل في أي بلد في العالم.",
+  universalGpsPortInfo: "إعداد فوري وسهل: فقط وجّه جهاز التتبع إلى خادمنا عبر منفذ TCP Port 5001.",
+
+  // WhatsApp Support
+  whatsappText: "هل لديك أي استفسار أو تحتاج مساعدة في ضبط جهازك؟",
+  whatsappNumber: "00212661176946",
+  whatsappDisplayNumber: "00212661176946",
+  whatsappLink: "https://wa.me/212661176946?text=%D9%85%D8%B1%D8%AD%D8%A8%D8%A7%D8%8C%20%D8%A3%D8%B1%D8%BA%D8%A8%20%D9%81%D9%8A%20%D8%AA%D9%81%D8%B9%D9%8A%D9%84%20%D8%A7%D9%84%D8%B4%D9%87%D8%B1%20%D8%A7%D9%84%D8%AA%D8%AC%D8%B1%D9%8A%D8%A8%D9%8A%20%D8%A7%D9%84%D9%85%D8%AC%D8%A7%D9%86%D9%8A%20%D8%B9%D9%84%D9%89%20Geofence%20GPS",
+  whatsappCta: "راسلنا مباشرة على واتساب: 00212661176946",
   badge: "منصة تتبع الأسطول الذكية والقياس عن بعد · تعمل على مدار الساعة 24/7",
   title1: "تحكم كامل وشامل في أسطول مركباتك.",
   title2: "تتبع مباشر، توفير الوقود بالدرهم وأمان فائق.",
@@ -728,8 +841,8 @@ const ar: LandingDict = {
   roiBudgetLabel: "ميزانية الوقود الشهرية لكل مركبة:",
   roiMonthlySavedLabel: "التوفير الشهري المتوقع",
   roiYearlySavedLabel: "التوفير السنوي المتوقع",
-  roiChartTitle: "منحنى تكاليف الوقود (قبل وبعد Geofence)",
-  roiChartSubtitle: (c: number) => `المتابعة الأسبوعية بالدرهم لأسطول مكون من ${c} مركبة`,
+  roiChartTitle: "منحنى تكلفة الوقود (MAD) (قبل وبعد نظام Geofence)",
+  roiChartSubtitle: (c: number) => `المتابعة الأسبوعية بالدرهم المغربي (MAD) لأسطول مكون من ${c} مركبة`,
   roiChartBadge: "-24% خفض تكاليف الوقود",
   roiChartNoGps: "بدون نظام تتبع GPS (MAD)",
   roiChartWithTrackPro: "مع Geofence (MAD)",
