@@ -16,6 +16,7 @@ export interface LandingDict {
   freeTrialSubtitle: string;
   freeTrialHighlight: string;
   freeTrialCta: string;
+  freeTrialNavCta: string;
 
   // Universal Hardware & SIM Requirement
   universalGpsBadge: string;
@@ -186,6 +187,7 @@ const fr: LandingDict = {
   freeTrialSubtitle: "Aucune carte bancaire requise, aucun engagement. Activez votre flotte immédiatement et constatez les économies dès le premier jour.",
   freeTrialHighlight: "1 Mois 100% Offert",
   freeTrialCta: "Activer Mon Mois Gratuit",
+  freeTrialNavCta: "1 Mois Offert",
 
   // Compatibilité GPS Universelle & Carte SIM
   universalGpsBadge: "Compatibilité Mondiale 100% Universelle",
@@ -204,7 +206,7 @@ const fr: LandingDict = {
   title1: "Pilotez Toute Votre Flotte en Temps Réel.",
   title2: "Suivi Live Mondial, Parkings, Économie de Carburant (€) & Sécurité.",
   subtitle:
-    "Visualisez vos véhicules à la seconde près : adresse exacte en direct, historique Aller/Retour multicolore, détection automatique de tous les parkings avec durée, analyse carburant en MAD, rapports Excel/PDF et coupure moteur à distance.",
+    "Visualisez vos véhicules à la seconde près : adresse exacte en direct, historique Aller/Retour multicolore, détection automatique de tous les parkings avec durée, analyse carburant en €, rapports Excel/PDF et coupure moteur à distance.",
   ctaPrimary: "Créer un Compte",
   ctaSecondary: "Accéder à ma Flotte",
   navFeatures: "Fonctionnalités",
@@ -456,6 +458,7 @@ const en: LandingDict = {
   freeTrialSubtitle: "No credit card required, zero commitment. Activate your fleet right away and start saving fuel and boosting security on day one.",
   freeTrialHighlight: "1 Month 100% Free",
   freeTrialCta: "Start 1 Month Free Trial",
+  freeTrialNavCta: "1 Month Free",
 
   // Universal GPS & SIM Requirement
   universalGpsBadge: "100% Universal Worldwide Compatibility",
@@ -472,9 +475,9 @@ const en: LandingDict = {
   whatsappCta: "Message us on WhatsApp: 00212661176946",
   badge: "Next-Gen GPS Fleet Management & Telemetry Platform · Live 24/7",
   title1: "Total Control Over Your Entire Fleet.",
-  title2: "Live Tracking, Fuel Analytics (MAD) & Security.",
+  title2: "Live Tracking, Fuel Analytics ($) & Security.",
   subtitle:
-    "Monitor every vehicle in real time: live street addresses, multi-color outbound/return trip history, automatic parking detection with exact duration, fuel waste analytics in MAD, Excel/PDF reports, and 1-click remote engine cut-off.",
+    "Monitor every vehicle in real time: live street addresses, multi-color outbound/return trip history, automatic parking detection with exact duration, fuel waste analytics in $, Excel/PDF reports, and 1-click remote engine cut-off.",
   ctaPrimary: "Start Free Trial",
   ctaSecondary: "Sign In to Fleet",
   navFeatures: "Features",
@@ -726,6 +729,7 @@ const ar: LandingDict = {
   freeTrialSubtitle: "بدون بطاقة بنكية، وبدون أي التزام مسبق. ابدأ تتبع أسطولك فوراً ولاحظ التوفير في الوقود والأمان من اليوم الأول.",
   freeTrialHighlight: "شهر كامل 100% مجاناً",
   freeTrialCta: "تفعيل الشهر التجريبي المجاني",
+  freeTrialNavCta: "شهر مجاني",
 
   // Universal GPS & SIM Requirement
   universalGpsBadge: "توافق عالمي 100% مع جميع الأجهزة",

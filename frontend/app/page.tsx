@@ -111,7 +111,7 @@ export default function Home() {
           1. STICKY HEADER (LIGHT CRISP WITH DIRECT WHATSAPP & FREE TRIAL PILL)
          ══════════════════════════════════════════════════════════════════════════ */}
       <header className="sticky top-0 z-50 w-full border-b border-slate-200/80 bg-white/95 backdrop-blur-xl shadow-xs">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between gap-4">
+        <div className="w-full max-w-[1536px] mx-auto px-3 sm:px-6 h-16 flex items-center justify-between gap-3 lg:gap-6">
           {/* Brand */}
           <Link href="/" className="flex items-center gap-2.5 group shrink-0">
             <img
@@ -130,7 +130,7 @@ export default function Home() {
           </Link>
 
           {/* Desktop Section Links */}
-          <nav className="hidden lg:flex items-center gap-6 text-xs font-semibold text-slate-600">
+          <nav className="hidden xl:flex items-center gap-4 2xl:gap-6 text-xs font-semibold text-slate-600 shrink-0">
             <a href="#free-trial" className="text-emerald-700 hover:text-emerald-800 font-bold flex items-center gap-1">
               <Gift size={13} className="text-emerald-600" />
               <span>{T.freeTrialHighlight}</span>
@@ -153,13 +153,13 @@ export default function Home() {
           </nav>
 
           {/* Right Controls */}
-          <div className="flex items-center gap-2 sm:gap-3">
+          <div className="flex items-center gap-1.5 sm:gap-2.5 shrink-0">
             {/* Direct WhatsApp Callout Button */}
             <a
               href={T.whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
-              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold transition-all shadow-xs"
+              className="hidden 2xl:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 text-emerald-800 text-xs font-bold transition-all shadow-xs shrink-0"
               title="WhatsApp direct assistance: 00212661176946"
             >
               <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -167,25 +167,29 @@ export default function Home() {
               <span className="font-mono tracking-wide">{T.whatsappNumber}</span>
             </a>
 
-            <ThemeToggle />
-            <LanguageSelector />
+            <div className="shrink-0">
+              <ThemeToggle />
+            </div>
 
-            <Link href="/login">
+            <LanguageSelector className="shrink-0" />
+
+            <Link href="/login" className="shrink-0">
               <Button
                 variant="outline"
                 size="sm"
-                className="bg-white hover:bg-slate-50 border-slate-200 text-slate-700 text-xs font-semibold px-3.5 rounded-xl transition-colors shadow-xs"
+                className="bg-white hover:bg-slate-50 border-slate-200 text-slate-700 text-xs font-semibold px-2.5 sm:px-3.5 rounded-xl transition-colors shadow-xs whitespace-nowrap"
               >
                 {T.ctaSecondary}
               </Button>
             </Link>
 
-            <Link href="/register" className="hidden sm:block">
+            <Link href="/register" className="shrink-0">
               <Button
                 size="sm"
-                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-4 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/30"
+                className="bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold px-3 sm:px-4 rounded-xl shadow-md shadow-blue-500/20 transition-all hover:shadow-lg hover:shadow-blue-500/30 whitespace-nowrap flex items-center gap-1.5"
               >
-                {T.freeTrialCta}
+                <Gift size={13} className="shrink-0" />
+                <span>{T.freeTrialNavCta}</span>
               </Button>
             </Link>
           </div>
